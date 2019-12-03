@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>設定</title>
+    <link href="flast-file:///style.css" type="text/css" rel="stylesheet" />
+    <script>
+        if (getDarkTheme()) {
+            document.write(
+                `<link href="https://stackpath.bootstrapcdn.com/bootswatch/3.4.1/darkly/bootstrap.min.css" type="text/css" rel="stylesheet" integrity="sha384-pKJMCXwCXq3HwRBt27cwwSmc0/DAo2BjRxGd7nEESEStk++p6LffHmhX9oqzVDUk" crossorigin="anonymous" />`
+            );
+        } else {
+            document.write(
+                `<link href="https://stackpath.bootstrapcdn.com/bootswatch/3.4.1/flatly/bootstrap.min.css" type="text/css" rel="stylesheet" integrity="sha384-bfWZLPtvQKHg/nZNhaO/ZW4Ba8ISud5CtEjnCTU6OR1yOq5zrrF+JP2o7om6rzLf" crossorigin="anonymous" />`
+            );
+        }
+    </script>
+    <link href="http://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.min.css" type="text/css" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css?family=Noto+Sans|Noto+Sans+JP|Roboto" type="text/css"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" type="text/css" rel="stylesheet" />
+    <link rel="icon" sizes="any" href="flast-file://public.svg" type="image/svg+xml" />
+    <link rel="mask-icon" href="flast-file://public.svg" color="black" />
+</head>
+
+<body style="padding-top: 75px;">
+    <nav class="navbar navbar-default navbar-fixed-top">
+        <div class="container-fluid">
+            <div class="navbar-header">
+                <a class="navbar-brand">
+                    <script>document.write(getAppName());</script></a>
+                <ul class="nav navbar-nav navbar-right">
+                    <li><a href="#" data-toggle="modal" data-target="#textEditorModal">テキストエディタで開く (高度なユーザー向け)</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-3">
+                <ul class="nav nav-pills nav-stacked">
+                    <li>
+                        <a href="flast://home/">
+                            <i class="material-icons" style="vertical-align: text-bottom; font-size: 16px;">home</i>
+                            ホーム
+                        </a>
+                    </li>
+                    <hr>
+                    <li>
+                        <a href="flast://history/">
+                            <i class="material-icons" style="vertical-align: text-bottom; font-size: 16px;">history</i>
+                            履歴
+                        </a>
+                    </li>
+                    <li>
+                        <a href="flast://downloads/">
+                            <i class="material-icons" style="vertical-align: text-bottom; font-size: 16px;">get_app</i>
+                            ダウンロード
+                        </a>
+                    </li>
+                    <li>
+                        <a href="flast://bookmarks/">
+                            <i class="material-icons"
+                                style="vertical-align: text-bottom; font-size: 16px;">bookmarks</i> ブックマーク
+                        </a>
+                    </li>
+                    <li>
+                        <a href="flast://store/">
+                            <i class="material-icons" style="vertical-align: text-bottom; font-size: 16px;">shop</i>
+                            WebApp Store
+                        </a>
+                    </li>
+                    <li class="dropdown active">
+                        <a class="dropdown-toggle" data-toggle="dropdown" href="#">
+                            <i class="material-icons" style="vertical-align: text-bottom; font-size: 16px;">settings</i>
+                            設定
+                        </a>
+                        <ul class="dropdown-menu" style="width: 100%;">
+                            <li><a href="flast://settings/">ホーム</a></li>
+                            <li class="divider"></li>
+                            <li><a href="flast://settings/#design">デザイン</a></li>
+                            <li><a href="flast://settings/#engine">検索エンジン</a></li>
+                            <li><a href="flast://settings/#adblock">広告ブロック</a></li>
+                            <li><a href="flast://settings/#window">ウィンドウ</a></li>
+                            <li class="divider"></li>
+                            <li><a href="flast://settings/#about">
+                                    <script>document.write(getAppName());</script> について</a></li>
+                        </ul>
+                    </li>
+                    <li>
+                        <a href="flast://help/">
+                            <i class="material-icons"
+                                style="vertical-align: text-bottom; font-size: 16px;">help_outline</i> ヘルプ
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            <div class="col-md-9" style="padding-right: 0px;">
+                <div style="padding: 5px 15px; overflow-y: auto; height: calc(100vh - 75px);">
+                    <h3>設定</h3>
+                    <hr>
+                    <div class="panel panel-default" id="design">
+                        <div class="panel-heading">デザイン</div>
+                        <div class="panel-body">
+                            <div class="container-fluid">
+                                <div class="row">
+                                    <div class="col-md-9">
+                                        <h6>ホームボタンを表示する</h6>
+                                    </div>
+                                    <div class="col-md-3"
+                                        style="display: flex; align-items: flex-end; flex-direction: column;">
+                                        <span><input id="homeButton" type="checkbox"></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <hr>
+                            <div class="container-fluid">
+                                <div class="row">
+                                    <div class="col-md-9">
+                                        <h6>起動時や<a href="flast://home/" target="_blank">新しいタブ</a> ページに使用されるサイト</h6>
+                                        <p class="text-muted">この設定はホームボタンをクリックしたときにも使用されます。</p>
+                                    </div>
+                                    <div class="col-md-3"
+                                        style="display: flex; align-items: flex-end; flex-direction: column;">
+                                        <div class="input-group" style="width: 100%;">
+                                            <span class="input-group-addon"><img id="startPageIcon" /></span>
+                                            <input type="text" placeholder="URL" class="form-control"
+                                                id="startPageUrl" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <hr>
+                            <div class="container-fluid">
+                                <div class="row">
+                                    <div class="col-md-9">
+                                        <h6>ブックマークバーを表示する</h6>
+                                    </div>
+                                    <div class="col-md-3" style="display: flex; flex-direction: row-reverse;">
+                                        <span><input id="markBar" type="checkbox"></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <hr>
+                            <div class="container-fluid">
+                                <div class="row">
+                                    <div class="col-md-9">
+                                        <h6>ダークテーマを使用する</h6>
+                                        <p class="text-muted">これは試験的機能の一つです。コントロールによっては文字等が見づらくなる場合があります。</p>
+                                    </div>
+                                    <div class="col-md-3" style="display: flex; flex-direction: row-reverse;">
+                                        <span><input id="darkTheme" type="checkbox"></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <hr>
+                            <div class="container-fluid">
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <h6>カスタムテーマ</h6>
+                                        <table class="table table-striped table-hover" id="themeList">
+                                            <thead>
+                                                <tr>
+                                                    <th>テーマ名</th>
+                                                    <th>テーマ説明</th>
+                                                    <th>テーマバージョン</th>
+                                                    <th>テーマ製作者</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="panel panel-default" id="engine">
+                        <div class="panel-heading">
+                            検索エンジン
+                            <a href="" data-toggle="modal" data-target="#searchEngineModal" class="text-muted"
+                                style="float: right;">検索エンジンの管理</a>
+                        </div>
+                        <div class="panel-body">
+                            <div class="container-fluid">
+                                <div class="row">
+                                    <div class="col-md-9">
+                                        <h6>アドレスバーと<a href="flast://home/" target="_blank">新しいタブ</a> ページで使用される検索エンジン
+                                        </h6>
+                                    </div>
+                                    <div class="col-md-3" style="display: flex; justify-content: space-between;">
+                                        <div class="input-group" style="width: 100%;">
+                                            <span class="input-group-addon"><img id="searchEngineIcon" /></span>
+                                            <form name="searchEngines" style="width: 100%; margin-right: 10px;">
+                                                <select class="form-control" id="searchEngineSelect"
+                                                    name="searchEngineSelect">
+
+                                                </select>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="panel panel-default" id="adblock">
+                        <div class="panel-heading">
+                            広告ブロック
+                            <a href="#adblock" id="reloadFilters" class="text-muted"
+                                style="float: right;">定義ファイルのアップデート・再読み込み</a>
+                        </div>
+                        <div class="panel-body">
+                            <div class="container-fluid">
+                                <div class="row">
+                                    <div class="col-md-9">
+                                        <h6>広告ブロックを使用する</h6>
+                                    </div>
+                                    <div class="col-md-3" style="display: flex; flex-direction: row-reverse;">
+                                        <span><input id="adBlock" type="checkbox"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="panel panel-default" id="window">
+                        <div class="panel-heading">ウィンドウ</div>
+                        <div class="panel-body">
+                            <div class="container-fluid">
+                                <div class="row">
+                                    <div class="col-md-9">
+                                        <h6>カスタムタイトルバーを使用する</h6>
+                                        <p class="text-muted">この設定が無効の場合、OS標準のタイトルバーが使用されます。</p>
+                                    </div>
+                                    <div class="col-md-3" style="display: flex; flex-direction: row-reverse;">
+                                        <span><input id="customTitlebar" type="checkbox"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="panel panel-default" id="about">
+                        <div class="panel-heading">
+                            <script>document.write(getAppName());</script> について
+                            <a href="" class="text-muted" id="resetLink" style="float: right;">リセット</a>
+                        </div>
+                        <div class="panel-body">
+                            <div class="container-fluid">
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <p>
+                                            <b>
+                                                <script>document.write(getAppName());</script></b> は(多分)最新版です<br>
+                                            <p class="text-muted">
+                                                <script>document.write(getAppDescription());</script><br>
+                                                バージョン:
+                                                <script>document.write(getAppVersion());</script> (<script>document.write(getAppChannel());</script>)
+                                                (73.0.36831.121)
+                                            </p>
+                                        </p>
+                                        <hr>
+                                        <h5><b>
+                                                <script>document.write(getAppName());</script></b></h5>
+                                        <p>Copyright 2019 Aoichaan0513. All rights reserved.</p>
+                                        <hr>
+                                        <p class="text-muted">
+                                            <b>
+                                                <script>document.write(getAppName());</script></b> はChromiumやその他の<a
+                                                href="flast://credits/">オープンソース
+                                                ソフトウェア</a>によって実現しました。
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="searchEngineModal" tabindex="-1">
+        <div class="modal-dialog" style="z-index: 9999;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal"><span>×</span></button>
+                    <h4 class="modal-title">検索エンジンの管理</h4>
+                </div>
+                <div class="modal-body">
+                    <table class="table table-striped table-hover" id="searchEngineList">
+                        <thead>
+                            <tr>
+                                <th></th>
+                                <th>検索エンジン名</th>
+                                <th>検索URL</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-dismiss="modal">閉じる</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="textEditorModal" tabindex="-1">
+        <div class="modal-dialog" style="z-index: 9999;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal"><span>×</span></button>
+                    <h4 class="modal-title">テキストエディタで開く (高度なユーザー用)</h4>
+                </div>
+                <div class="modal-body">
+                    現在、<b>
+                        <script>document.write(getAppName());</script></b> は開発版のため一部の設定がGUIから変更することが出来ません。<br>
+                    検索エンジンの管理を行う場合は、<a id="configPath">ここ</a>のリンクをコピーして<b>Windows標準のメモ帳以外</b>で開いてください。
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-dismiss="modal">閉じる</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="resetModal" tabindex="-1" data-backdrop="static">
+        <div class="modal-dialog" style="z-index: 9999;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title">本当に実行しますか？</h4>
+                </div>
+                <div class="modal-body">
+                    本当にデータをリセットしてよろしいですか？<br>
+                    <b>続行</b> を押した場合データのリセット後アプリが再起動します。<br>
+                    <hr>
+                    <h6>削除されるデータ</h6>
+                    <ul>
+                        <li>履歴</li>
+                        <li>ブックマーク (プライベート ブックマークも含む)</li>
+                        <li>キャッシュ</li>
+                        <li>Cookieとサイトデータ</li>
+                        <ul>
+                            <li>ログイン情報</li>
+                        </ul>
+                    </ul>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-link" data-dismiss="modal">キャンセル</button>
+                    <button type="button" class="btn btn-primary" id="reset">続行</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="restartModal" tabindex="-1" data-backdrop="static">
+        <div class="modal-dialog" style="z-index: 9999;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title">再起動が必要です</h4>
+                </div>
+                <div class="modal-body">
+                    アプリの再起動が必要な設定が変更されました。<br>
+                    今すぐ再起動をする場合は、<b>続行</b> をクリックしてください。<br>
+                    <b>キャンセル</b> をクリックした場合、次回のアプリ起動時に設定が反映されます。
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-link" data-dismiss="modal">キャンセル</button>
+                    <button type="button" class="btn btn-primary" id="restart">続行</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/moment.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/locale/ja.js"></script>
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $(`a[href="${window.location.href}"]`).parent().addClass('active');
+
+            $('#configPath').prop('href', `file:///${getConfigPath()}`);
+
+            $('#homeButton').prop('checked', getHomeButton());
+
+            $('#startPageIcon').prop('src', new URL(getStartPage()).protocol === 'flast:' ? 'flast-file:///public.png' : `http://www.google.com/s2/favicons?domain=${new URL(getStartPage()).origin}`);
+            $('#startPageUrl').val(getStartPage());
+
+            $('#darkTheme').prop('checked', getDarkTheme());
+
+            $('#adBlock').prop('checked', getAdBlock());
+
+            $('#customTitlebar').prop('checked', getCustomTitlebar());
+
+            let searchEngineSelect = document.forms.searchEngines.searchEngineSelect;
+
+            getSearchEngines().forEach(function (item, i) {
+                searchEngineSelect.options[i] = new Option(item.name);
+            });
+
+            for (var i = 0; i < searchEngineSelect.options.length; i++) {
+                if (searchEngineSelect.options[i].value == getSearchEngine().name) {
+                    $('#searchEngineIcon').prop('src', `http://www.google.com/s2/favicons?domain=${new URL(getSearchEngine().url).origin}`);
+                    searchEngineSelect.selectedIndex = i;
+                }
+            }
+
+            $('#homeButton').on('change', function () {
+                setHomeButton($(this).prop('checked'));
+                location.href = '#';
+            });
+
+            $('#startPageUrl').on('keydown', function (e) {
+                if (e.key != 'Enter') return;
+
+                const text = $(this).val();
+
+                if (isURL(text) && !text.includes('://')) {
+                    setStartPage(text);
+                    $(this).val(text);
+                    $('#startPageIcon').prop('src', new URL(getStartPage()).protocol === 'flast:' ? 'flast-file:///public.png' : `http://www.google.com/s2/favicons?domain=${new URL(getStartPage()).origin}`);
+                } else if (!text.includes('://')) {
+                    setStartPage('flast://home');
+                    $(this).val('flast://home');
+                    $('#startPageIcon').prop('src', new URL(getStartPage()).protocol === 'flast:' ? 'flast-file:///public.png' : `http://www.google.com/s2/favicons?domain=${new URL(getStartPage()).origin}`);
+                } else {
+                    setStartPage(text);
+                    $(this).val(text);
+                    $('#startPageIcon').prop('src', new URL(getStartPage()).protocol === 'flast:' ? 'flast-file:///public.png' : `http://www.google.com/s2/favicons?domain=${new URL(getStartPage()).origin}`);
+                }
+            });
+
+            $('#darkTheme').on('change', function () {
+                setDarkTheme($(this).prop('checked'));
+                location.href = '#';
+            });
+
+            $('#searchEngineSelect').on('change', function () {
+                const target = $('#searchEngineSelect option:selected').val();
+                setSearchEngine(target);
+                $('#searchEngineIcon').prop('src', `http://www.google.com/s2/favicons?domain=${new URL(getSearchEngine().url).origin}`);
+            });
+            getSearchEngines().forEach(function (item, i) {
+                $('#searchEngineList').append(
+                    $('<tr></tr>')
+                        .append($('<td></td>').append($(`<img src="http://www.google.com/s2/favicons?domain=${new URL(item.url).origin}" />`)))
+                        .append($('<td></td>').text(item.name))
+                        .append($('<td></td>').text(item.url))
+                );
+            });
+
+            getFiles('../themes').forEach(function (item, i) {
+                const theme = getFile(item, true);
+                $('#themeList').append($('<tr></tr>').append($('<td></td>').text(theme.meta.name)).append($('<td></td>').text(theme.meta.description)).append($('<td></td>').text(theme.meta.version)).append($('<td></td>').text(theme.meta.authors)));
+            });
+
+            $('#adBlock').on('change', function () {
+                setAdBlock($(this).prop('checked'));
+                location.href = '#';
+            });
+
+            $('#customTitlebar').on('change', function () {
+                setCustomTitlebar($(this).prop('checked'));
+                $('#restartModal').modal({ backdrop: 'static', keyboard: false, show: true });
+            });
+
+            $('#reloadFilters').click(function () {
+                updateFilters();
+            });
+
+            $('#resetLink').click(function (e) {
+                e.preventDefault();
+                $('#resetModal').modal({ backdrop: 'static', keyboard: false, show: true });
+            });
+
+            $('#reset').click(function () {
+                clearBrowserData(true);
+                restart();
+            });
+
+            $('#restart').click(function () {
+                restart();
+            });
+        });
+    </script>
+</body>
+
+</html>

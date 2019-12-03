@@ -1,0 +1,285 @@
+* {
+    box-sizing: border-box;
+}
+
+body {
+    width: 100vw;
+    height: 100vh;
+    margin: 0px;
+    padding: 0px;
+
+    position: relative;
+    
+    overflow: hidden;
+}
+
+select.form-control {
+    padding-left: 6px !important;
+}
+
+@media screen and (max-width: 1024px) {
+    body > header.topbar {
+        width: 100%;
+        height: 50px;
+        margin: 0px;
+        padding: 10px 15px;
+
+        display: flex;
+        align-items: center;
+        
+        box-shadow: 0 0px 5px rgb(202, 202, 202);
+        background-color: white;
+    }
+
+    body > div.nav {
+        width: 240px;
+        height: 100%;
+        margin: 0px;
+        padding: 40px 50px;
+
+        position: absolute;
+        top: 0px;
+
+        transform: translateX(-102%);
+        box-shadow: 0 0px 5px rgb(202, 202, 202);
+        background-color: white;
+    }
+
+    body > div.container {
+        width: 100%;
+        height: calc(100% - 53px);
+        margin: 0px;
+        padding: 40px 50px;
+
+        position: absolute;
+        top: 53px;
+        left: 0px;
+        
+        overflow-y: auto;
+    }
+
+    header.topbar .title {
+        margin: 0px;
+        display: none;
+    }
+
+    header.topbar div.nav-toggle {
+        width: 30px;
+        height: 30px;
+        margin: 0px;
+        padding: 0px;
+        margin-right: 10px;
+        
+        display: flex;
+        justify-content: center;
+        align-items: center;
+
+        cursor: pointer;
+
+        -webkit-user-select: none;
+
+        border: none;
+        border-radius: 2px;
+        background-color: transparent;
+        transition: 0.2s background-color;
+    }
+
+    header.topbar div.nav-toggle:hover {
+      background-color: rgba(0, 0, 0, 0.06);
+    }
+
+    header.topbar input.topbar-search {
+        background: white;
+        border: solid 1px #c1c1c1;
+        border-radius: 2px;
+        font-size: 14.5px;
+        outline: none;
+        cursor: initial;
+        width: 100%;
+        height: 100%;
+        padding: 2px 5px;
+        margin: 5px;
+        box-sizing: border-box;
+    }
+
+    header.topbar input.topbar-search:hover, header.topbar input.topbar-search:focus {
+        box-shadow: 0 5px 10px -3px rgba(0,0,0,.15), 0 0 3px rgba(0,0,0,.1);
+        transition: 0.2s;
+    }
+
+    header.topbar div.topbar-search-btn {
+        width: 60px;
+        height: 30px;
+        margin: 0px;
+        padding: 0px;
+        margin-right: 10px;
+        
+        display: flex;
+        justify-content: center;
+        align-items: center;
+
+        cursor: pointer;
+
+        -webkit-user-select: none;
+
+        border: none;
+        border-radius: 2px;
+    }
+
+    header.topbar div.topbar-search-btn:hover {
+        box-shadow: 0 5px 10px -3px rgba(0,0,0,.15), 0 0 3px rgba(0,0,0,.1);
+        transition: 0.2s;
+    }
+}
+@media screen and (min-width: 1024px) {
+    body > header.topbar {
+        width: 100%;
+        height: 50px;
+        margin: 0px;
+        padding: 10px 15px;
+
+        position: absolute;
+
+        display: flex;
+        align-items: center;
+        
+        box-shadow: 0 0px 5px rgb(202, 202, 202);
+        background-color: white;
+    }
+
+    body > div.nav {
+        width: 240px;
+        height: calc(100% - 53px);
+        margin: 0px;
+        padding: 0px;
+
+        position: absolute;
+        top: 53px;
+        left: 0px;
+
+        border-right: solid 1px rgb(202, 202, 202);
+    }
+
+    body > div.container {
+        width: calc(100% - 240px);
+        height: calc(100% - 53px);
+        margin: 0px;
+        padding: 40px 50px;
+
+        position: absolute;
+        top: 53px;
+        left: 240px;
+        
+        overflow-y: auto;
+    }
+
+    header.topbar .title {
+        margin: 0px;
+    }
+
+    header.topbar div.nav-toggle {
+        width: 30px;
+        height: 30px;
+        margin: 0px;
+        padding: 0px;
+        margin-right: 10px;
+
+        display: flex;
+        justify-content: center;
+        align-items: center;
+
+        cursor: pointer;
+
+        -webkit-user-select: none;
+
+        border: none;
+        border-radius: 2px;
+        background-color: transparent;
+        transition: 0.2s background-color;
+    }
+
+    header.topbar div.nav-toggle:hover {
+      background-color: rgba(0, 0, 0, 0.06);
+    }
+
+    header.topbar input.topbar-search {
+        background: white;
+        border: solid 1px #c1c1c1;
+        border-radius: 2px;
+        font-size: 14.5px;
+        outline: none;
+        cursor: initial;
+        width: calc((100% - (40px * 5)) - 25%);
+        height: 100%;
+        padding: 2px 5px;
+        margin: 5px;
+        margin-left: 80px;
+        box-sizing: border-box;
+    }
+
+    header.topbar input.topbar-search:hover, header.topbar input.topbar-search:focus {
+        box-shadow: 0 5px 10px -3px rgba(0,0,0,.15), 0 0 3px rgba(0,0,0,.1);
+        transition: 0.2s;
+    }
+
+    header.topbar div.topbar-search-btn {
+        width: 60px;
+        height: 30px;
+        margin: 0px;
+        padding: 0px;
+        margin-right: 10px;
+        
+        display: flex;
+        justify-content: center;
+        align-items: center;
+
+        cursor: pointer;
+
+        -webkit-user-select: none;
+
+        border: none;
+        border-radius: 2px;
+    }
+
+    header.topbar div.topbar-search-btn:hover {
+        box-shadow: 0 5px 10px -3px rgba(0,0,0,.15), 0 0 3px rgba(0,0,0,.1);
+        transition: 0.2s;
+    }
+
+    div.nav > div.nav-item.separator {
+        padding: 0px;
+        border-bottom: solid 1px rgb(202, 202, 202);
+    }
+
+    div.nav > a.nav-item {
+        width: 100%;
+        height: auto;
+        margin: 0px;
+        padding: 8px 10px;
+        
+        display: block;
+
+        font-size: 1.6rem;
+        color: #656565;
+        text-decoration: none;
+
+        display: flex;
+        -webkit-align-items: center;
+        align-items: center;
+        -webkit-justify-content: center;
+        justify-content: center;
+    }
+
+    div.nav > a.nav-item:hover {
+        background-color: rgba(0, 0, 0, 0.06);
+    }
+
+    div.nav > a.nav-item > span {
+        width: 100%;
+        height: 100%;
+        margin: 0px;
+        margin-top: 0.5px;
+        margin-left: 8px;
+        padding: 0px;
+    }
+}

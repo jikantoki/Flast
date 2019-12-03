@@ -1,0 +1,31 @@
+{
+    "meta": {
+        "name": "Black Theme",
+        "description": "Simple Black Theme.",
+        "version": 1.0,
+        "authors": [
+            "Flast",
+            "Aoichaan0513"
+        ]
+    },
+    "theme": {
+        "window": {
+            "border": "auto",
+            "titleBar": "auto"
+        },
+        "tabs": {
+            "background": "#353535",
+            "accent": "#252525",
+            "hover": {
+                "tab": "rgba(196, 196, 196, 0.4)"
+            }
+        },
+        "actionBar": {
+            "background": "#353535",
+            "border": "#8b8b8b",
+            "control": {
+                "button": "rgba(130, 130, 130, 0.3)"
+            }
+        }
+    }
+}

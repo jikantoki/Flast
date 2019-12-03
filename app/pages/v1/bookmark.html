@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>ブックマーク | MyBrowser</title>
+    <link href="my://style.css" rel="stylesheet">
+    <link href="https://stackpath.bootstrapcdn.com/bootswatch/3.4.1/paper/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-czdUt3c5InCk6AjJWW7zMMS5xcvRAyC6tWoWfXuRYfX6Vvv4Es8m8eRjzMChD493" crossorigin="anonymous">
+    <link href="https://fonts.googleapis.com/css?family=Noto+Sans|Noto+Sans+JP|Roboto" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="icon" sizes="any" href="my://public.svg" type="image/svg+xml">
+    <link rel="mask-icon" href="my://public.svg" color="black">
+    <style>
+        .table-style {
+            table-layout: fixed;
+            white-space: nowrap;
+        }
+
+        .table-style th.table-title,
+        .table-style td.table-title {
+            width: 400px;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+
+        .table-style th.table-url,
+        .table-style td.table-url {
+            width: calc(100% - 600px);
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+    </style>
+</head>
+
+<body>
+    <header class="topbar">
+        <div class="nav-toggle">
+            <i class="material-icons">
+                menu
+            </i>
+        </div>
+        <h5 class="title">ブックマーク</h5>
+        <button type="button" class="btn btn-link" style="margin-left: auto;" data-toggle="modal"
+            data-target="#clearModal">
+            ブックマークをクリア
+        </button>
+    </header>
+    <div class="nav">
+    </div>
+    <div class="container">
+        <script>
+            if (navigator.userAgent.indexOf('PrivMode') != -1) {
+                document.write(
+                    `<div class="panel panel-default" id="private">
+                        <div class="panel-heading">プライベート ブックマーク</div>
+                        <div class="panel-body">
+                            <div class="table-responsive">
+                                <table class="table table-striped table-hover table-style" id="privMarkList">
+                                    <thead>
+                                        <tr>
+                                            <th class="table-title">タイトル</th>
+                                            <th class="table-url">URL</th>
+                                            <th style="width: 200px; white-space: nowrap;">追加日時</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    <hr>`
+                );
+            }
+        </script>
+        <div class="panel panel-default" id="normal">
+            <div class="panel-heading">ブックマーク</div>
+            <div class="panel-body">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover table-style" id="markList">
+                        <thead>
+                            <tr>
+                                <th class="table-title">タイトル</th>
+                                <th class="table-url">URL</th>
+                                <th style="width: 200px; white-space: nowrap;">追加日時</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="clearModal" tabindex="-1">
+        <div class="modal-dialog" style="z-index: 9999;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal"><span>×</span></button>
+                    <h4 class="modal-title">ブックマークをクリア</h4>
+                </div>
+                <div class="modal-body">
+                    これまでのブックマークをクリアします。
+                    続行を押すとブックマークがクリアされます。
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-link" data-dismiss="modal">閉じる</button>
+                    <button type="button" class="btn btn-primary" id="clearBookmark">続行</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/moment.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/locale/ja.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $('.nav a[href="' + window.location.pathname + '"]').parent().addClass('active');
+
+            $('#clearBookmark').click(function () {
+                clearBookmark(true);
+                location.reload();
+            });
+
+            if (navigator.userAgent.indexOf('PrivMode') != -1) {
+                getBookmarks(true).then((data) => {
+                    data.forEach((item, i) => {
+                        $('#privMarkList').append($('<tr></tr>').append($('<td class="table-title"></td>').append($(`<a href="${item.url}"></a>`).text(item.title))).append($('<td class="table-url"></td>').text(item.url)).append($('<td></td>').text(moment(item.createdAt).format('YYYY/MM/DD HH:mm'))));
+                    });
+                    getBookmarks(false).then((data) => {
+                        data.forEach((item, i) => {
+                            $('#markList').append($('<tr></tr>').append($('<td class="table-title"></td>').append($(`<a href="${item.url}"></a>`).text(item.title))).append($('<td class="table-url"></td>').text(item.url)).append($('<td></td>').text(moment(item.createdAt).format('YYYY/MM/DD HH:mm'))));
+                        });
+                    });
+                });
+            } else {
+                getBookmarks(false).then((data) => {
+                    data.forEach((item, i) => {
+                        $('#markList').append($('<tr></tr>').append($('<td class="table-title"></td>').append($(`<a href="${item.url}"></a>`).text(item.title))).append($('<td class="table-url"></td>').text(item.url)).append($('<td></td>').text(moment(item.createdAt).format('YYYY/MM/DD HH:mm'))));
+                    });
+                });
+            }
+        });
+    </script>
+</body>
+
+</html>

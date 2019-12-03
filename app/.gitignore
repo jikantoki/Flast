@@ -1,0 +1,6 @@
+electron/Config.js
+node_modules/
+pages/static/Historys.js
+pages/static/Downloads.js
+pages/static/Bookmarks.js
+pages/static/Settings.js

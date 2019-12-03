@@ -1,0 +1,10 @@
+app/electron/Config.js
+app/pages/static/Home.js
+app/pages/static/Bookmarks.js
+app/pages/static/Historys.js
+app/pages/static/Downloads.js
+app/pages/static/Settings.js
+app/pages/static/ErrorPage.js
+app/builds
+dist/
+node_modules/

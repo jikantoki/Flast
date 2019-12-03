@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>ホーム</title>
+    <link rel="shortcut icon" href="flast-file:///public.png" />
+    <link href="flast-file:///style.css" type="text/css" rel="stylesheet" />
+    <script>
+        if (getThemeType() || navigator.userAgent.indexOf('PrivMode') != -1) {
+            document.write(
+                `<link href="https://stackpath.bootstrapcdn.com/bootswatch/3.4.1/darkly/bootstrap.min.css" type="text/css" rel="stylesheet" integrity="sha384-pKJMCXwCXq3HwRBt27cwwSmc0/DAo2BjRxGd7nEESEStk++p6LffHmhX9oqzVDUk" crossorigin="anonymous" />`
+            );
+        } else {
+            document.write(
+                `<link href="https://stackpath.bootstrapcdn.com/bootswatch/3.4.1/flatly/bootstrap.min.css" type="text/css" rel="stylesheet" integrity="sha384-bfWZLPtvQKHg/nZNhaO/ZW4Ba8ISud5CtEjnCTU6OR1yOq5zrrF+JP2o7om6rzLf" crossorigin="anonymous" />`
+            );
+        }
+    </script>
+    <link href="http://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.min.css" type="text/css" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css?family=Noto+Sans|Noto+Sans+JP|Roboto" type="text/css"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" type="text/css" rel="stylesheet" />
+</head>
+
+<body>
+    <script>
+        if (navigator.userAgent.indexOf('PrivMode') == -1) {
+            document.write(
+                `<div class="test" style="height: calc(100vh - 100px); background-repeat: no-repeat; background-size: cover;"></div>`
+            );
+        }
+    </script>
+    <nav class="navbar navbar-default navbar-static-top" style="position: sticky; top: 0px;">
+        <div class="container-fluid">
+            <div class="navbar-header">
+                <a class="navbar-brand">
+                    <script>document.write(getAppName());</script></a>
+                <div class="navbar-form navbar-right" role="search" style="width: 75%;">
+                    <input placeholder="Google で検索または URL を入力" onkeydown="handleKeydown();" class="form-control"
+                        id="search" style="width: calc(100% - 145px);">
+                    <button onclick="handleClick();" type="button" class="btn btn-default" id="searchBtn">検索 /
+                        Search
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-3">
+                <ul class="nav nav-pills nav-stacked">
+                    <li>
+                        <a href="flast://home/">
+                            <i class="material-icons" style="vertical-align: text-bottom; font-size: 16px;">home</i>
+                            ホーム
+                        </a>
+                    </li>
+                    <hr>
+                    <li>
+                        <a href="flast://history/">
+                            <i class="material-icons" style="vertical-align: text-bottom; font-size: 16px;">history</i>
+                            履歴
+                        </a>
+                    </li>
+                    <li>
+                        <a href="flast://downloads/">
+                            <i class="material-icons" style="vertical-align: text-bottom; font-size: 16px;">get_app</i>
+                            ダウンロード
+                        </a>
+                    </li>
+                    <li>
+                        <a href="flast://bookmarks/">
+                            <i class="material-icons"
+                                style="vertical-align: text-bottom; font-size: 16px;">bookmarks</i>
+                            ブックマーク
+                        </a>
+                    </li>
+                    <hr>
+                    <li>
+                        <a href="flast://apps/">
+                            <i class="material-icons" style="vertical-align: text-bottom; font-size: 16px;">apps</i>
+                            アプリ
+                        </a>
+                    </li>
+                    <li>
+                        <a href="flast://store/">
+                            <i class="material-icons" style="vertical-align: text-bottom; font-size: 16px;">shop</i>
+                            WebApp Store
+                        </a>
+                    </li>
+                    <hr>
+                    <li class="dropdown">
+                        <a class="dropdown-toggle" data-toggle="dropdown" href="#">
+                            <i class="material-icons" style="vertical-align: text-bottom; font-size: 16px;">settings</i>
+                            設定
+                        </a>
+                        <ul class="dropdown-menu" style="width: 100%;">
+                            <li><a href="flast://settings/">ホーム</a></li>
+                            <li class="divider"></li>
+                            <li><a href="flast://settings/#design">デザイン</a></li>
+                            <li><a href="flast://settings/#engine">検索エンジン</a></li>
+                            <li><a href="flast://settings/#adblock">広告ブロック</a></li>
+                            <li><a href="flast://settings/#window">ウィンドウ</a></li>
+                            <li class="divider"></li>
+                            <li><a href="flast://settings/#about">
+                                    <script>document.write(getAppName());</script> について</a></li>
+                        </ul>
+                    </li>
+                    <li>
+                        <a href="flast://help/">
+                            <i class="material-icons"
+                                style="vertical-align: text-bottom; font-size: 16px;">help_outline</i> ヘルプ
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            <div class="col-md-9">
+                <div style="padding: 5px 15px; overflow-y: auto;">
+                    <script>
+                        if (localStorage.getItem('isFirst') == true || localStorage.getItem('isFirst') == undefined) {
+                            document.write(
+                                `<div class="jumbotron">
+                                    <div class="container">
+                                        <h1>ようこそ</h1>
+                                        <p>新しいタブ ページはホームとして生まれ変わりました。</p>
+                                    </div>
+                                </div>`
+                            );
+                            localStorage.setItem('isFirst', false);
+                        }
+                    </script>
+                    <h3>ホーム</h3>
+                    <hr>
+                    <script>
+                        if (navigator.userAgent.indexOf('PrivMode') != -1) {
+                            document.write(
+                                `<div class="panel panel-default" id="normal">
+                                    <div class="panel-heading">プライベート モード</div>
+                                    <div class="panel-body">
+                                            現在、プライベート モードで閲覧しています。<br>
+                                            プライベート モードでは、閲覧履歴やCookieなどが${getAppName()}に保存されません。<br>
+                                            また、ブックマークはプライベート ブックマークに保存されます。<br>
+                                            ※ プライベート ブックマークは、プライベート モードの時のみブックマークの表示や編集ができる機能です。<br>
+                                            ただし、ダウンロードしたファイルは通常通り保存されます。<br><br>
+                                            ${getAppName()} に<b>以下の情報は</b>保存されません。<br>
+                                            <ul>
+                                                <li>閲覧履歴</li>
+                                                <li>Cookieとサイトデータ</li>
+                                                <li>ログイン情報</li>
+                                            </ul>
+                                            ${getAppName()} に<b>以下の情報は</b>保存されます。<br>
+                                            <ul>
+                                                <li>ダウンロード情報</li>
+                                                <li>プライベート ブックマーク</li>
+                                            </ul>
+                                    </div>
+                                </div>`
+                            );
+                        }
+                    </script>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="panel panel-default" id="normal">
+                                <div class="panel-heading">
+                                    最近の履歴
+                                </div>
+                                <div class="panel-body">
+                                    <p class="location"></p>
+                                    <p class="dayWeather"></p>
+                                    <p class="nowTemp"></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            アプリ
+                            <a href="flast://bookmarks" class="text-muted" style="float: right;">すべての履歴を表示</a>
+                        </div>
+                        <div class="panel-body">
+                            <div class="table-responsive">
+                                <table class="table table-striped table-hover table-style" id="appsList">
+                                    <thead>
+                                        <tr>
+                                            <th class="table-icon"></th>
+                                            <th class="table-title">タイトル</th>
+                                            <th class="table-url">URL</th>
+                                            <th class="table-date">閲覧日時</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            最近追加したブックマーク
+                            <a href="flast://bookmarks" class="text-muted" style="float: right;">すべてのブックマークを表示</a>
+                        </div>
+                        <div class="panel-body">
+                            <div class="table-responsive">
+                                <table class="table table-striped table-hover table-style" id="marksList">
+                                    <thead>
+                                        <tr>
+                                            <th class="table-icon"></th>
+                                            <th class="table-title">タイトル</th>
+                                            <th class="table-url">URL</th>
+                                            <th class="table-date">追加日時</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="panel panel-default" id="normal">
+                        <div class="panel-heading">
+                            最近の履歴
+                            <a href="flast://history" class="text-muted" style="float: right;">すべての履歴を表示</a>
+                        </div>
+                        <div class="panel-body">
+                            <div class="table-responsive">
+                                <table class="table table-striped table-hover table-style" id="historyList">
+                                    <thead>
+                                        <tr>
+                                            <th class="table-icon"></th>
+                                            <th class="table-title">タイトル</th>
+                                            <th class="table-url">URL</th>
+                                            <th class="table-date">閲覧日時</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/moment.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/locale/ja.js"></script>
+    <script type="text/javascript">
+        const APIKEY = '4045596cfcdfc424943d70d0464d76af';
+
+        $(document).ready(function () {
+            $(`a[href="${window.location.href}"]`).parent().addClass('active');
+
+            $('#search').prop('placeholder', `${getSearchEngine().name} で検索または URL を入力`);
+
+            $('#search').autocomplete({
+                source: function (request, response) {
+                    $.ajax({
+                        url: "http://www.google.com/complete/search",
+                        data: { hl: 'ja', client: 'firefox', q: request.term },
+                        dataType: "jsonp",
+                        type: "GET",
+                        success: function (data) {
+                            response(data[1]);
+                        }
+                    });
+                },
+                delay: 300,
+                minLength: 2,
+            });
+
+            getHistorys().then((data) => {
+                let v = 0;
+                data.forEach((item, i) => {
+                    if (v > 9) return;
+                    $('#historyList').append(
+                        $('<tr></tr>')
+                            .append($('<td class="table-icon"></td>').append($(`<img src="http://www.google.com/s2/favicons?domain=${new URL(item.url).origin}" />`)))
+                            .append($('<td class="table-title"></td>').append($(`<a href="${item.url}"></a>`).text(item.title)))
+                            .append($(`<td class="table-url" title="${item.url}"></td>`).text(item.url))
+                            .append($('<td></td>').text(moment(item.createdAt).format('YYYY/MM/DD HH:mm')))
+                    );
+                    v++;
+                });
+            });
+            getBookmarks(false).then((data) => {
+                let v = 0;
+                data.forEach((item, i) => {
+                    if (v > 9) return;
+                    $('#marksList').append(
+                        $('<tr></tr>')
+                            .append($('<td class="table-icon"></td>').append($(`<img src="http://www.google.com/s2/favicons?domain=${new URL(item.url).origin}" />`)))
+                            .append($('<td class="table-title"></td>').append($(`<a href="${item.url}"></a>`).text(item.title)))
+                            .append($(`<td class="table-url" title="${item.url}"></td>`).text(item.url))
+                            .append($('<td></td>').text(moment(item.createdAt).format('YYYY/MM/DD HH:mm')))
+                    );
+                    v++;
+                });
+            });
+
+            if (navigator.userAgent.indexOf('PrivMode') == -1) {
+                var now = new Date();
+                var start = new Date(now.getFullYear(), 0, 0);
+                var diff = now - start;
+                var oneDay = 1000 * 60 * 60 * 24;
+                var day = Math.floor(diff / oneDay);
+                if (day > 100 && day) {
+                    day = day.toString().slice(1, 3);
+                    day = parseInt(day);
+                }
+
+                $('.test').css({
+                    'background': `linear-gradient(to bottom, #00000000 65%, #FFF), url(flast-file:///photos/${day}.jpg)`,
+                    'background-repeat': 'no-repeat',
+                    'background-size': 'cover'
+                });
+
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition((position) => {
+                        const positionData = position.coords;
+
+                        const lat = positionData.latitude;
+                        const lon = positionData.longitude;
+                        $('.location').text('現在の位置（' + Math.floor(lat * 100) / 100 + ',' + Math.floor(lon * 100) / 100 + ')');
+
+
+                        //現在の天気データを呼び出し
+                        $.ajax({
+                            url: 'http://api.openweathermap.org/data/2.5/weather',
+                            dataType: 'jsonp',
+                            data: `lat=${lat}&lon=${lon}&appid=${APIKEY}`,
+                            //天気データ呼び出し成功時の挙動
+                            success: function (data) {
+                                $('.location').text(data.name);
+
+                                if (data.weather[0].main === "Clear") {
+                                    $('body').css('background-image', 'url(Sunny.jpg)');
+                                    $('.dayWeather').text("晴れ");
+                                } else if (data.weather[0].main === "Rain") {
+                                    $('body').css('background-image', 'url(Rain.jpg)');
+                                    $('.dayWeather').text("雨");
+                                } else if (data.weather[0].main === "Clouds") {
+                                    $('body').css('background-image', 'url(Cloudy.jpg)');
+                                    $('.dayWeather').text("くもり");
+                                } else if (data.weather[0].main === "Snow") {
+                                    $('body').css('background-image', 'url(Snowy.jpg)');
+                                    $('.dayWeather').text("雪");
+                                }
+
+                                //各データの表示
+                                $('.nowTemp').text(Math.floor((data.main.temp - 273.15) * 10) / 10);
+                                $('.dayWeatherIcon').attr('src', 'http://openweathermap.org/img/w/' + data.weather[0].icon + '.png ');
+                            }
+                        });
+                    }, (error) => {
+                        $('.location').text('東京');
+
+                        TokyoWeather();
+                    });
+                } else {
+                    $('.location').text('東京');
+
+                    TokyoWeather();
+                }
+            } else {
+                $('.location').text('東京');
+
+                TokyoWeather();
+            }
+        });
+
+
+        function TokyoWeather() {
+            $.ajax({
+                url: "http://api.openweathermap.org/data/2.5/weather",
+                dataType: "jsonp",
+                data: `q=Tokyo,jp&appid=${APIKEY}`,
+                success: function (data) {
+                    if (data.weather[0].main === "Sunny" || data.weather[0].main === "Clear") {
+                        $('body').css('background-image', 'url(Sunny.jpg)');
+                        $('.dayWeather').text("晴れ");
+                    } else if (data.weather[0].main === "Rain") {
+                        $('body').css('background-image', 'url(Rain.jpg)');
+                        $('.dayWeather').text("雨");
+                    } else if (data.weather[0].main === "Clouds") {
+                        $('body').css('background-image', 'url(Cloudy.jpg)');
+                        $('.dayWeather').text("くもり");
+                    } else if (data.weather[0].main === "Snow") {
+                        $('body').css('background-image', 'url(Snowy.jpg)');
+                        $('.dayWeather').text("雪");
+                    }
+                    $('.nowTemp').text(Math.floor((data.main.temp - 273.15) * 10) / 10);
+                    $('.dayWeatherIcon').attr('src', 'http://openweathermap.org/img/w/' + data.weather[0].icon + '.png ');
+                }
+            });
+        }
+
+        function handleClick() {
+            let searchBar = $('#search');
+            if (searchBar.val().length == 0 || searchBar.val() == '') return;
+
+            if (isURL(searchBar.val()) && !searchBar.val().includes('://')) {
+                location.href = `http://${searchBar.val()}`;
+            } else if (!searchBar.val().includes('://')) {
+                location.href = getSearchEngine().url.replace('%s', searchBar.val());
+            } else {
+                const pattern = /^(file:\/\/\S.*)\S*$/;
+
+                if (pattern.test(searchBar.val())) {
+                    searchBar.val('');
+                } else {
+                    location.href = searchBar.val();
+                }
+            }
+        }
+
+        function handleKeydown() {
+            let searchBar = $('#search');
+            if (searchBar.val().length == 0 || searchBar.val() == '') return;
+
+            if (event.keyCode == 13) {
+                if (isURL(searchBar.val()) && !searchBar.val().includes('://')) {
+                    location.href = `http://${searchBar.val()}`;
+                } else if (!searchBar.val().includes('://')) {
+                    location.href = getSearchEngine().url.replace('%s', encodeURIComponent(searchBar.val()));
+                } else {
+                    const pattern = /^(file:\/\/\S.*)\S*$/;
+
+                    if (pattern.test(searchBar.val())) {
+                        searchBar.val('');
+                    } else {
+                        location.href = searchBar.val();
+                    }
+                }
+            } else {
+                let searchBtn = $('#searchBtn');
+                if (isURL(searchBar.val()) && !searchBar.val().includes('://')) {
+                    searchBtn.text('読み込み / Load');
+                } else if (!searchBar.val().includes('://')) {
+                    searchBtn.text('検索 / Search');
+                } else {
+                    searchBtn.text('読み込み / Load');
+                }
+            }
+        }
+
+        function isURL(input) {
+            const pattern = /^((?:\w+:)?\/\/([^\s.]+\.\S{2}|localhost[:?\d]*)|flast:\/\/\S.*)\S*$/;
+
+            if (pattern.test(input)) {
+                return true;
+            }
+            return pattern.test(`http://${input}`);
+        }
+    </script>
+</body>
+
+</html>

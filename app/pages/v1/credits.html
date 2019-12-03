@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Credits | MyBrowser</title>
+    <link href="my://style.css" rel="stylesheet">
+    <link href="https://stackpath.bootstrapcdn.com/bootswatch/3.4.1/paper/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-czdUt3c5InCk6AjJWW7zMMS5xcvRAyC6tWoWfXuRYfX6Vvv4Es8m8eRjzMChD493" crossorigin="anonymous">
+    <link href="https://fonts.googleapis.com/css?family=Noto+Sans|Noto+Sans+JP|Roboto" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="icon" sizes="any" href="my://public.svg" type="image/svg+xml">
+    <link rel="mask-icon" href="my://public.svg" color="black">
+</head>
+
+<body>
+    <header class="topbar">
+        <div class="nav-toggle">
+            <i class="material-icons">
+                menu
+            </i>
+        </div>
+        <h5 class="title">Credits</h5>
+    </header>
+    <div class="nav">
+    </div>
+    <div class="container">
+        <div class="panel panel-default" id="about">
+            <div class="panel-heading">Credits</div>
+            <div class="panel-body">
+                <div class="container-fluid">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <ul>
+                                <li>Chromium</li>
+                                <li>Electron</li>
+                                <li>electron-store</li>
+                                <li>electron-platform</li>
+                                <li>React</li>
+                                <li>Styled-Components</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $('.nav a[href="' + window.location.pathname + '"]').parent().addClass('active');
+        });
+    </script>
+</body>
+
+</html>

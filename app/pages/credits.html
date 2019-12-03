@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Credits</title>
+    <link href="flast-file:///style.css" type="text/css" rel="stylesheet" />
+    <script>
+        if (getThemeType()) {
+            document.write(
+                `<link href="https://stackpath.bootstrapcdn.com/bootswatch/3.4.1/darkly/bootstrap.min.css" type="text/css" rel="stylesheet" integrity="sha384-pKJMCXwCXq3HwRBt27cwwSmc0/DAo2BjRxGd7nEESEStk++p6LffHmhX9oqzVDUk" crossorigin="anonymous" />`
+            );
+        } else {
+            document.write(
+                `<link href="https://stackpath.bootstrapcdn.com/bootswatch/3.4.1/flatly/bootstrap.min.css" type="text/css" rel="stylesheet" integrity="sha384-bfWZLPtvQKHg/nZNhaO/ZW4Ba8ISud5CtEjnCTU6OR1yOq5zrrF+JP2o7om6rzLf" crossorigin="anonymous" />`
+            );
+        }
+    </script>
+    <link href="http://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.min.css" type="text/css" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css?family=Noto+Sans|Noto+Sans+JP|Roboto" type="text/css" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" type="text/css" rel="stylesheet" />
+    <link rel="icon" sizes="any" href="flast-file://public.svg" type="image/svg+xml" />
+    <link rel="mask-icon" href="flast-file://public.svg" color="black" />
+</head>
+
+<body style="padding-top: 75px;">
+    <nav class="navbar navbar-default navbar-fixed-top">
+        <div class="container-fluid">
+            <div class="navbar-header">
+                <a class="navbar-brand"><script>document.write(getAppName());</script></a>
+            </div>
+        </div>
+    </nav>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-3">
+                <ul class="nav nav-pills nav-stacked">
+                    <li>
+                        <a href="flast://home/">
+                            <i class="material-icons" style="vertical-align: text-bottom; font-size: 16px;">home</i>
+                            ホーム
+                        </a>
+                    </li>
+                    <hr>
+                    <li>
+                        <a href="flast://history/">
+                            <i class="material-icons" style="vertical-align: text-bottom; font-size: 16px;">history</i>
+                            履歴
+                        </a>
+                    </li>
+                    <li>
+                        <a href="flast://downloads/">
+                            <i class="material-icons" style="vertical-align: text-bottom; font-size: 16px;">get_app</i>
+                            ダウンロード
+                        </a>
+                    </li>
+                    <li>
+                        <a href="flast://bookmarks/">
+                            <i class="material-icons"
+                                style="vertical-align: text-bottom; font-size: 16px;">bookmarks</i> ブックマーク
+                        </a>
+                    </li>
+                    <li>
+                        <a href="flast://store/">
+                            <i class="material-icons" style="vertical-align: text-bottom; font-size: 16px;">shop</i>
+                            WebApp Store
+                        </a>
+                    </li>
+                    <li class="dropdown">
+                        <a class="dropdown-toggle" data-toggle="dropdown" href="#">
+                            <i class="material-icons" style="vertical-align: text-bottom; font-size: 16px;">settings</i>
+                            設定
+                        </a>
+                        <ul class="dropdown-menu" style="width: 100%;">
+                            <li><a href="flast://settings/">ホーム</a></li>
+                            <li class="divider"></li>
+                            <li><a href="flast://settings/#design">デザイン</a></li>
+                            <li><a href="flast://settings/#engine">検索エンジン</a></li>
+                            <li><a href="flast://settings/#adblock">広告ブロック</a></li>
+                            <li><a href="flast://settings/#window">ウィンドウ</a></li>
+                            <li class="divider"></li>
+                            <li><a href="flast://settings/#about"><script>document.write(getAppName());</script> について</a></li>
+                        </ul>
+                    </li>
+                    <li>
+                        <a href="flast://help/">
+                            <i class="material-icons"
+                                style="vertical-align: text-bottom; font-size: 16px;">help_outline</i> ヘルプ
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            <div class="col-md-9" style="padding-right: 0px;">
+                <div style="padding: 5px 15px; overflow-y: auto; height: calc(100vh - 75px);">
+                    <h3>Credits</h3>
+                    <hr>
+                    <ul>
+                        <li>SereneLinux</li>
+                        <hr>
+                        <li>Chromium</li>
+                        <li>Electron</li>
+                        <ul>
+                            <li>electron-store</li>
+                            <li>electron-platform</li>
+                            <li>electron-builder</li>
+                        </ul>
+                        <li>NeDB</li>
+                        <li>@cliqz/adblocker</li>
+                        <ul>
+                            <li>axios</li>
+                            <li>tldts</li>
+                        </ul>
+                        <li>React</li>
+                        <ul>
+                            <li>React</li>
+                            <li>React-Router</li>
+                            <li>React-Router-DOM</li>
+                        </ul>
+                        <li>Styled-Components</li>
+                        <br><br><br>
+                        <li><h1>🐬&🍊</h1></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/moment.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/locale/ja.js"></script>
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $(`a[href="${window.location.href}"]`).parent().addClass('active');
+        });
+    </script>
+</body>
+
+</html>
