@@ -6,7 +6,7 @@ import DarkBackIcon from './Resources/dark/arrow_back.svg';
 import LightBackIcon from './Resources/light/arrow_back.svg';
 
 const { remote, ipcRenderer, shell } = window.require('electron');
-const { app, systemPreferences, Menu, MenuItem, dialog } = remote;
+const { app, systemPreferences, Menu, MenuItem, dialog, nativeTheme } = remote;
 
 const pkg = window.require(`${app.getAppPath()}/package.json`);
 const protocolStr = 'flast';
@@ -169,6 +169,10 @@ class MenuWindow extends Component {
 			isOpen: null
 		};
 
+		window.addEventListener('blur', () => {
+			ipcRenderer.send(`dialogView-close-${remote.getCurrentWebContents().id}`);
+		});
+
 		ipcRenderer.on('window-change-settings', (e, args) => {
 			this.forceUpdate();
 		});
@@ -185,7 +189,7 @@ class MenuWindow extends Component {
 
 	getTheme = () => {
 		if (config.get('design.theme') === -1)
-			return systemPreferences.isDarkMode();
+			return nativeTheme.shouldUseDarkColors;
 		else if (config.get('design.theme') === 0)
 			return false;
 		else if (config.get('design.theme') === 1)

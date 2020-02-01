@@ -1,8 +1,9 @@
 const { app } = require('electron');
-const { FiltersEngine, makeRequest } = require('@cliqz/adblocker');
+const { ElectronBlocker, Request } = require('@cliqz/adblocker-electron');
+const fetch = require('node-fetch');
 const Axios = require('axios');
-const fs = require('fs');
-const path = require('path');
+const { existsSync, readFile, writeFile, mkdirSync } = require('fs');
+const { resolve, join } = require('path');
 const tldts = require('tldts');
 const { parse, format } = require('url');
 
@@ -11,137 +12,73 @@ const lists = require('./Lists.json');
 const Config = require('electron-store');
 const config = new Config();
 
+const PRELOAD_PATH = join(__dirname, './Preloads/Preload.js');
+
 let engine;
 
-if (!fs.existsSync(path.join(app.getPath('userData'), 'Files'))) {
-	fs.mkdirSync(path.join(app.getPath('userData'), 'Files'));
-}
+if (!existsSync(join(app.getPath('userData'), 'Files')))
+	mkdirSync(join(app.getPath('userData'), 'Files'));
 
-const ops = [];
+const loadFilters = async (forceDownload = false) => {
+	const filePath = resolve(join(app.getPath('userData'), 'Files', 'Ads.dat'));
 
-const updateFilters = () => {
-	if (!fs.existsSync(path.join(app.getPath('userData'), 'Files'))) {
-		fs.mkdirSync(path.join(app.getPath('userData'), 'Files'));
-	}
+	const downloadFilters = async () => {
+		engine = await ElectronBlocker.fromPrebuiltAdsAndTracking(fetch);
 
-	console.log('Downloading filters...');
+		await writeFile(filePath, engine.serialize(), (err) => { if (err) return console.error(err); });
+	};
 
-	for (const key in lists) {
-		ops.push(Axios.get(lists[key]));
-	}
-
-	Axios.all(ops).then(res => {
-		let data = '';
-
-		for (const res1 of res) {
-			data += res1.data;
+	if (!forceDownload && existsSync(filePath)) {
+		try {
+			await readFile(resolve(filePath), (err, data) => {
+				try {
+					engine = ElectronBlocker.deserialize(data);
+				} catch (e) {
+					return downloadFilters();
+				}
+			});
+		} catch (err) {
+			return console.error(err);
 		}
-
-		console.log('Parsing filters...');
-
-		engine = FiltersEngine.parse(data);
-
-		console.log('Saving output...');
-
-		fs.writeFile(path.resolve(path.join(app.getPath('userData'), 'Files', 'Ads.dat')), engine.serialize(), err => {
-			if (err) return console.error(err);
-			console.log('Complete.');
-		});
-	});
-}
-
-module.exports.updateFilters = updateFilters;
-
-module.exports.loadFilters = async () => {
-	const filePath = path.resolve(path.join(app.getPath('userData'), 'Files', 'Ads.dat'));
-
-	if (fs.existsSync(filePath)) {
-		fs.readFile(path.resolve(filePath), (err, buffer) => {
-			if (err) return console.error(err);
-
-			try {
-				engine = FiltersEngine.deserialize(buffer);
-			} catch (e) {
-				updateFilters();
-			}
-		});
 	} else {
-		updateFilters();
+		return downloadFilters();
 	}
 };
 
-module.exports.hasFile = () => {
-	const filePath = path.resolve(path.join(app.getPath('userData'), 'Files', 'Ads.dat'));
+let adblockRunning = false;
 
-	return fs.existsSync(filePath);
-}
+const runAdblockService = async (ses) => {
+	if (!engine)
+		await loadFilters();
 
-module.exports.isEnabled = () => {
-	return engine != undefined;
-}
+	engine.enableBlockingInSession(ses);
+};
 
-const isDisabledSite = (url) => {
-	for (const item of config.get('adBlock.disabledSites')) {
-		if (item.isSubDomain) {
-			if (String(url).endsWith(item.url)) {
-				return true;
-			}
-		} else {
-			if (String(url) === String(item.url)) {
-				return true;
-			}
-		}
+const stopAdblockService = (ses) => {
+	if (!ses.webRequest.removeListener) return;
+
+	if (ses.beforeRequestId) {
+		ses.webRequest.removeListener('onBeforeRequest', ses.beforeRequestId);
+		ses.beforeRequestId = null;
 	}
+
+	if (ses.headersReceivedId) {
+		ses.webRequest.removeListener('onHeadersReceived', ses.headersReceivedId);
+		ses.headersReceivedId = null;
+	}
+
+	ses.setPreloads(ses.getPreloads().filter((p) => p !== PRELOAD_PATH));
+
+	adblockRunning = false;
+};
+
+const isDisabled = (url) => {
+	for (const item of config.get('adBlock.disabledSites'))
+		if (String(url).startsWith(item.url))
+			return true;
 	return false;
 }
 
-module.exports.runAdblockService = (window, windowId, id, session) => {
-	session.webRequest.onBeforeRequest({ urls: ['<all_urls>'] }, async (details, callback) => {
-		if (engine && config.get('adBlock.isAdBlock')) {
-			const { match, redirect } = engine.match(makeRequest({ type: details.resourceType, url: details.url }, tldts.parse));
-
-			if (match || redirect) {
-				window.webContents.send(`blocked-ad-${windowId}`, { id });
-
-				if (redirect) {
-					callback({ redirectURL: redirect });
-				} else {
-					callback({ cancel: true });
-				}
-
-				return;
-			}
-		}
-
-		callback({ cancel: false });
-	});
-}
-
-module.exports.removeAds = (url, webContents) => {
-	if (engine == undefined) return;
-
-	let urlWithoutProtocol = new URL(url).hostname;
-
-	new Promise((resolve, reject) => {
-		resolve(isDisabledSite(urlWithoutProtocol));
-	}).then((result) => {
-		console.log(`${urlWithoutProtocol} is AdBlock ${result ? 'Paused' : 'Run'}`);
-		if (!result) {
-			console.log(`${urlWithoutProtocol} is Run`);
-			const { styles, scripts } = engine.getCosmeticsFilters({
-				url,
-				...tldts.parse(url),
-			});
-
-			webContents.insertCSS(styles);
-
-			for (const script of scripts) {
-				console.log(script);
-				webContents.executeJavaScript(script);
-			}
-			return;
-		} else {
-			return;
-		}
-	});
-}
+module.exports = {
+	loadFilters, runAdblockService, stopAdblockService
+};

@@ -2,12 +2,6 @@ import React, { Component } from 'react';
 
 import styled from 'styled-components';
 
-import Window from './Components/Window';
-import WindowButtons from './Components/WindowButtons';
-import WindowButton from './Components/WindowButton';
-import WindowContent from './Components/WindowContent';
-import Titlebar from './Components/Titlebar';
-
 import DarkFileIcon from './Resources/dark/file.svg';
 import LightFileIcon from './Resources/light/file.svg';
 
@@ -31,6 +25,22 @@ const config = new Config();
 const request = window.require('request');
 
 const lang = window.require(`${app.getAppPath()}/langs/${config.get('language') != undefined ? config.get('language') : 'ja'}.js`);
+
+const Window = styled.div`
+  width: auto;
+  height: ${platform.isWin32 || platform.isDarwin ? 'auto' : '100%'};
+  margin: ${platform.isWin32 || platform.isDarwin ? '0px 4px' : '0px'};
+  padding: 0px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  border-radius: ${platform.isWin32 || platform.isDarwin ? 2 : 0}px;
+  border: ${platform.isWin32 || platform.isDarwin ? 'none' : (props => !props.isDarkModeOrPrivateMode ? 'solid 1px #e1e1e1' : 'solid 1px #8b8b8b')};
+  background-color: ${props => !props.isDarkModeOrPrivateMode ? '#f9f9fa' : '#353535'};
+  color: ${props => !props.isDarkModeOrPrivateMode ? '#353535' : '#f9f9fa'};
+  box-shadow: ${platform.isWin32 || platform.isDarwin ? '0px 2px 4px rgba(0, 0, 0, 0.16), 0px 2px 4px rgba(0, 0, 0, 0.23)' : 'none'};
+  box-sizing: border-box;
+`;
 
 const SuggestListContainer = styled.ul`
   margin: 5px;
@@ -84,7 +94,7 @@ const Button = styled.li`
   }
 `;
 
-class InfomationWindow extends Component {
+class SuggestWindow extends Component {
 	constructor(props) {
 		super(props);
 		this.state = {
@@ -103,11 +113,9 @@ class InfomationWindow extends Component {
 
 			let suggestions = [];
 
-			for (const item of data[1]) {
-				if (suggestions.indexOf(item) === -1) {
+			for (const item of data[1])
+				if (suggestions.indexOf(item) === -1)
 					suggestions.push(String(item).toLowerCase());
-				}
-			}
 
 			this.setState({
 				id: args.id,
@@ -129,9 +137,8 @@ class InfomationWindow extends Component {
 
 			let { request } = http;
 
-			if (options.protocol === 'https:') {
+			if (options.protocol === 'https:')
 				request = https.request;
-			}
 
 			const req = request(options, res => {
 				let data = '';
@@ -155,11 +162,9 @@ class InfomationWindow extends Component {
 		});
 
 	getSearchEngine = () => {
-		for (var i = 0; i < config.get('searchEngine.searchEngines').length; i++) {
-			if (config.get('searchEngine.searchEngines')[i].name == config.get('searchEngine.defaultEngine')) {
+		for (var i = 0; i < config.get('searchEngine.searchEngines').length; i++)
+			if (config.get('searchEngine.searchEngines')[i].name == config.get('searchEngine.defaultEngine'))
 				return config.get('searchEngine.searchEngines')[i];
-			}
-		}
 	}
 
 	getTheme = () => {
@@ -223,9 +228,9 @@ class InfomationWindow extends Component {
 
 	render() {
 		return (
-			<div style={{ boxSizing: 'border-box', padding: 0, boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.16), 0px 2px 4px rgba(0, 0, 0, 0.23)', backgroundColor: this.getTheme() || String(this.props.match.params.windowId).startsWith('private') ? '#353535' : '#f9f9fa', color: this.getTheme() || String(this.props.match.params.windowId).startsWith('private') ? '#f9f9fa' : '#353535', width: 'auto', display: 'flex', flexDirection: 'column', justifyContent: 'space-around' }} onMouseEnter={(e) => { remote.getCurrentWindow().setIgnoreMouseEvents(false); }} onMouseLeave={(e) => { remote.getCurrentWindow().setIgnoreMouseEvents(true, { forward: true }); }}>
+			<Window isDarkModeOrPrivateMode={this.getTheme() || String(this.props.match.params.windowId).startsWith('private')} onMouseEnter={(e) => { remote.getCurrentWindow().setIgnoreMouseEvents(false); }} onMouseLeave={(e) => { remote.getCurrentWindow().setIgnoreMouseEvents(true, { forward: true }); }}>
 				<SuggestListContainer>
-					<SuggestListItem style={{ borderBottom: this.state.suggestions.length > 0 ? 'solid 1px #c1c1c1' : 'none', padding: `4px ${40 * (config.get('design.isHomeButton') ? 5 : 4) - 40}px`, color: this.getTheme() || String(this.props.match.params.windowId).startsWith('private') ? '#f9f9fa' : '#353535' }} windowId={this.props.match.params.windowId} onClick={() => { this.loadURL(this.state.text); }}>
+					<SuggestListItem style={{ borderBottom: this.state.suggestions.length > 0 ? 'solid 1px #c1c1c1' : 'none', padding: 4, color: this.getTheme() || String(this.props.match.params.windowId).startsWith('private') ? '#f9f9fa' : '#353535' }} windowId={this.props.match.params.windowId} onClick={() => { this.loadURL(this.state.text); }}>
 						<SuggestListItemIcon src={this.getSuggestIcon()} size={16} />
 						{this.state.text}
 						<SuggestListItemSecondaryText>
@@ -235,7 +240,7 @@ class InfomationWindow extends Component {
 					</SuggestListItem>
 					{this.state.suggestions.map((item, i) => {
 						return (
-							<SuggestListItem key={i} style={{ padding: `4px ${40 * (config.get('design.isHomeButton') ? 5 : 4) - 40}px`, color: this.getTheme() || String(this.props.match.params.windowId).startsWith('private') ? '#f9f9fa' : '#353535' }} windowId={this.props.match.params.windowId} onClick={() => { ipcRenderer.send(`suggestWindow-loadURL-${this.props.match.params.windowId}`, { id: this.state.id, url: this.getSearchEngine().url.replace('%s', encodeURIComponent(item)) }); }}>
+							<SuggestListItem key={i} style={{ padding: 4, color: this.getTheme() || String(this.props.match.params.windowId).startsWith('private') ? '#f9f9fa' : '#353535' }} windowId={this.props.match.params.windowId} onClick={() => { ipcRenderer.send(`suggestWindow-loadURL-${this.props.match.params.windowId}`, { id: this.state.id, url: this.getSearchEngine().url.replace('%s', encodeURIComponent(item)) }); }}>
 								<SuggestListItemIcon src={this.getTheme() || String(this.props.match.params.windowId).startsWith('private') ? DarkSearchIcon : LightSearchIcon} size={16} />
 								{item}
 								<SuggestListItemSecondaryText>
@@ -246,7 +251,7 @@ class InfomationWindow extends Component {
 						);
 					})}
 				</SuggestListContainer>
-				<ul style={{ margin: 0, padding: 0, backgroundColor: this.getTheme() || String(this.props.match.params.windowId).startsWith('private') ? '#5a5a5a' : '#eaeaea', borderTop: 'solid 1px #c1c1c1' }}>
+				<ul style={{ margin: 0, padding: 0, backgroundColor: this.getTheme() || String(this.props.match.params.windowId).startsWith('private') ? '#5a5a5a' : '#eaeaea', borderTop: 'solid 1px #c1c1c1', borderBottomLeftRadius: 2, borderBottomRightRadius: 2 }}>
 					<Button style={{ listStyle: 'none', borderRight: 'solid 1px #c1c1c1', padding: '5px 15px', display: 'inline-table' }} title={this.getSearchEngine().name} onClick={() => { ipcRenderer.send(`suggestWindow-loadURL-${this.props.match.params.windowId}`, { id: this.state.id, url: this.getSearchEngine().url.replace('%s', encodeURIComponent(this.state.text)) }); }}>
 						<img src={`https://www.google.com/s2/favicons?domain=${parse(this.getSearchEngine().url).protocol}//${parse(this.getSearchEngine().url).hostname}`} alt={this.getSearchEngine().name} style={{ verticalAlign: 'middle' }} />
 						<span style={{ marginLeft: 8, verticalAlign: 'middle' }}>{String(lang.window.toolBar.addressBar.textBox.suggest.search).replace(/{replace}/, this.getSearchEngine().name)}</span>
@@ -268,9 +273,9 @@ class InfomationWindow extends Component {
 						</svg>
 					</Button>
 				</ul>
-			</div>
+			</Window>
 		);
 	}
 }
 
-export default InfomationWindow;
+export default SuggestWindow;

@@ -1,8 +1,8 @@
 import React, { Component } from 'react';
-import { HashRouter, Route, Switch } from "react-router-dom";
+import { HashRouter, Route, Switch } from 'react-router-dom';
 
 import MainWindow from './Windows/MainWindow';
-import MainWindow2 from './Windows/MainWindow2';
+import TitlebarWindow from './Windows/Overlays/TitlebarWindow';
 import InfomationWindow from './Windows/InfomationWindow';
 import PermissionWindow from './Windows/PermissionWindow';
 import MenuWindow from './Windows/MenuWindow';
@@ -19,7 +19,7 @@ class App extends Component {
 		return (
 			<HashRouter>
 				<Route exact path='/window/:windowId/:urls?' component={MainWindow} />
-				<Route exact path='/window2/:windowId/:urls?' component={MainWindow2} />
+				<Route path='/titleBar/:windowId' component={TitlebarWindow} />
 				<Route path='/info/:windowId' component={InfomationWindow} />
 				<Route path='/permission/:windowId' component={PermissionWindow} />
 				<Route path='/menu/:windowId/:tabId' component={MenuWindow} />

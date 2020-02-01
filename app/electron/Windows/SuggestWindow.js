@@ -20,7 +20,7 @@ module.exports = class SuggestWindow extends BrowserWindow {
     constructor(appWindow, windowId) {
         super({
             width: 320,
-            height: 215,
+            height: 218,
             frame: false,
             resizable: false,
             transparent: true,
@@ -63,12 +63,13 @@ module.exports = class SuggestWindow extends BrowserWindow {
 
         this.showInactive();
         this.fixBounds();
+        // this.webContents.openDevTools({ mode: 'detach' });
 
         ipcMain.once(`suggestWindow-close-${this.windowId}`, (e, result) => {
             this.hide();
             this.appWindow.focus();
         });
-        
+
         this.webContents.send(`suggestWindow-${this.windowId}`, { id, text });
     }
 
@@ -76,6 +77,13 @@ module.exports = class SuggestWindow extends BrowserWindow {
         const isMaximized = this.appWindow.isMaximized();
         const bounds = this.appWindow.getContentBounds();
 
-        this.setBounds({ x: isMaximized ? bounds.x : bounds.x + 1, y: isMaximized ? bounds.y + 70 : bounds.y + 70 + 1, width: isMaximized ? bounds.width : bounds.width - 2 });
+        const x = bounds.x + ((40 * (config.get('design.isHomeButton') ? 5 : 4)) - (config.get('design.isHomeButton') ? 52 : 48));
+        const width = bounds.width - ((40 * (config.get('design.isHomeButton') ? 8 : 7)) - (config.get('design.isHomeButton') ? 11 : 5));
+
+        this.setBounds({
+            x: isMaximized ? x : x + 1,
+            y: isMaximized ? bounds.y + 70 : bounds.y + 70 + 1,
+            width: isMaximized ? width : width - 2
+        });
     }
 }

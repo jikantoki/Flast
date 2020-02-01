@@ -150,16 +150,16 @@ class History extends Component {
         const { classes } = this.props;
 
         return (
-            <NavigationBar title="履歴" buttons={[<Button color="inherit" onClick={() => { this.setState({ isDialogOpened: true }); }}>閲覧履歴の削除</Button>]}>
+            <NavigationBar title={window.getLanguageFile().internalPages.history.title} buttons={[<Button color="inherit" onClick={() => { this.setState({ isDialogOpened: true }); }}>{window.getLanguageFile().internalPages.history.clear}</Button>]}>
                 {this.state.isOnline ?
                     <Paper className={classes.root}>
                         <Table className={classes.table}>
                             <TableHead>
                                 <TableRow>
                                     <TableCell className={classes.tableIcon2}></TableCell>
-                                    <TableCell className={classes.tableTitle2}>タイトル</TableCell>
-                                    <TableCell className={classes.tableUrl2}>URL</TableCell>
-                                    <TableCell className={classes.tableDate2}>閲覧日時</TableCell>
+                                    <TableCell className={classes.tableTitle2}>{window.getLanguageFile().internalPages.history.table.title}</TableCell>
+                                    <TableCell className={classes.tableUrl2}>{window.getLanguageFile().internalPages.history.table.url}</TableCell>
+                                    <TableCell className={classes.tableDate2}>{window.getLanguageFile().internalPages.history.table.date}</TableCell>
                                 </TableRow>
                             </TableHead>
                             <TableBody>

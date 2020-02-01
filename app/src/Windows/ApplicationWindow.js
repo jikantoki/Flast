@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import { findDOMNode } from 'react-dom';
+import { WindowsControl } from 'react-windows-controls';
 import Tippy from '@tippy.js/react';
 import Sortable from 'sortablejs';
 
@@ -7,7 +8,7 @@ import Window from './Components/Window';
 import WindowButtons from './Components/WindowButtons';
 import WindowButton from './Components/WindowButton';
 import WindowContent from './Components/WindowContent';
-import Titlebar from './Components/Titlebar';
+import { Titlebar } from './Components/Titlebar';
 import Tabs from './Components/Tabs';
 import { TabContainer, Tab, TabIcon, TabTitle, TabStatusIcon, TabCloseButton } from './Components/Tab';
 import TabButton from './Components/TabButton';
@@ -259,22 +260,37 @@ class ApplicationWindow extends Component {
 							isShowing={true} isRight={false} isMarginLeft={false} isEnabled={true} title={this.webView != undefined && this.webView.getWebContents().isLoadingMainFrame() ? lang.window.toolBar.reload.stop : lang.window.toolBar.reload.reload} onClick={() => { if (this.webView.getWebContents().isLoadingMainFrame()) { this.webView.getWebContents().stop(); } else { this.webView.getWebContents().reload(); } this.forceUpdate(); }} />
 					</Toolbar>
 					<span style={{ color: this.getForegroundColor(platform.isWin32 || platform.isDarwin ? `#${systemPreferences.getAccentColor()}` : '#353535'), marginLeft: 10, display: 'flex', WebkitBoxAlign: 'center', alignItems: 'center', WebkitBoxPack: 'center', justifyContent: 'center' }}>{this.webView != undefined ? this.webView.getWebContents().getTitle() : 'Application'}</span>
-					<WindowButtons isCustomTitlebar={config.get('design.isCustomTitlebar')} isWindowsOrLinux={platform.isWin32 || !(platform.isWin32 && platform.isDarwin)}>
-						<WindowButton isClose={false} isWindowsOrLinux={platform.isWin32 || !(platform.isWin32 && platform.isDarwin)} title={lang.window.titleBar.buttons.minimize} onClick={() => { remote.getCurrentWindow().minimize(); }}>
-							<svg name="TitleBarMinimize" width="12" height="12" viewBox="0 0 12 12" fill={this.getForegroundColor(platform.isWin32 || platform.isDarwin ? `#${systemPreferences.getAccentColor()}` : '#353535')}>
-								<rect width="10" height="1" x="1" y="6" />
-							</svg>
-						</WindowButton>
-						<WindowButton isClose={false} isWindowsOrLinux={platform.isWin32 || !(platform.isWin32 && platform.isDarwin)} title={remote.getCurrentWindow().isMaximized() ? lang.window.titleBar.buttons.maximize.restore : lang.window.titleBar.buttons.maximize.maximize} onClick={() => { remote.getCurrentWindow().isMaximized() ? remote.getCurrentWindow().unmaximize() : remote.getCurrentWindow().maximize(); this.forceUpdate(); }}>
-							<svg name="TitleBarMaximize" width="12" height="12" viewBox="0 0 12 12" stroke={this.getForegroundColor(platform.isWin32 || platform.isDarwin ? `#${systemPreferences.getAccentColor()}` : '#353535')}>
-								<rect fill="none" width="9" height="9" x="1.5" y="1.5" />
-							</svg>
-						</WindowButton>
-						<WindowButton isClose={true} isWindowsOrLinux={platform.isWin32 || !(platform.isWin32 && platform.isDarwin)} title={lang.window.titleBar.buttons.close} onClick={() => { remote.getCurrentWindow().close(); }}>
-							<svg name="TitleBarClose" width="12" height="12" viewBox="0 0 12 12" fill={this.getForegroundColor(platform.isWin32 || platform.isDarwin ? `#${systemPreferences.getAccentColor()}` : '#353535')}>
-								<polygon fill-rule="evenodd" points="11 1.576 6.583 6 11 10.424 10.424 11 6 6.583 1.576 11 1 10.424 5.417 6 1 1.576 1.576 1 6 5.417 10.424 1" />
-							</svg>
-						</WindowButton>
+					<WindowButtons isMaximized={remote.getCurrentWindow().isMaximized()} isCustomTitlebar={config.get('design.isCustomTitlebar')} isWindowsOrLinux={platform.isWin32 || (!platform.isWin32 && !platform.isDarwin)}>
+						<WindowsControl
+							minimize
+							whiteIcon
+							title={lang.window.titleBar.buttons.minimize}
+							onClick={() => {
+								remote.getCurrentWindow().minimize();
+								this.forceUpdate();
+							}}
+						/>
+						<WindowsControl
+							maximize={!remote.getCurrentWindow().isMaximized()}
+							restore={remote.getCurrentWindow().isMaximized()}
+							whiteIcon
+							title={remote.getCurrentWindow().isMaximized() ? lang.window.titleBar.buttons.maximize.restore : lang.window.titleBar.buttons.maximize.maximize}
+							onClick={() => {
+								remote.getCurrentWindow().isMaximized()
+									? remote.getCurrentWindow().restore()
+									: remote.getCurrentWindow().maximize();
+								this.forceUpdate();
+							}}
+						/>
+						<WindowsControl
+							close
+							whiteIcon
+							title={lang.window.titleBar.buttons.close}
+							onClick={() => {
+								remote.getCurrentWindow().close();
+								this.forceUpdate();
+							}}
+						/>
 					</WindowButtons>
 				</Titlebar>
 				<WindowContent>

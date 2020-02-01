@@ -168,7 +168,7 @@ module.exports = {
         view: {
             errorMessage: {
                 UNDEFINED: {
-                    title: '不明なエラーが発生しました', 
+                    title: '不明なエラーが発生しました',
                     description: '不明なエラーが発生しました。エラーの説明等がまだ翻訳されていないときに表示されます。'
                 },
                 FILE_NOT_FOUND: {
@@ -307,9 +307,7 @@ module.exports = {
         },
         history: {
             title: 'History',
-            clear: {
-                title: 'Clear browsing data'
-            },
+            clear: 'Clear browsing data',
             table: {
                 title: 'Title',
                 url: 'URL',
@@ -318,9 +316,7 @@ module.exports = {
         },
         downloads: {
             title: 'Downloads',
-            clear: {
-                title: 'Clear download data'
-            },
+            clear: 'Clear download data',
             table: {
                 title: 'Title',
                 url: 'URL',
@@ -330,9 +326,7 @@ module.exports = {
         },
         bookmarks: {
             title: 'Bookmarks',
-            clear: {
-                title: 'Clear bookmarks'
-            },
+            clear: 'Clear bookmarks',
             table: {
                 title: 'Title',
                 url: 'URL',
@@ -342,19 +336,50 @@ module.exports = {
         settings: {
             title: 'Settings',
             sections: {
-                design: {
-                    name: 'Design',
+                user: {
+                    title: 'User',
                     controls: {
-                        homeButton: 'ホームボタンを表示する',
-                        bookMarkBar: 'ブックマーク バーを表示する',
-                        darkTheme: 'ダーク テーマを使用する',
-                        titleBar: 'カスタム タイトルバーを使用する',
-                        details: 'ウィンドウの詳細設定'
+                        login: 'Login',
+                        logout: 'Logout'
+                    }
+                },
+                design: {
+                    title: 'Design',
+                    controls: {
+                        homeButton: {
+                            name: 'Show home button',
+                            controls: {
+                                openWithHomePage: 'Open {link}Home{/link} page',
+                                openWithCustomPage: 'Open a specific page'
+                            }
+                        },
+                        bookMarkBar: 'Show bookmark bar',
+                        theme: {
+                            name: 'Theme',
+                            controls: {
+                                system: 'System',
+                                light: 'Light',
+                                dark: 'Dark'
+                            }
+                        },
+                        accentColor: {
+                            name: 'Tab accent color',
+                            controls: {
+                                reset: 'Reset',
+                                select: 'Select color'
+                            }
+                        },
+                        titleBar: {
+                            name: 'Use custom title bar',
+                            controls: {
+                                restart: 'Restart'
+                            }
+                        },
+                        moreSettings: 'Advanced window settings'
                     }
                 },
                 homePage: {
                     title: 'Homepage',
-                    description: '現在、{replace} を使用しています。',
                     controls: {
                         homePage: 'ホーム ページ',
                         customPage: 'カスタムページ'

@@ -20,6 +20,7 @@ const width = 320;
 const height = 160;
 
 module.exports = class InfomationView extends BrowserView {
+
     constructor(appWindow, windowId) {
         super({
             webPreferences: {
@@ -39,31 +40,43 @@ module.exports = class InfomationView extends BrowserView {
         });
 
         this.webContents.loadURL(startUrl);
-
-        // this.show();
-        this.fixBounds();
     }
 
     showWindow = (title, description, url = '', isButton = false) => {
         this.appWindow.isModuleWindowFocused = true;
 
-        this.appWindow.removeBrowserView(this);
-        this.webContents.send(`infoWindow-${this.windowId}`, { title, description, url, isButton });
         this.appWindow.addBrowserView(this);
+
         this.fixBounds();
+        this.webContents.focus();
+        this.webContents.send(`infoWindow-${this.windowId}`, { title, description, url, isButton });
 
         ipcMain.once(`infoWindow-close-${this.windowId}`, (e, result) => {
             this.appWindow.removeBrowserView(this);
-            this.appWindow.focus();
+            this.hide();
+            // this.appWindow.focus();
         });
 
         return new Promise((resolve, reject) => {
             ipcMain.once(`infoWindow-result-${this.windowId}`, (e, result) => {
                 resolve(result);
+
                 this.appWindow.removeBrowserView(this);
+                this.hide();
                 this.appWindow.focus();
             });
         });
+    }
+
+    hide = () => {
+        this.setBounds({
+            height: height,
+            width: 1,
+            x: 0,
+            y: -height + 1,
+        });
+
+        this.appWindow.fixDragging();
     }
 
     fixBounds = () => {
@@ -71,8 +84,8 @@ module.exports = class InfomationView extends BrowserView {
         this.setBounds({
             x: (config.get('design.isHomeButton') ? (platform.isWin32 || platform.isDarwin ? (this.appWindow.isMaximized() ? 147 : 148) : 151) : (platform.isWin32 || platform.isDarwin ? (this.appWindow.isMaximized() ? 112 : 113) : 116)),
             y: this.appWindow.isFullScreen() ? bounds.y : 71,
-            width,
-            height
+            width: width,
+            height: height
         });
     }
 }

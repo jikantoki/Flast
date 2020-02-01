@@ -1,4 +1,4 @@
-const { app, shell, ipcMain, protocol, session, BrowserWindow, BrowserView, Menu, nativeImage, clipboard, dialog, Notification, nativeTheme } = require('electron');
+const { app, shell, ipcMain, protocol, session, BrowserWindow, BrowserView, Menu, nativeImage, clipboard, dialog, Notification, nativeTheme, systemPreferences } = require('electron');
 const path = require('path');
 const { parse, format } = require('url');
 const os = require('os');
@@ -8,7 +8,6 @@ const http = require('http');
 const Firebase = require('./Firebase');
 
 const MainWindow = require('./Windows/MainWindow');
-const MainWindow2 = require('./Windows/MainWindow2');
 
 const pkg = require(`${app.getAppPath()}/package.json`);
 const protocolStr = 'flast';
@@ -22,6 +21,7 @@ const Config = require('electron-store');
 const config = new Config();
 
 const lang = require(`${app.getAppPath()}/langs/${config.get('language') != undefined ? config.get('language') : 'ja'}.js`);
+const { loadFilters } = require('./AdBlocker');
 
 const Datastore = require('nedb');
 let db = {};
@@ -58,8 +58,6 @@ db.apps = new Datastore({
     timestampData: true
 });
 
-const { loadFilters, updateFilters, runAdblockService, removeAds } = require('./AdBlocker');
-
 let floatingWindows = [];
 
 getBaseWindow = (width = 1100, height = 680, minWidth = 500, minHeight = 360, x, y, frame = false) => {
@@ -76,240 +74,6 @@ getBaseWindow = (width = 1100, height = 680, minWidth = 500, minHeight = 360, x,
         }
     });
 }
-
-loadSessionAndProtocol = () => {
-    const ses = session.defaultSession;
-
-    // setPermissionRequestHandler(ses, false);
-
-    protocol.isProtocolHandled(protocolStr).then((handled) => {
-        if (!handled) {
-            protocol.registerFileProtocol(protocolStr, (request, callback) => {
-                const parsed = parse(request.url);
-
-                return callback({
-                    path: path.join(app.getAppPath(), 'pages', parsed.pathname === '/' || !parsed.pathname.match(/(.*)\.([A-z0-9])\w+/g) ? `${parsed.hostname}.html` : `${parsed.hostname}${parsed.pathname}`),
-                });
-            }, (error) => {
-                if (error) console.error(`[Error] Failed to register protocol: ${error}`);
-            });
-        }
-    });
-
-    protocol.isProtocolHandled(fileProtocolStr).then((handled) => {
-        if (!handled) {
-            protocol.registerFileProtocol(fileProtocolStr, (request, callback) => {
-                const parsed = parse(request.url);
-
-                return callback({
-                    path: path.join(app.getPath('userData'), 'Files', 'Users', parsed.pathname),
-                });
-            }, (error) => {
-                if (error) console.error(`[Error] Failed to register protocol: ${error}`);
-            });
-        }
-    });
-}
-
-loadSessionAndProtocolWithPrivateMode = (windowId) => {
-    const ses = session.fromPartition(windowId);
-    // ses.setUserAgent(ses.getUserAgent().replace(/ Electron\/[0-9\.]*/g, '') + ' PrivMode');
-
-    // setPermissionRequestHandler(ses, true);
-
-    ses.protocol.isProtocolHandled(fileProtocolStr).then((handled) => {
-        if (!handled) {
-            ses.protocol.registerFileProtocol(protocolStr, (request, callback) => {
-                const parsed = parse(request.url);
-
-                return callback({
-                    path: path.join(app.getAppPath(), 'pages', parsed.pathname === '/' || !parsed.pathname.match(/(.*)\.([A-z0-9])\w+/g) ? `${parsed.hostname}.html` : `${parsed.hostname}${parsed.pathname}`),
-                });
-            }, (error) => {
-                if (error) console.error(`[Error] Failed to register protocol: ${error}`);
-            });
-        }
-    });
-
-    ses.protocol.isProtocolHandled(fileProtocolStr).then((handled) => {
-        if (!handled) {
-            ses.protocol.registerFileProtocol(fileProtocolStr, (request, callback) => {
-                const parsed = parse(request.url);
-
-                return callback({
-                    path: path.join(app.getPath('userData'), 'Files', 'Users', parsed.pathname),
-                });
-            }, (error) => {
-                if (error) console.error(`[Error] Failed to register protocol: ${error}`);
-            });
-        }
-    });
-}
-
-/*
-setPermissionRequestHandler = (ses, isPrivate = false) => {
-    if (!isPrivate) {
-        ses.setPermissionRequestHandler((webContents, permission, callback) => {
-            const url = parse(webContents.getURL());
-
-            db.pageSettings.findOne({ origin: `${url.protocol}//${url.hostname}` }, (err, doc) => {
-                if (doc != undefined) {
-                    if (permission == 'media' && doc.media != undefined && doc.media > -1)
-                        return callback(doc.media === 0);
-                    if (permission == 'geolocation' && doc.geolocation != undefined && doc.geolocation > -1)
-                        return callback(doc.geolocation === 0);
-                    if (permission == 'notifications' && doc.notifications != undefined && doc.notifications > -1)
-                        return callback(doc.notifications === 0);
-                    if (permission == 'midiSysex' && doc.midiSysex != undefined && doc.midiSysex > -1)
-                        return callback(doc.midiSysex === 0);
-                    if (permission == 'pointerLock' && doc.pointerLock != undefined && doc.pointerLock > -1)
-                        return callback(doc.pointerLock === 0);
-                    if (permission == 'fullscreen' && doc.fullscreen != undefined && doc.fullscreen > -1)
-                        return callback(doc.fullscreen === 0);
-                    if (permission == 'openExternal' && doc.openExternal != undefined && doc.openExternal > -1)
-                        return callback(doc.openExternal === 0);
-                } else {
-                    if (config.get(`pageSettings.${permission}`) === null || config.get(`pageSettings.${permission}`) === -1) {
-                        if (Notification.isSupported()) {
-                            const notify = new Notification({
-                                icon: path.join(app.getAppPath(), 'static', 'app', 'icon.png'),
-                                title: `${url.protocol}//${url.hostname} が権限を要求しています。`,
-                                body: '詳細はここをクリックしてください。',
-                                silent: true
-                            });
-
-                            notify.show();
-
-                            notify.on('click', (e) => {
-                                dialog.showMessageBox({
-                                    type: 'info',
-                                    title: '権限の要求',
-                                    message: `${url.protocol}//${url.hostname} が権限を要求しています。`,
-                                    detail: `要求内容: ${permission}`,
-                                    checkboxLabel: 'このサイトでは今後も同じ処理をする',
-                                    checkboxChecked: false,
-                                    noLink: true,
-                                    buttons: ['はい / Yes', 'いいえ / No'],
-                                    defaultId: 0,
-                                    cancelId: 1
-                                }, (res, checked) => {
-                                    if (checked) {
-                                        if (permission == 'media')
-                                            db.pageSettings.update({ origin: `${url.protocol}//${url.hostname}` }, { origin: `${url.protocol}//${url.hostname}`, media: res }, { upsert: true });
-                                        if (permission == 'geolocation')
-                                            db.pageSettings.update({ origin: `${url.protocol}//${url.hostname}` }, { origin: `${url.protocol}//${url.hostname}`, geolocation: res }, { upsert: true });
-                                        if (permission == 'notifications')
-                                            db.pageSettings.update({ origin: `${url.protocol}//${url.hostname}` }, { origin: `${url.protocol}//${url.hostname}`, notifications: res }, { upsert: true });
-                                        if (permission == 'midiSysex')
-                                            db.pageSettings.update({ origin: `${url.protocol}//${url.hostname}` }, { origin: `${url.protocol}//${url.hostname}`, midiSysex: res }, { upsert: true });
-                                        if (permission == 'pointerLock')
-                                            db.pageSettings.update({ origin: `${url.protocol}//${url.hostname}` }, { origin: `${url.protocol}//${url.hostname}`, pointerLock: res }, { upsert: true });
-                                        if (permission == 'fullscreen')
-                                            db.pageSettings.update({ origin: `${url.protocol}//${url.hostname}` }, { origin: `${url.protocol}//${url.hostname}`, fullscreen: res }, { upsert: true });
-                                        if (permission == 'openExternal')
-                                            db.pageSettings.update({ origin: `${url.protocol}//${url.hostname}` }, { origin: `${url.protocol}//${url.hostname}`, openExternal: res }, { upsert: true });
-                                    }
-                                    return callback(res === 0);
-                                });
-                            });
-                            notify.on('close', (e) => {
-                                return callback(false);
-                            });
-                        } else {
-                            dialog.showMessageBox({
-                                type: 'info',
-                                title: '権限の要求',
-                                message: `${url.protocol}//${url.hostname} が権限を要求しています。`,
-                                detail: `要求内容: ${permission}`,
-                                checkboxLabel: 'このサイトでは今後も同じ処理をする',
-                                checkboxChecked: false,
-                                noLink: true,
-                                buttons: ['はい / Yes', 'いいえ / No'],
-                                defaultId: 0,
-                                cancelId: 1
-                            }, (res, checked) => {
-                                if (checked) {
-                                    if (permission == 'media')
-                                        db.pageSettings.update({ origin: `${url.protocol}//${url.hostname}` }, { origin: `${url.protocol}//${url.hostname}`, media: res }, { upsert: true });
-                                    if (permission == 'geolocation')
-                                        db.pageSettings.update({ origin: `${url.protocol}//${url.hostname}` }, { origin: `${url.protocol}//${url.hostname}`, geolocation: res }, { upsert: true });
-                                    if (permission == 'notifications')
-                                        db.pageSettings.update({ origin: `${url.protocol}//${url.hostname}` }, { origin: `${url.protocol}//${url.hostname}`, notifications: res }, { upsert: true });
-                                    if (permission == 'midiSysex')
-                                        db.pageSettings.update({ origin: `${url.protocol}//${url.hostname}` }, { origin: `${url.protocol}//${url.hostname}`, midiSysex: res }, { upsert: true });
-                                    if (permission == 'pointerLock')
-                                        db.pageSettings.update({ origin: `${url.protocol}//${url.hostname}` }, { origin: `${url.protocol}//${url.hostname}`, pointerLock: res }, { upsert: true });
-                                    if (permission == 'fullscreen')
-                                        db.pageSettings.update({ origin: `${url.protocol}//${url.hostname}` }, { origin: `${url.protocol}//${url.hostname}`, fullscreen: res }, { upsert: true });
-                                    if (permission == 'openExternal')
-                                        db.pageSettings.update({ origin: `${url.protocol}//${url.hostname}` }, { origin: `${url.protocol}//${url.hostname}`, openExternal: res }, { upsert: true });
-                                }
-                                return callback(res === 0);
-                            });
-                        }
-                    } else if (config.get(`pageSettings.${permission}`) === 0) {
-                        return callback(false);
-                    } else if (config.get(`pageSettings.${permission}`) === 1) {
-                        return callback(true);
-                    }
-                }
-            });
-        });
-    } else {
-        ses.setPermissionRequestHandler((webContents, permission, callback) => {
-            const url = parse(webContents.getURL());
-
-            if (config.get(`pageSettings.${permission}`) === null || config.get(`pageSettings.${permission}`) === -1) {
-                if (Notification.isSupported()) {
-                    const notify = new Notification({
-                        icon: path.join(app.getAppPath(), 'static', 'app', 'icon.png'),
-                        title: `${url.protocol}//${url.hostname} が権限を要求しています。`,
-                        body: '詳細はここをクリックしてください。\nプライベート ウィンドウ',
-                        silent: true
-                    });
-
-                    notify.show();
-
-                    notify.on('click', (e) => {
-                        dialog.showMessageBox({
-                            type: 'info',
-                            title: '権限の要求',
-                            message: `${url.protocol}//${url.hostname} が権限を要求しています。`,
-                            detail: `要求内容: ${permission}`,
-                            noLink: true,
-                            buttons: ['はい / Yes', 'いいえ / No'],
-                            defaultId: 0,
-                            cancelId: 1
-                        }, (res) => {
-                            return callback(res === 0);
-                        });
-                    });
-                    notify.on('close', (e) => {
-                        return callback(false);
-                    });
-                } else {
-                    dialog.showMessageBox({
-                        type: 'info',
-                        title: '権限の要求',
-                        message: `${url.protocol}//${url.hostname} が権限を要求しています。`,
-                        detail: `要求内容: ${permission}`,
-                        noLink: true,
-                        buttons: ['はい / Yes', 'いいえ / No'],
-                        defaultId: 0,
-                        cancelId: 1
-                    }, (res) => {
-                        return callback(res === 0);
-                    });
-                }
-            } else if (config.get(`pageSettings.${permission}`) === 0) {
-                return callback(false);
-            } else if (config.get(`pageSettings.${permission}`) === 1) {
-                return callback(true);
-            }
-        });
-    }
-}
-*/
 
 module.exports = class WindowManager {
     constructor() {
@@ -348,7 +112,7 @@ module.exports = class WindowManager {
         });
 
         ipcMain.on('update-filters', (e, args) => {
-            updateFilters();
+            loadFilters(true);
         });
 
         ipcMain.on('data-history-get', (e, args) => {
@@ -464,30 +228,19 @@ module.exports = class WindowManager {
     }
 
     addWindow = (isPrivate = false, urls = (config.get('startUp.isDefaultHomePage') ? [`${protocolStr}://home/`] : config.get('startUp.defaultPages'))) => {
-        loadFilters();
-
         const window = new MainWindow(this, isPrivate, db, urls);
         const id = window.id;
 
-        !isPrivate ? loadSessionAndProtocol() : loadSessionAndProtocolWithPrivateMode(window.getWindowId());
+        !isPrivate ? this.loadSessionAndProtocol() : this.loadSessionAndProtocolWithPrivateMode(window.getWindowId());
 
         this.windows.set(id, { window, isPrivate });
         window.on('closed', () => { this.windows.delete(id); });
-
-        /*
-        const window = new MainWindow2(this, isPrivate, db, urls);
-        const id = window.id;
-
-        this.windows.set(id, { window, isPrivate });
-        window.on('closed', () => { this.windows.delete(id); });
-        */
 
         return window;
     }
 
     addAppWindow = (url = config.get('homePage.defaultPage')) => {
-        loadSessionAndProtocol();
-        loadFilters();
+        this.loadSessionAndProtocol();
 
         const { width, height, x, y } = config.get('window.bounds');
         const window = getBaseWindow(config.get('window.isMaximized') ? 1110 : width, config.get('window.isMaximized') ? 680 : height, 500, 360, x, y, !config.get('design.isCustomTitlebar'));
@@ -863,5 +616,69 @@ module.exports = class WindowManager {
                 ]
             },
         ]);
+    }
+
+
+    loadSessionAndProtocol = () => {
+        protocol.isProtocolHandled(protocolStr).then((handled) => {
+            if (!handled) {
+                protocol.registerFileProtocol(protocolStr, (request, callback) => {
+                    const parsed = parse(request.url);
+    
+                    return callback({
+                        path: path.join(app.getAppPath(), 'pages', parsed.pathname === '/' || !parsed.pathname.match(/(.*)\.([A-z0-9])\w+/g) ? `${parsed.hostname}.html` : `${parsed.hostname}${parsed.pathname}`),
+                    });
+                }, (error) => {
+                    if (error) console.error(`[Error] Failed to register protocol: ${error}`);
+                });
+            }
+        });
+    
+        protocol.isProtocolHandled(fileProtocolStr).then((handled) => {
+            if (!handled) {
+                protocol.registerFileProtocol(fileProtocolStr, (request, callback) => {
+                    const parsed = parse(request.url);
+    
+                    return callback({
+                        path: path.join(app.getPath('userData'), 'Files', 'Users', parsed.pathname),
+                    });
+                }, (error) => {
+                    if (error) console.error(`[Error] Failed to register protocol: ${error}`);
+                });
+            }
+        });
+    }
+    
+    loadSessionAndProtocolWithPrivateMode = (windowId) => {
+        const ses = session.fromPartition(windowId);
+        ses.setUserAgent(ses.getUserAgent().replace(/ Electron\/[0-9\.]*/g, '') + ' PrivMode');
+    
+        ses.protocol.isProtocolHandled(fileProtocolStr).then((handled) => {
+            if (!handled) {
+                ses.protocol.registerFileProtocol(protocolStr, (request, callback) => {
+                    const parsed = parse(request.url);
+    
+                    return callback({
+                        path: path.join(app.getAppPath(), 'pages', parsed.pathname === '/' || !parsed.pathname.match(/(.*)\.([A-z0-9])\w+/g) ? `${parsed.hostname}.html` : `${parsed.hostname}${parsed.pathname}`),
+                    });
+                }, (error) => {
+                    if (error) console.error(`[Error] Failed to register protocol: ${error}`);
+                });
+            }
+        });
+    
+        ses.protocol.isProtocolHandled(fileProtocolStr).then((handled) => {
+            if (!handled) {
+                ses.protocol.registerFileProtocol(fileProtocolStr, (request, callback) => {
+                    const parsed = parse(request.url);
+    
+                    return callback({
+                        path: path.join(app.getPath('userData'), 'Files', 'Users', parsed.pathname),
+                    });
+                }, (error) => {
+                    if (error) console.error(`[Error] Failed to register protocol: ${error}`);
+                });
+            }
+        });
     }
 }

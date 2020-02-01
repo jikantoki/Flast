@@ -146,6 +146,20 @@ const styles = theme => ({
         top: theme.spacing(1),
         color: theme.palette.grey[500],
     },
+    userInfoRoot: {
+        padding: theme.spacing(1),
+    },
+    userInfoAvatarRoot: {
+        display: 'flex',
+        padding: theme.spacing(1),
+        '& > *': {
+            margin: theme.spacing(1),
+        },
+    },
+    bigAvatar: {
+        width: 60,
+        height: 60,
+    },
 });
 
 const tableIcons = {
@@ -198,73 +212,144 @@ class Settings extends Component {
         const { classes } = this.props;
 
         return (
-            <NavigationBar title="設定" buttons={[<Button color="inherit" onClick={() => { window.openInEditor(); }}>テキストエディタで開く</Button>]}>
+            <NavigationBar title={window.getLanguageFile().internalPages.settings.title} buttons={[<Button color="inherit" onClick={() => { window.openInEditor(); }}>テキストエディタで開く</Button>]}>
                 <Container fixed className={classes.containerRoot}>
                     <Paper className={classes.paperRoot}>
                         <Grid container spacing={2}>
                             <Grid item xs={12}>
-                                <Typography variant="h6" className={classes.paperHeading}>ユーザー</Typography>
+                                <Typography variant="h6" className={classes.paperHeading}>{window.getLanguageFile().internalPages.settings.sections.user.title}</Typography>
                                 <Divider />
+                            </Grid>
+                            <Grid item xs={12}>
+                                <Paper className={classes.userInfoRoot}>
+                                    <Grid container spacing={2}>
+                                        <Grid item xs={12} md={2} lg={1}>
+                                            <div className={classes.userInfoAvatarRoot}>
+                                                <Avatar alt="Remy Sharp" src={`${fileProtocolStr}:///background.jpg`} className={classes.bigAvatar} />
+                                            </div>
+                                        </Grid>
+                                        <Grid item xs={12} md={10} lg={11} style={{ padding: 18 }}>
+                                            <div style={{ display: 'flex' }}>
+                                                <Typography variant="h6">
+                                                    {!String(window.getCurrentUser().address).endsWith('@flast.com') ? window.getCurrentUser().name : 'ゲスト / Guest'}
+                                                </Typography>
+                                                <Button variant="contained" color={!String(window.getCurrentUser().address).endsWith('@flast.com') ? 'default' : 'primary'} onClick={() => { this.setState({ isDialogOpened: 'login' }); }} style={{ marginLeft: 'auto' }}>
+                                                    {!String(window.getCurrentUser().address).endsWith('@flast.com') ? window.getLanguageFile().internalPages.settings.sections.user.controls.logout : window.getLanguageFile().internalPages.settings.sections.user.controls.login}
+                                                </Button>
+                                            </div>
+                                            <Typography variant="body2" color="textSecondary" gutterBottom>
+                                                {!String(window.getCurrentUser().address).endsWith('@flast.com') ? window.getCurrentUser().address : ''}
+                                            </Typography>
+                                        </Grid>
+                                    </Grid>
+                                </Paper>
                             </Grid>
                         </Grid>
                     </Paper>
                 </Container>
+                <Dialog
+                    open={this.state.isDialogOpened === 'register'}
+                    onClose={this.handleDialogClose}
+                    aria-labelledby="alert-dialog-title"
+                    aria-describedby="alert-dialog-description"
+                >
+                    <DialogTitle id="alert-dialog-title">新規登録</DialogTitle>
+                    <DialogContent>
+                        <TextField
+                            autoFocus
+                            margin="dense"
+                            id="name"
+                            label="Email Address"
+                            type="email"
+                            fullWidth
+                        />
+                        <TextField
+                            autoFocus
+                            margin="dense"
+                            id="name"
+                            label="Email Address"
+                            type="email"
+                            fullWidth
+                        />
+                    </DialogContent>
+                    <DialogActions>
+                        <Button color="primary" style={{ marginRight: 'auto' }} onClick={() => { this.setState({ isDialogOpened: 'login' }); }}>
+                            ログイン
+                        </Button>
+                        <Button color="primary" variant="outlined" onClick={this.handleDialogClose}>
+                            キャンセル
+                        </Button>
+                        <Button color="primary" variant="contained" onClick={() => { window.clearBrowserData(true); window.restart(); }}>
+                            登録
+                        </Button>
+                    </DialogActions>
+                </Dialog>
+                <Dialog
+                    open={this.state.isDialogOpened === 'login'}
+                    onClose={this.handleDialogClose}
+                    aria-labelledby="alert-dialog-title"
+                    aria-describedby="alert-dialog-description"
+                >
+                    <DialogTitle id="alert-dialog-title">ログイン</DialogTitle>
+                    <DialogContent>
+                        <TextField
+                            autoFocus
+                            margin="dense"
+                            id="name"
+                            label="Email Address"
+                            type="email"
+                            fullWidth
+                        />
+                        <TextField
+                            autoFocus
+                            margin="dense"
+                            id="name"
+                            label="Email Address"
+                            type="email"
+                            fullWidth
+                        />
+                    </DialogContent>
+                    <DialogActions>
+                        <Button color="primary" style={{ marginRight: 'auto' }} onClick={() => { this.setState({ isDialogOpened: 'register' }); }}>
+                            新規登録
+                        </Button>
+                        <Button color="primary" variant="outlined" onClick={this.handleDialogClose}>
+                            キャンセル
+                        </Button>
+                        <Button color="primary" variant="contained" onClick={() => { window.clearBrowserData(true); window.restart(); }}>
+                            ログイン
+                        </Button>
+                    </DialogActions>
+                </Dialog>
+                <Dialog
+                    open={this.state.isDialogOpened === 'logout'}
+                    onClose={this.handleDialogClose}
+                    aria-labelledby="alert-dialog-title"
+                    aria-describedby="alert-dialog-description"
+                >
+                    <DialogTitle id="alert-dialog-title">ログアウト</DialogTitle>
+                    <DialogContent>
+                        <DialogContentText id="alert-dialog-description">
+                            本当にログアウトしますか？
+                            クラウド上に保存されている履歴・ブックマークはこのデバイスでは利用できなくなります。
+                            なお、再度ログインをすることで、履歴・ブックマークが利用できるようになります。
+                        </DialogContentText>
+                    </DialogContent>
+                    <DialogActions>
+                        <Button color="primary" variant="outlined" onClick={this.handleDialogClose}>
+                            キャンセル
+                        </Button>
+                        <Button color="primary" variant="contained" onClick={() => { window.clearBrowserData(true); window.restart(); }}>
+                            ログアウト
+                        </Button>
+                    </DialogActions>
+                </Dialog>
             </NavigationBar>
         );
     }
 }
 
 Settings.propTypes = {
-    classes: PropTypes.object.isRequired,
-};
-
-class SettingsUserPage extends Component {
-    constructor(props) {
-        super(props);
-
-        this.state = {
-            isDialogOpened: false,
-            isExpanded: null
-        };
-    }
-
-    handleChange = (panel) => (e, isExpanded) => {
-        this.setState({ isExpanded: isExpanded ? panel : false });
-    }
-
-    handleDialogClose = () => {
-        this.setState({ isDialogOpened: false });
-    }
-
-    handleSnackbarClose = (event, reason) => {
-        if (reason === 'clickaway') {
-            return;
-        }
-
-        this.setState({ isShowingSnackbar: false });
-    }
-
-    render() {
-        const { classes } = this.props;
-
-        return (
-            <NavigationBar title="設定" buttons={[<Button color="inherit" onClick={() => { window.openInEditor(); }}>テキストエディタで開く</Button>]}>
-                <Container fixed className={classes.containerRoot}>
-                    <Paper className={classes.paperRoot}>
-                        <Grid container spacing={2}>
-                            <Grid item xs={12}>
-                                <Typography variant="h6" className={classes.paperHeading}>ユーザー</Typography>
-                                <Divider />
-                            </Grid>
-                        </Grid>
-                    </Paper>
-                </Container>
-            </NavigationBar>
-        );
-    }
-}
-
-SettingsUserPage.propTypes = {
     classes: PropTypes.object.isRequired,
 };
 
@@ -351,16 +436,16 @@ class SettingsDesignPage extends Component {
         const { classes } = this.props;
 
         return (
-            <NavigationBar title="設定" buttons={[<Button color="inherit" onClick={() => { window.openInEditor(); }}>テキストエディタで開く</Button>]}>
+            <NavigationBar title={window.getLanguageFile().internalPages.settings.title} buttons={[<Button color="inherit" onClick={() => { window.openInEditor(); }}>テキストエディタで開く</Button>]}>
                 <Container fixed className={classes.containerRoot}>
                     <Paper className={classes.paperRoot}>
                         <Grid container spacing={2}>
                             <Grid item xs={12}>
-                                <Typography variant="h6" className={classes.paperHeading}>デザイン</Typography>
+                                <Typography variant="h6" className={classes.paperHeading}>{window.getLanguageFile().internalPages.settings.sections.design.title}</Typography>
                                 <Divider />
                             </Grid>
                             <Grid item xs={10} sm={11} style={{ padding: '8px 14px' }}>
-                                <Typography variant="body2">ホームボタンを表示する</Typography>
+                                <Typography variant="body2">{window.getLanguageFile().internalPages.settings.sections.design.controls.homeButton.name}</Typography>
                             </Grid>
                             <Grid item xs={2} sm={1} style={{ display: 'flex', padding: '0px 8px' }} direction="column" alignItems="flex-end">
                                 <Switch
@@ -378,7 +463,6 @@ class SettingsDesignPage extends Component {
                                     <div className={classes.formRoot}>
                                         <FormControl component="fieldset" className={classes.formControl}>
                                             <RadioGroup
-                                                aria-label="Gender"
                                                 onChange={(e) => {
                                                     this.setState({ ...this.state, isDefaultHomePage: (e.target.value === 'default') });
                                                     window.setButtonDefaultHomePage(e.target.value === 'default');
@@ -386,7 +470,7 @@ class SettingsDesignPage extends Component {
                                                 value={this.state.isDefaultHomePage ? 'default' : 'custom'}
                                             >
                                                 <FormControlLabel value="default" control={<Radio color="primary" />} label={<span><Link href="flast://home/">ホーム</Link> ページを開く</span>} />
-                                                <FormControlLabel value="custom" control={<Radio color="primary" />} label="特定のページを開く" />
+                                                <FormControlLabel value="custom" control={<Radio color="primary" />} label={window.getLanguageFile().internalPages.settings.sections.design.controls.homeButton.controls.openWithCustomPage} />
                                             </RadioGroup>
                                         </FormControl>
                                     </div>
@@ -426,7 +510,7 @@ class SettingsDesignPage extends Component {
                                 <Divider />
                             </Grid>
                             <Grid item xs={10} sm={11} style={{ padding: '8px 14px' }}>
-                                <Typography variant="body2">ブックマーク バーを表示する</Typography>
+                                <Typography variant="body2">{window.getLanguageFile().internalPages.settings.sections.design.controls.bookMarkBar}</Typography>
                             </Grid>
                             <Grid item xs={2} sm={1} style={{ display: 'flex', padding: '0px 8px' }} direction="column" alignItems="flex-end">
                                 <Switch
@@ -443,7 +527,7 @@ class SettingsDesignPage extends Component {
                                 <Divider />
                             </Grid>
                             <Grid item xs={8} sm={8} style={{ padding: '8px 14px' }}>
-                                <Typography variant="body2">テーマ</Typography>
+                                <Typography variant="body2">{window.getLanguageFile().internalPages.settings.sections.design.controls.theme.name}</Typography>
                             </Grid>
                             <Grid item xs={4} sm={4} style={{ display: 'flex', padding: '0px 8px' }} direction="column" alignItems="flex-end">
                                 <div className={classes.formRoot}>
@@ -459,9 +543,9 @@ class SettingsDesignPage extends Component {
                                                 id: 'theme',
                                             }}
                                         >
-                                            <MenuItem value={-1}>システム</MenuItem>
-                                            <MenuItem value={0}>ライト</MenuItem>
-                                            <MenuItem value={1}>ダーク</MenuItem>
+                                            <MenuItem value={-1}>{window.getLanguageFile().internalPages.settings.sections.design.controls.theme.controls.system}</MenuItem>
+                                            <MenuItem value={0}>{window.getLanguageFile().internalPages.settings.sections.design.controls.theme.controls.light}</MenuItem>
+                                            <MenuItem value={1}>{window.getLanguageFile().internalPages.settings.sections.design.controls.theme.controls.dark}</MenuItem>
                                         </Select>
                                     </FormControl>
                                 </div>
@@ -470,10 +554,10 @@ class SettingsDesignPage extends Component {
                                 <Divider />
                             </Grid>
                             <Grid item xs={7} sm={9} style={{ padding: '8px 14px' }}>
-                                <Typography variant="body2">タブのアクセントカラー</Typography>
+                                <Typography variant="body2">{window.getLanguageFile().internalPages.settings.sections.design.controls.accentColor.name}</Typography>
                             </Grid>
                             <Grid item xs={5} sm={3} style={{ display: 'flex', padding: '0px 8px' }} alignItems="center" justify="flex-end">
-                                <Tooltip title="リセット">
+                                <Tooltip title={window.getLanguageFile().internalPages.settings.sections.design.controls.accentColor.controls.reset}>
                                     <IconButton size="small" style={{ marginRight: 5 }}
                                         onClick={() => {
                                             this.setState({ tabAccentColor: '#0a84ff' }); window.setTabAccentColor('#0a84ff');
@@ -482,7 +566,7 @@ class SettingsDesignPage extends Component {
                                         <RestoreIcon />
                                     </IconButton>
                                 </Tooltip>
-                                <Button variant="contained" size="small" color="primary" startIcon={<PaletteIcon />} onClick={this.handleColorPicker}>色を選択</Button>
+                                <Button variant="contained" size="small" color="primary" startIcon={<PaletteIcon />} onClick={this.handleColorPicker}>{window.getLanguageFile().internalPages.settings.sections.design.controls.accentColor.controls.select}</Button>
                                 <Popover
                                     id={Boolean(this.state.colorPickerAnchorEl) ? 'colorPickerPopOver' : undefined}
                                     open={Boolean(this.state.colorPickerAnchorEl)}
@@ -506,10 +590,10 @@ class SettingsDesignPage extends Component {
                                 <Divider />
                             </Grid>
                             <Grid item xs={7} sm={9} style={{ padding: '8px 14px' }}>
-                                <Typography variant="body2">カスタムタイトルバーを使用する</Typography>
+                                <Typography variant="body2">{window.getLanguageFile().internalPages.settings.sections.design.controls.titleBar.name}</Typography>
                             </Grid>
                             <Grid item xs={5} sm={3} style={{ display: 'flex', padding: '0px 8px' }} alignItems="center" justify="flex-end">
-                                {this.state.isCustomTitlebar2 !== window.getCustomTitlebar() && <Button variant="outlined" size="small" className={classes.button} onClick={() => { window.restart(); }}>再起動</Button>}
+                                {this.state.isCustomTitlebar2 !== window.getCustomTitlebar() && <Button variant="outlined" size="small" className={classes.button} onClick={() => { window.restart(); }}>{window.getLanguageFile().internalPages.settings.sections.design.controls.titleBar.controls.restart}</Button>}
                                 <Switch
                                     checked={this.state.isCustomTitlebar}
                                     onChange={(e) => {
@@ -524,7 +608,7 @@ class SettingsDesignPage extends Component {
                                 <Divider />
                             </Grid>
                             <Grid item xs={8} sm={8} style={{ padding: '8px 14px' }}>
-                                <Typography variant="body2">ウィンドウの詳細設定</Typography>
+                                <Typography variant="body2">{window.getLanguageFile().internalPages.settings.sections.design.controls.moreSettings}</Typography>
                             </Grid>
                             <Grid item xs={4} sm={4} style={{ display: 'flex', padding: '0px 8px' }} direction="column" alignItems="flex-end">
                                 <Button variant="outlined" size="small">変更</Button>
@@ -757,7 +841,7 @@ class SettingsHomePage extends Component {
         const { classes } = this.props;
 
         return (
-            <NavigationBar title="設定" buttons={[<Button color="inherit" onClick={() => { window.openInEditor(); }}>テキストエディタで開く</Button>]}>
+            <NavigationBar title={window.getLanguageFile().internalPages.settings.title} buttons={[<Button color="inherit" onClick={() => { window.openInEditor(); }}>テキストエディタで開く</Button>]}>
                 <Container fixed className={classes.containerRoot}>
                     <Paper className={classes.paperRoot}>
                         <Grid container spacing={2}>
@@ -1556,7 +1640,7 @@ class SettingsAboutPage extends Component {
                                     }
                                 })()}
                                 <Typography variant="body2" color="textSecondary" gutterBottom>
-                                    バージョン: {window.getAppVersion()} ({window.getAppChannel()}) (Electron: {window.getElectronVersion()}, Chromium: {window.getChromiumVersion()})
+                                    バージョン: {window.getAppVersion()} (<b>{window.getAppChannel()}</b>, Electron: {window.getElectronVersion()}, Chromium: {window.getChromiumVersion()})
                                 </Typography>
                             </Grid>
                             <Grid item xs={12}>
@@ -1592,18 +1676,18 @@ class SettingsAboutPage extends Component {
                         <DialogContentText id="alert-dialog-description">
                             本当にデータをリセットしてよろしいですか？<br />
                             <b>続行</b>を押すとデータのリセット後アプリが再起動します。
-                        </DialogContentText>
-                        <Divider />
-                        <Typography variant="subtitle2" gutterBottom>削除されるデータ</Typography>
-                        <ul>
-                            <li>履歴</li>
-                            <li>ブックマーク (プライベート ブックマークも含む)</li>
-                            <li>キャッシュ</li>
-                            <li>Cookieとサイトデータ</li>
+                            <Divider />
+                            <Typography variant="subtitle2" gutterBottom>削除されるデータ</Typography>
                             <ul>
-                                <li>ログイン情報</li>
+                                <li>履歴</li>
+                                <li>ブックマーク (プライベート ブックマークも含む)</li>
+                                <li>キャッシュ</li>
+                                <li>Cookieとサイトデータ</li>
+                                <ul>
+                                    <li>ログイン情報</li>
+                                </ul>
                             </ul>
-                        </ul>
+                        </DialogContentText>
                     </DialogContent>
                     <DialogActions>
                         <Button color="primary" variant="outlined" onClick={this.handleDialogClose} style={{ marginRight: 5 }}>
@@ -1649,7 +1733,6 @@ render(
         <BrowserRouter>
             <div>
                 <Route exact path='/' component={Page} />
-                <Route path='/user' component={withStyles(styles)(SettingsUserPage)} />
                 <Route path='/design' component={withStyles(styles)(SettingsDesignPage)} />
                 <Route path='/adBlock' component={withStyles(styles)(SettingsAdBlockPage)} />
                 <Route path='/homePage' component={withStyles(styles)(SettingsHomePage)} />

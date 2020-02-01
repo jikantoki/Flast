@@ -335,7 +335,7 @@ class NavigationBar extends Component {
                     <div className={classes.root}>
                         <CSSBaseline />
                         <ElevationScroll {...this.props}>
-                            <AppBar position="fixed" className={classes.appBar}>
+                            <AppBar color="default" position="fixed" className={classes.appBar}>
                                 <Toolbar>
                                     <IconButton
                                         color="inherit"

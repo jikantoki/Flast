@@ -28,6 +28,7 @@ const Window = styled.div`
 `;
 
 class InfomationWindow extends Component {
+
 	constructor(props) {
 		super(props);
 		this.state = {
@@ -36,6 +37,10 @@ class InfomationWindow extends Component {
 			url: '',
 			isButton: false
 		};
+
+		window.addEventListener('blur', () => {
+			ipcRenderer.send(`infoWindow-close-${this.props.match.params.windowId}`, {});
+		});
 
 		ipcRenderer.on('window-change-settings', (e, args) => {
 			this.forceUpdate();

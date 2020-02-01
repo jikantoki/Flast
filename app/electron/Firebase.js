@@ -14,16 +14,26 @@ const cfg = require('./Config');
 const Config = require('electron-store');
 const config = new Config();
 
+const crypto = require('crypto');
+
 const firebase = require('firebase/app');
 
 require('firebase/auth');
 require('firebase/firestore');
 
+const ALGORITHM = 'aes-256-cbc';
+const KEY = Buffer.from([
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff
+]);
+
 module.exports = class Firebase {
+
     constructor() {
-        if (firebase.apps.length < 1) {
+        if (firebase.apps.length < 1)
             firebase.initializeApp(cfg.firebaseConfig);
-        }
     }
 
     getInstance = () => {
@@ -38,7 +48,7 @@ module.exports = class Firebase {
             });
         firebase.auth().onAuthStateChanged((user) => {
             if (!user) return;
-            config.set('users.currentUser', { 'isAnonymously': false, 'id': user.uid });
+            config.set('profile', { id: user.uid, name: user.displayName, address: user.email, token: this.encodeBase64(password) });
         });
     }
 
@@ -50,23 +60,26 @@ module.exports = class Firebase {
             });
         firebase.auth().onAuthStateChanged((user) => {
             if (!user) return;
-            config.set('users.currentUser', { 'isAnonymously': false, 'id': user.uid });
+            config.set('profile', { id: user.uid, name: user.displayName, address: user.email, token: this.encodeBase64(password) });
         });
     }
 
-    loginGuest = () => {
-        if (config.get('users.currentUser.id') === '') {
-            firebase.auth().signInAnonymously()
+    login = () => {
+        if (this.getToken() !== undefined && this.getToken() !== '') {
+            const email = config.get('profile.address');
+            const password = this.decodeBase64(this.getToken());
+
+            firebase.auth().signInWithEmailAndPassword(email, password)
                 .then(() => this.initDatabase())
                 .catch((error) => {
-                    console.log(`[Error] Can not signin anonymouse (${error.code}: ${error.message})`);
+                    console.log(`[Error] ${error.code}: ${error.message}`);
                 });
             firebase.auth().onAuthStateChanged((user) => {
                 if (!user) return;
-                config.set('users.currentUser', { 'isAnonymously': true, 'id': user.uid });
+                config.set('profile', { id: user.uid, name: user.displayName, address: user.email, token: this.encodeBase64(password) });
             });
         } else {
-            this.initDatabase();
+            this.createAccount(`${this.getRandString(12)}@flast.com`, this.getRandString(16));
         }
     }
 
@@ -76,129 +89,139 @@ module.exports = class Firebase {
         });
     }
 
-    getUserId = () => {
-        return !this.isAnonymously() ? new Promise((resolve, reject) => this.getUser().then(async (user) => resolve(user.uid))) : new Promise((resolve, reject) => resolve(config.get('users.currentUser.id')));
+    getId = () => {
+        return config.get('profile.id');
     }
 
-    isAnonymously = () => {
-        return config.get('users.currentUser.isAnonymously');
-    }
-
-    getUserTypeToString = () => {
-        return !this.isAnonymously() ? 'users' : 'guests';
+    getToken = () => {
+        return config.get('profile.token');
     }
 
     initDatabase = () => {
-        this.getUserId().then(async (user) => {
-            const firestore = firebase.firestore();
+        const id = this.getId();
+        const firestore = firebase.firestore();
 
-            await firestore.doc(`${this.getUserTypeToString()}/${user}`).collection('bookmarks').get()
-                .then(async (querySnapshot) => {
-                    if (querySnapshot.docs.length < 1)
-                        await firestore.doc(`${this.getUserTypeToString()}/${user}`).collection('bookmarks').doc().set({ title: 'Demo Data', url: 'flast://welcome', date: firebase.firestore.Timestamp.now() });
-                });
-            await firestore.doc(`${this.getUserTypeToString()}/${user}`).collection('historys').get()
-                .then(async (querySnapshot) => {
-                    if (querySnapshot.docs.length < 1)
-                        await firestore.doc(`${this.getUserTypeToString()}/${user}`).collection('historys').doc().set({ title: 'Demo Data', url: 'flast://welcome', date: firebase.firestore.Timestamp.now() });
-                });
-            await firestore.doc(`${this.getUserTypeToString()}/${user}`).collection('downloads').get()
-                .then(async (querySnapshot) => {
-                    if (querySnapshot.docs.length < 1)
-                        await firestore.doc(`${this.getUserTypeToString()}/${user}`).collection('downloads').doc().set({ title: 'Demo Data', url: 'flast://welcome', date: firebase.firestore.Timestamp.now() });
-                });
-        });
+        firestore.collection('users').doc(id).collection('bookmarks').get()
+            .then(async (querySnapshot) => {
+                if (querySnapshot.docs.length < 1)
+                    await firestore.collection('users').doc(id).collection('bookmarks').doc().set({ title: 'Demo Data', url: 'flast://welcome', date: firebase.firestore.Timestamp.now() });
+            });
+        firestore.collection('users').doc(id).collection('historys').get()
+            .then(async (querySnapshot) => {
+                if (querySnapshot.docs.length < 1)
+                    await firestore.collection('users').doc(id).collection('historys').doc().set({ title: 'Demo Data', url: 'flast://welcome', date: firebase.firestore.Timestamp.now() });
+            });
+        firestore.collection('users').doc(id).collection('downloads').get()
+            .then(async (querySnapshot) => {
+                if (querySnapshot.docs.length < 1)
+                    await firestore.collection('users').doc(id).collection('downloads').doc().set({ title: 'Demo Data', url: 'flast://welcome', date: firebase.firestore.Timestamp.now() });
+            });
     }
-
-
-
-
 
     getBookmarks = (isPrivate = false) => {
         return new Promise((resolve, reject) => {
-            this.getUserId().then(async (user) => {
-                await firebase.firestore().doc(`${this.getUserTypeToString()}/${user}`).collection('bookmarks').where('isPrivate', '==', isPrivate).orderBy('date', 'desc').get().then((querySnapshot) => resolve(querySnapshot)).catch((error) => console.log(`Error: ${error} (getBookmarks)`))
-            });
+            const id = this.getId();
+            firebase.firestore().collection('users').doc(id).collection('bookmarks').where('isPrivate', '==', isPrivate).orderBy('date', 'desc').get().then((querySnapshot) => resolve(querySnapshot)).catch((error) => console.log(`Error: ${error} (getBookmarks)`));
         });
     }
 
     addBookmark = (title, url, isPrivate = false) => {
-        this.getUserId().then(async (user) => {
-            await firebase.firestore().doc(`${this.getUserTypeToString()}/${user}`).collection('bookmarks').doc().set({ title, url, isPrivate, date: firebase.firestore.Timestamp.now() }).catch((error) => console.log(`Error: ${error} (addBookmark)`))
-        });
+        const id = this.getId();
+        firebase.firestore().collection('users').doc(id).collection('bookmarks').doc().set({ title, url, isPrivate, date: firebase.firestore.Timestamp.now() }).catch((error) => console.log(`Error: ${error} (addBookmark)`))
     }
 
     removeBookmark = (url, isPrivate = false) => {
-        this.getUserId().then(async (user) => {
-            await firebase.firestore().doc(`${this.getUserTypeToString()}/${user}`).collection('bookmarks').where('url', '==', url).where('isPrivate', '==', isPrivate).get()
-                .then((items) => {
-                    if (items.size > 0) {
-                        items.forEach((item) => {
-                            if (url === item.data().url)
-                                firebase.firestore().doc(`${this.getUserTypeToString()}/${user}`).collection('bookmarks').doc(item.id).delete().catch((error) => console.log(`Error: ${error} (removeBookmark)`));
-                        });
-                    }
-                })
-                .catch((error) => console.log(`Error: ${error} (removeBookmark)`));
-        });
+        const id = this.getId();
+        firebase.firestore().collection('users').doc(id).collection('bookmarks').where('url', '==', url).where('isPrivate', '==', isPrivate).get()
+            .then((items) => {
+                if (items.size > 0) {
+                    items.forEach((item) => {
+                        if (url === item.data().url)
+                            firebase.firestore().collection('users').doc(id).collection('bookmarks').doc(item.id).delete().catch((error) => console.log(`Error: ${error} (removeBookmark)`));
+                    });
+                }
+            })
+            .catch((error) => console.log(`Error: ${error} (removeBookmark)`));
     }
 
     isBookmarked = (url, isPrivate = false) => {
         return new Promise((resolve, reject) => {
-            this.getUserId().then(async (user) => {
-                await firebase.firestore().doc(`${this.getUserTypeToString()}/${user}`).collection('bookmarks').where('url', '==', url).where('isPrivate', '==', isPrivate).get()
-                    .then((items) => resolve(items.size > 0))
-                    .catch((error) => console.log(`Error: ${error} (isBookmarked)`));
-            });
-        })
+            const id = this.getId();
+            firebase.firestore().collection('users').doc(id).collection('bookmarks').where('url', '==', url).where('isPrivate', '==', isPrivate).get()
+                .then((items) => resolve(items.size > 0))
+                .catch((error) => console.log(`Error: ${error} (isBookmarked)`));
+        });
     }
-
 
     getHistorys = () => {
         return new Promise((resolve, reject) => {
-            this.getUserId().then(async (user) => {
-                await firebase.firestore().doc(`${this.getUserTypeToString()}/${user}`).collection('historys').orderBy('date', 'desc').get().then((querySnapshot) => resolve(querySnapshot)).catch((error) => console.log(`Error: ${error} (getHistorys)`))
-            });
+            const id = this.getId();
+            firebase.firestore().collection('users').doc(id).collection('historys').orderBy('date', 'desc').get().then((querySnapshot) => resolve(querySnapshot)).catch((error) => console.log(`Error: ${error} (getHistorys)`))
         });
     }
 
     addHistory = (title, url) => {
-        this.getUserId().then(async (user) => {
-            await firebase.firestore().doc(`${this.getUserTypeToString()}/${user}`).collection('historys').where('url', '==', url).get()
-                .then((items) => {
-                    if (items.size > 0) {
-                        items.forEach((item) => {
-                            if (url === item.data().url)
-                                firebase.firestore().doc(`${this.getUserTypeToString()}/${user}`).collection('historys').doc(item.id).update({ title, url, date: firebase.firestore.Timestamp.now() }).catch((error) => console.log(`Error: ${error} (addHistory)`))
-                        });
-                    } else {
-                        firebase.firestore().doc(`${this.getUserTypeToString()}/${user}`).collection('historys').doc().set({ title, url, date: firebase.firestore.Timestamp.now() }).catch((error) => console.log(`Error: ${error} (addHistory)`));
-                        return;
-                    }
-                })
-                .catch((error) => console.log(`Error: ${error} (addHistory)`));
-        });
+        const id = this.getId();
+        firebase.firestore().collection('users').doc(id).collection('historys').where('url', '==', url).get()
+            .then((items) => {
+                if (items.size > 0) {
+                    items.forEach((item) => {
+                        if (url === item.data().url)
+                            firebase.firestore().collection('users').doc(id).collection('historys').doc(item.id).update({ title, url, date: firebase.firestore.Timestamp.now() }).catch((error) => console.log(`Error: ${error} (addHistory)`))
+                    });
+                } else {
+                    firebase.firestore().collection('users').doc(id).collection('historys').doc().set({ title, url, date: firebase.firestore.Timestamp.now() }).catch((error) => console.log(`Error: ${error} (addHistory)`));
+                    return;
+                }
+            })
+            .catch((error) => console.log(`Error: ${error} (addHistory)`));
     }
 
     clearHistorys = () => {
         return new Promise((resolve, reject) => {
-            this.getUserId().then(async (user) => {
-                await firebase.firestore().doc(`${this.getUserTypeToString()}/${user}`).collection('historys').get()
-                    .then((items) => {
-                        items.forEach((item) => {
-                            firebase.firestore().doc(`${this.getUserTypeToString()}/${user}`).collection('historys').doc(item.id).delete().catch((error) => console.log(`Error: ${error} (clearHistorys)`))
-                        });
-                    })
-                    .catch((error) => console.log(`Error: ${error} (clearHistorys)`))
-            });
+            const id = this.getId();
+            firebase.firestore().collection('users').doc(id).collection('historys').get()
+                .then((items) => {
+                    items.forEach((item) => {
+                        firebase.firestore().collection('users').doc(id).collection('historys').doc(item.id).delete().catch((error) => console.log(`Error: ${error} (clearHistorys)`))
+                    });
+                })
+                .catch((error) => console.log(`Error: ${error} (clearHistorys)`))
         });
     }
 
     getDownloads = () => {
         return new Promise((resolve, reject) => {
-            this.getUserId().then(async (user) => {
-                await firebase.firestore().doc(`${this.getUserTypeToString()}/${user}`).collection('downloads').get().then((querySnapshot) => resolve(querySnapshot)).catch((error) => console.log(`Error: ${error} (getDownloads)`))
-            });
+            const id = this.getId();
+            firebase.firestore().collection('users').doc(id).collection('downloads').get().then((querySnapshot) => resolve(querySnapshot)).catch((error) => console.log(`Error: ${error} (getDownloads)`))
         });
+    }
+
+    encodeBase64 = (data) => {
+        const iv = crypto.randomBytes(16);
+        const cipher = crypto.createCipheriv(ALGORITHM, KEY, iv);
+        const encData = cipher.update(Buffer.from(data));
+        return Buffer.concat([iv, encData, cipher.final()]).toString('base64');
+    }
+
+    decodeBase64 = (data) => {
+        const buff = Buffer.from(data, 'base64');
+        const iv = buff.slice(0, 16);
+        const encData = buff.slice(16);
+        const decipher = crypto.createDecipheriv(ALGORITHM, KEY, iv);
+        const decData = decipher.update(encData);
+        return Buffer.concat([decData, decipher.final()]).toString('utf8');
+    }
+
+
+    getRandString = (length) => {
+        const char = 'abcdefghijklmnopqrstuvwxyz0123456789';
+        const charLength = char.length;
+
+        let str = '';
+        for (var i = 0; i < length; i++)
+            str += char[Math.floor(Math.random() * charLength)];
+
+        return str;
     }
 }

@@ -17,6 +17,7 @@ const Config = require('electron-store');
 const config = new Config();
 
 module.exports = class InfomationWindow extends BrowserWindow {
+    
     constructor(appWindow, windowId) {
         super({
             width: 320,

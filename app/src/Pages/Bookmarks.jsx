@@ -180,7 +180,7 @@ class Bookmarks extends Component {
         const { classes } = this.props;
 
         return (
-            <NavigationBar title="ブックマーク" buttons={[<Button color="inherit" onClick={() => { this.setState({ isDialogOpened: true }); }}>ブックマークの削除</Button>]}>
+            <NavigationBar title={window.getLanguageFile().internalPages.bookmarks.title} buttons={[<Button color="inherit" onClick={() => { this.setState({ isDialogOpened: true }); }}>{window.getLanguageFile().internalPages.bookmarks.clear}</Button>]}>
                 {this.state.isOnline ?
                     window.navigator.userAgent.indexOf('PrivMode') !== -1 ?
                         <div>
@@ -198,9 +198,9 @@ class Bookmarks extends Component {
                                             <TableHead>
                                                 <TableRow>
                                                     <TableCell className={classes.tableIcon2}></TableCell>
-                                                    <TableCell className={classes.tableTitle2}>タイトル</TableCell>
-                                                    <TableCell className={classes.tableUrl2}>URL</TableCell>
-                                                    <TableCell className={classes.tableDate2}>追加日時</TableCell>
+                                                    <TableCell className={classes.tableTitle2}>{window.getLanguageFile().internalPages.bookmarks.table.title}</TableCell>
+                                                    <TableCell className={classes.tableUrl2}>{window.getLanguageFile().internalPages.bookmarks.table.url}</TableCell>
+                                                    <TableCell className={classes.tableDate2}>{window.getLanguageFile().internalPages.bookmarks.table.date}</TableCell>
                                                 </TableRow>
                                             </TableHead>
                                             <TableBody>
@@ -231,9 +231,9 @@ class Bookmarks extends Component {
                                             <TableHead>
                                                 <TableRow>
                                                     <TableCell className={classes.tableIcon2}></TableCell>
-                                                    <TableCell className={classes.tableTitle2}>タイトル</TableCell>
-                                                    <TableCell className={classes.tableUrl2}>URL</TableCell>
-                                                    <TableCell className={classes.tableDate2}>追加日時</TableCell>
+                                                    <TableCell className={classes.tableTitle2}>{window.getLanguageFile().internalPages.bookmarks.table.title}</TableCell>
+                                                    <TableCell className={classes.tableUrl2}>{window.getLanguageFile().internalPages.bookmarks.table.url}</TableCell>
+                                                    <TableCell className={classes.tableDate2}>{window.getLanguageFile().internalPages.bookmarks.table.date}</TableCell>
                                                 </TableRow>
                                             </TableHead>
                                             <TableBody>
@@ -257,9 +257,9 @@ class Bookmarks extends Component {
                                 <TableHead>
                                     <TableRow>
                                         <TableCell className={classes.tableIcon2}></TableCell>
-                                        <TableCell className={classes.tableTitle2}>タイトル</TableCell>
-                                        <TableCell className={classes.tableUrl2}>URL</TableCell>
-                                        <TableCell className={classes.tableDate2}>追加日時</TableCell>
+                                        <TableCell className={classes.tableTitle2}>{window.getLanguageFile().internalPages.bookmarks.table.title}</TableCell>
+                                        <TableCell className={classes.tableUrl2}>{window.getLanguageFile().internalPages.bookmarks.table.url}</TableCell>
+                                        <TableCell className={classes.tableDate2}>{window.getLanguageFile().internalPages.bookmarks.table.date}</TableCell>
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>

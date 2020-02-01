@@ -1,4 +1,4 @@
-const { app, ipcMain, protocol, session, BrowserWindow, BrowserView, Menu, nativeImage, clipboard, dialog, Notification } = require('electron');
+const { app, ipcMain, protocol, session, BrowserWindow, BrowserView, Menu, nativeImage, clipboard, dialog, Notification, systemPreferences } = require('electron');
 const { isAbsolute, extname, resolve, join, dirname } = require('path');
 const { existsSync, readdirSync } = require('fs');
 const url = require('url');
@@ -18,12 +18,12 @@ const cfg = require('./Config');
 const Config = require('electron-store');
 const config = new Config({
     defaults: {
-        users: {
-            currentUser: {
-                isAnonymously: true,
-                id: ''
-            },
-            loginUsers: []
+        profile: {
+            id: '',
+            name: '',
+            address: '',
+            token: '',
+            refresh: ''
         },
         design: {
             isHomeButton: false,
@@ -48,7 +48,7 @@ const config = new Config({
         },
         startUp: {
             isDefaultHomePage: true,
-            defaultPages: ['flast://home2']
+            defaultPages: ['flast://home']
         },
         searchEngine: {
             defaultEngine: 'Google',
@@ -139,6 +139,9 @@ const config = new Config({
                 width: 1100,
                 height: 680
             }
+        },
+        meta: {
+            version: '1.0.0'
         }
     },
 });
@@ -170,6 +173,7 @@ getBaseWindow = (width = 1100, height = 680, minWidth = 500, minHeight = 360, x,
 }
 
 module.exports = class Application {
+
     loadApplication = () => {
         protocol.registerSchemesAsPrivileged([
             { scheme: protocolStr, privileges: { standard: true, bypassCSP: true, secure: true } },
@@ -227,8 +231,7 @@ module.exports = class Application {
         });
 
         const firebase = new Firebase();
-        firebase.loginGuest();
-        // firebase.loginAccount('aoichaan0513@gmail.com', 'ab012890cd');
+        firebase.login();
 
         if (!singleInstance) {
             app.quit();
@@ -270,7 +273,7 @@ module.exports = class Application {
                 process.env.GOOGLE_API_KEY = cfg.googleAPIKey;
 
                 app.setAppUserModelId(pkg.flast_package_id);
-                session.defaultSession.setUserAgent(session.defaultSession.getUserAgent().replace(/ Electron\/[0-9\.]*/g, ''));
+                session.defaultSession.setUserAgent(session.defaultSession.getUserAgent().replace(/ Electron\/[A-z0-9-\.]*/g, ''));
 
                 autoUpdater.checkForUpdatesAndNotify();
                 Menu.setApplicationMenu(null);
@@ -279,9 +282,8 @@ module.exports = class Application {
             });
 
             app.on('window-all-closed', () => {
-                if (process.platform !== 'darwin') {
+                if (process.platform !== 'darwin')
                     app.quit();
-                }
             });
 
             app.on('activate', () => {
@@ -624,7 +626,17 @@ module.exports = class Application {
         const versions = readdirSync(`${extensionDir}/${id}`).sort();
         const version = versions.pop();
 
-        const extensions = new ExtensibleSession(session.defaultSession);
         extensions.loadExtension(`${extensionDir}/${id}/${version}`);
     }
-};
+
+    getRandString = (length) => {
+        const char = 'abcdefghijklmnopqrstuvwxyz0123456789';
+        const charLength = char.length;
+
+        let str = '';
+        for (var i = 0; i < length; i++)
+            str += char[Math.floor(Math.random() * charLength)];
+
+        return str;
+    }
+}

@@ -128,16 +128,16 @@ class Downloads extends Component {
         const { classes } = this.props;
 
         return (
-            <NavigationBar title="ダウンロード" buttons={[<Button color="inherit" onClick={() => { this.setState({ isDialogOpened: true }); }}>ダウンロード履歴の削除</Button>]}>
+            <NavigationBar title={window.getLanguageFile().internalPages.downloads.title} buttons={[<Button color="inherit" onClick={() => { this.setState({ isDialogOpened: true }); }}>{window.getLanguageFile().internalPages.downloads.clear}</Button>]}>
                 <Paper className={classes.root}>
                     <Table className={classes.table}>
                         <TableHead>
                             <TableRow>
                                 <TableCell className={classes.tableIcon2}></TableCell>
-                                <TableCell className={classes.tableTitle2}>タイトル</TableCell>
-                                <TableCell className={classes.tableUrl2}>URL</TableCell>
-                                <TableCell className={classes.tableStatus2}>ステータス</TableCell>
-                                <TableCell className={classes.tableDate2}>開始日時</TableCell>
+                                <TableCell className={classes.tableTitle2}>{window.getLanguageFile().internalPages.downloads.table.title}</TableCell>
+                                <TableCell className={classes.tableUrl2}>{window.getLanguageFile().internalPages.downloads.table.url}</TableCell>
+                                <TableCell className={classes.tableStatus2}>{window.getLanguageFile().internalPages.downloads.table.status}</TableCell>
+                                <TableCell className={classes.tableDate2}>{window.getLanguageFile().internalPages.downloads.table.date}</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
