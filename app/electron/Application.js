@@ -86,6 +86,10 @@ const config = new Config({
                     url: 'https://www.youtube.com/results?search_query=%s'
                 },
                 {
+                    name: 'NicoVideo',
+                    url: 'https://www.nicovideo.jp/search/%s'
+                },
+                {
                     name: 'Twitter',
                     url: 'https://www.twitter.com/search?q=%s'
                 },
@@ -232,6 +236,11 @@ module.exports = class Application {
 
         const firebase = new Firebase();
         firebase.login();
+
+        ipcMain.on('sync-account', (e, args) => {
+            const id = firebase.syncAccount(args.id);
+            e.sender.send('sync-account', { id });
+        });
 
         if (!singleInstance) {
             app.quit();

@@ -23,16 +23,16 @@ const buttonHeight = 27;
 
 const Window = styled.div`
   width: auto;
-  height: ${platform.isWin32 || platform.isDarwin ? 'auto' : '100%'};
-  margin: ${platform.isWin32 || platform.isDarwin ? '0px 4px 2px' : '0px'};
+  height: ${platform.isWin32 && systemPreferences.isAeroGlassEnabled() || platform.isDarwin ? 'auto' : '100%'};
+  margin: ${platform.isWin32 && systemPreferences.isAeroGlassEnabled() || platform.isDarwin ? '0px 4px 2px' : '0px'};
   padding: 5px 0px;
   display: flex;
   flex-direction: column;
-  border-radius: ${platform.isWin32 || platform.isDarwin ? 2 : 0}px;
-  border: ${platform.isWin32 || platform.isDarwin ? 'none' : (props => !props.isDarkModeOrPrivateMode ? 'solid 1px #e1e1e1' : 'solid 1px #8b8b8b')};
+  border-radius: ${platform.isWin32 && systemPreferences.isAeroGlassEnabled() || platform.isDarwin ? 2 : 0}px;
+  border: ${platform.isWin32 && systemPreferences.isAeroGlassEnabled() || platform.isDarwin ? 'none' : (props => !props.isDarkModeOrPrivateMode ? 'solid 1px #e1e1e1' : 'solid 1px #8b8b8b')};
   background-color: ${props => !props.isDarkModeOrPrivateMode ? '#f9f9fa' : '#353535'};
   color: ${props => !props.isDarkModeOrPrivateMode ? '#353535' : '#f9f9fa'};
-  box-shadow: ${platform.isWin32 || platform.isDarwin ? '0px 2px 4px rgba(0, 0, 0, 0.16), 0px 2px 4px rgba(0, 0, 0, 0.23)' : 'none'};
+  box-shadow: ${platform.isWin32 && systemPreferences.isAeroGlassEnabled() || platform.isDarwin ? '0px 2px 4px rgba(0, 0, 0, 0.16), 0px 2px 4px rgba(0, 0, 0, 0.23)' : 'none'};
   box-sizing: border-box;
 `;
 
@@ -78,16 +78,16 @@ const Divider = styled.div`
 
 const Dialog = styled.div`
   width: -webkit-fill-available;
-  height: ${platform.isWin32 || platform.isDarwin ? '505px' : '100%'};
-  margin: ${platform.isWin32 || platform.isDarwin ? '0px 4px 2px' : '0px'};
+  height: ${platform.isWin32 && systemPreferences.isAeroGlassEnabled() || platform.isDarwin ? '505px' : '100%'};
+  margin: ${platform.isWin32 && systemPreferences.isAeroGlassEnabled() || platform.isDarwin ? '0px 4px 2px' : '0px'};
   padding: 0px;
   position: fixed;
   top: 0px;
   transform: translateX(${props => props.isOpen ? '0%' : '105%'});
   display: flex;
   flex-flow: column nowrap;
-  border-radius: ${platform.isWin32 || platform.isDarwin ? 2 : 0}px;
-  border: ${platform.isWin32 || platform.isDarwin ? 'none' : (props => !props.isDarkModeOrPrivateMode ? 'solid 1px #e1e1e1' : 'solid 1px #8b8b8b')};
+  border-radius: ${platform.isWin32 && systemPreferences.isAeroGlassEnabled() || platform.isDarwin ? 2 : 0}px;
+  border: ${platform.isWin32 && systemPreferences.isAeroGlassEnabled() || platform.isDarwin ? 'none' : (props => !props.isDarkModeOrPrivateMode ? 'solid 1px #e1e1e1' : 'solid 1px #8b8b8b')};
   background-color: ${props => !props.isDarkModeOrPrivateMode ? '#f9f9fa' : '#353535'};
   color: ${props => !props.isDarkModeOrPrivateMode ? '#353535' : '#f9f9fa'};
   transition: 0.2s transform;
@@ -101,8 +101,8 @@ const DialogHeader = styled.div`
   padding: 0px;
   display: flex;
   background-color: gray;
-  border-top-left-radius: ${platform.isWin32 || platform.isDarwin ? 2 : 0}px;
-  border-top-right-radius: ${platform.isWin32 || platform.isDarwin ? 2 : 0}px;
+  border-top-left-radius: ${platform.isWin32 && systemPreferences.isAeroGlassEnabled() || platform.isDarwin ? 2 : 0}px;
+  border-top-right-radius: ${platform.isWin32 && systemPreferences.isAeroGlassEnabled() || platform.isDarwin ? 2 : 0}px;
   box-sizing: border-box;
 `;
 
@@ -140,9 +140,9 @@ const DialogContainer = styled.div`
   padding: 5px 0px;
   display: flex;
   flex-direction: column;
-  border-bottom-left-radius: ${platform.isWin32 || platform.isDarwin ? 2 : 0}px;
-  border-bottom-right-radius: ${platform.isWin32 || platform.isDarwin ? 2 : 0}px;
-  border: ${platform.isWin32 || platform.isDarwin ? 'none' : (props => !props.isDarkModeOrPrivateMode ? 'solid 1px #e1e1e1' : 'solid 1px #8b8b8b')};
+  border-bottom-left-radius: ${platform.isWin32 && systemPreferences.isAeroGlassEnabled() || platform.isDarwin ? 2 : 0}px;
+  border-bottom-right-radius: ${platform.isWin32 && systemPreferences.isAeroGlassEnabled() || platform.isDarwin ? 2 : 0}px;
+  border: ${platform.isWin32 && systemPreferences.isAeroGlassEnabled() || platform.isDarwin ? 'none' : (props => !props.isDarkModeOrPrivateMode ? 'solid 1px #e1e1e1' : 'solid 1px #8b8b8b')};
   background-color: ${props => !props.isDarkModeOrPrivateMode ? '#f9f9fa' : '#353535'};
   color: ${props => !props.isDarkModeOrPrivateMode ? '#353535' : '#f9f9fa'};
   box-sizing: border-box;
@@ -209,11 +209,10 @@ class MenuWindow extends Component {
 			const u = parse(this.state.url);
 			console.log(u.protocol);
 
-			if (u.protocol === `${protocolStr}:`) {
+			if (u.protocol === `${protocolStr}:`)
 				ipcRenderer.send(`browserView-loadURL-${this.props.match.params.windowId}`, { id: this.props.match.params.tabId, url });
-			} else {
+			else
 				ipcRenderer.send(`tab-add-${this.props.match.params.windowId}`, { url, isActive: true });
-			}
 		} else {
 			ipcRenderer.send(`tab-add-${this.props.match.params.windowId}`, { url, isActive: true });
 		}
@@ -229,7 +228,7 @@ class MenuWindow extends Component {
 
 	render() {
 		return (
-			<div style={{ boxSizing: 'border-box', width: '100%', height: platform.isWin32 || platform.isDarwin ? 'auto' : '100%' }}>
+			<div style={{ boxSizing: 'border-box', width: '100%', height: platform.isWin32 && systemPreferences.isAeroGlassEnabled() || platform.isDarwin ? 'auto' : '100%' }}>
 				<Window isDarkModeOrPrivateMode={this.getTheme() || String(this.props.match.params.windowId).startsWith('private')}>
 					<Button onClick={() => { this.setState({ isOpen: 'userInfo' }); }}>
 						<img src={`${this.getIconDirectory()}/account.png`} style={{ verticalAlign: 'middle' }} />

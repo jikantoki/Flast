@@ -83,6 +83,35 @@ module.exports = class Firebase {
         }
     }
 
+    syncAccount = (id = undefined) => {
+        const firestore = firebase.firestore();
+
+        if (id) {
+            firestore.collection('sync').doc(id).get().then((doc) => {
+                if (doc.exists) {
+                    const user = doc.data();
+                    config.set('profile', { id: user.id, name: user.displayName, address: user.email, token: user.token });
+
+                    firestore.collection('sync').doc(id).delete().then(function() {
+                        console.log('Document successfully deleted!');
+                    }).catch((err) => {
+                        console.log(`Error removing document: ${err}`);
+                        return null;
+                    });
+                } else {
+                    return null;
+                }
+            }).catch((err) => {
+                console.log(`Error getting document: ${err}`);
+                return null;
+            });
+        } else {
+            const str = this.getRandString(8);
+            firestore.collection('sync').doc(str).set({ id: this.getId(), displayName: config.get('profile.name'), email: config.get('profile.address'), token: this.getToken(), date: firebase.firestore.Timestamp.now() });
+            return str;
+        }
+    }
+
     getUser = () => {
         return new Promise((resolve, reject) => {
             firebase.auth().onAuthStateChanged(user => resolve(user))

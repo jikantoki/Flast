@@ -28,17 +28,17 @@ const lang = window.require(`${app.getAppPath()}/langs/${config.get('language') 
 
 const Window = styled.div`
   width: auto;
-  height: ${platform.isWin32 || platform.isDarwin ? 'auto' : '100%'};
-  margin: ${platform.isWin32 || platform.isDarwin ? '0px 4px' : '0px'};
+  height: ${platform.isWin32 && systemPreferences.isAeroGlassEnabled() || platform.isDarwin ? 'auto' : '100%'};
+  margin: ${platform.isWin32 && systemPreferences.isAeroGlassEnabled() || platform.isDarwin ? '0px 4px' : '0px'};
   padding: 0px;
   display: flex;
   flex-direction: column;
   justify-content: space-around;
-  border-radius: ${platform.isWin32 || platform.isDarwin ? 2 : 0}px;
-  border: ${platform.isWin32 || platform.isDarwin ? 'none' : (props => !props.isDarkModeOrPrivateMode ? 'solid 1px #e1e1e1' : 'solid 1px #8b8b8b')};
+  border-radius: ${platform.isWin32 && systemPreferences.isAeroGlassEnabled() || platform.isDarwin ? 2 : 0}px;
+  border: ${platform.isWin32 && systemPreferences.isAeroGlassEnabled() || platform.isDarwin ? 'none' : (props => !props.isDarkModeOrPrivateMode ? 'solid 1px #e1e1e1' : 'solid 1px #8b8b8b')};
   background-color: ${props => !props.isDarkModeOrPrivateMode ? '#f9f9fa' : '#353535'};
   color: ${props => !props.isDarkModeOrPrivateMode ? '#353535' : '#f9f9fa'};
-  box-shadow: ${platform.isWin32 || platform.isDarwin ? '0px 2px 4px rgba(0, 0, 0, 0.16), 0px 2px 4px rgba(0, 0, 0, 0.23)' : 'none'};
+  box-shadow: ${platform.isWin32 && systemPreferences.isAeroGlassEnabled() || platform.isDarwin ? '0px 2px 4px rgba(0, 0, 0, 0.16), 0px 2px 4px rgba(0, 0, 0, 0.23)' : 'none'};
   box-sizing: border-box;
 `;
 
@@ -251,7 +251,7 @@ class SuggestWindow extends Component {
 						);
 					})}
 				</SuggestListContainer>
-				<ul style={{ margin: 0, padding: 0, backgroundColor: this.getTheme() || String(this.props.match.params.windowId).startsWith('private') ? '#5a5a5a' : '#eaeaea', borderTop: 'solid 1px #c1c1c1', borderBottomLeftRadius: 2, borderBottomRightRadius: 2 }}>
+				<ul style={{ margin: 0, padding: 0, backgroundColor: this.getTheme() || String(this.props.match.params.windowId).startsWith('private') ? '#5a5a5a' : '#eaeaea', borderTop: 'solid 1px #c1c1c1', borderBottomLeftRadius: platform.isWin32 && systemPreferences.isAeroGlassEnabled() || platform.isDarwin ? 2 : 0, borderBottomRightRadius: platform.isWin32 && systemPreferences.isAeroGlassEnabled() || platform.isDarwin ? 2 : 0 }}>
 					<Button style={{ listStyle: 'none', borderRight: 'solid 1px #c1c1c1', padding: '5px 15px', display: 'inline-table' }} title={this.getSearchEngine().name} onClick={() => { ipcRenderer.send(`suggestWindow-loadURL-${this.props.match.params.windowId}`, { id: this.state.id, url: this.getSearchEngine().url.replace('%s', encodeURIComponent(this.state.text)) }); }}>
 						<img src={`https://www.google.com/s2/favicons?domain=${parse(this.getSearchEngine().url).protocol}//${parse(this.getSearchEngine().url).hostname}`} alt={this.getSearchEngine().name} style={{ verticalAlign: 'middle' }} />
 						<span style={{ marginLeft: 8, verticalAlign: 'middle' }}>{String(lang.window.toolBar.addressBar.textBox.suggest.search).replace(/{replace}/, this.getSearchEngine().name)}</span>

@@ -18,16 +18,16 @@ const lang = window.require(`${app.getAppPath()}/langs/${config.get('language') 
 
 const Window = styled.div`
   width: auto;
-  height: ${platform.isWin32 || platform.isDarwin ? 'auto' : '100%'};
-  margin: ${platform.isWin32 || platform.isDarwin ? '0px 4px' : '0px'};
+  height: ${platform.isWin32 && systemPreferences.isAeroGlassEnabled() || platform.isDarwin ? 'auto' : '100%'};
+  margin: ${platform.isWin32 && systemPreferences.isAeroGlassEnabled() || platform.isDarwin ? '0px 4px' : '0px'};
   padding: 6px;
   display: flex;
   flex-direction: column;
-  border-radius: ${platform.isWin32 || platform.isDarwin ? 2 : 0}px;
-  border: ${platform.isWin32 || platform.isDarwin ? 'none' : (props => !props.isDarkModeOrPrivateMode ? 'solid 1px #e1e1e1' : 'solid 1px #8b8b8b')};
+  border-radius: ${platform.isWin32 && systemPreferences.isAeroGlassEnabled() || platform.isDarwin ? 2 : 0}px;
+  border: ${platform.isWin32 && systemPreferences.isAeroGlassEnabled() || platform.isDarwin ? 'none' : (props => !props.isDarkModeOrPrivateMode ? 'solid 1px #e1e1e1' : 'solid 1px #8b8b8b')};
   background-color: ${props => !props.isDarkModeOrPrivateMode ? '#f9f9fa' : '#353535'};
   color: ${props => !props.isDarkModeOrPrivateMode ? '#353535' : '#f9f9fa'};
-  box-shadow: ${platform.isWin32 || platform.isDarwin ? '0px 2px 4px rgba(0, 0, 0, 0.16), 0px 2px 4px rgba(0, 0, 0, 0.23)' : 'none'};
+  box-shadow: ${platform.isWin32 && systemPreferences.isAeroGlassEnabled() || platform.isDarwin ? '0px 2px 4px rgba(0, 0, 0, 0.16), 0px 2px 4px rgba(0, 0, 0, 0.23)' : 'none'};
   box-sizing: border-box;
 `;
 

@@ -283,6 +283,15 @@ global.getCurrentUser = () => {
     return config.get('profile');
 }
 
+global.syncAccount = (id = undefined) => new Promise((resolve) => {
+    if (location.protocol !== `${protocolStr}:` && location.protocol !== `${fileProtocolStr}:`) return;
+
+    ipcRenderer.send('sync-account', { id });
+    ipcRenderer.once('sync-account', (e, args) => {
+        resolve(args.id);
+    });
+});
+
 
 global.getUser = () => {
     if (location.protocol !== `${protocolStr}:` && location.protocol !== `${fileProtocolStr}:`) return;
@@ -436,7 +445,6 @@ global.copyHomePageBackgroundImage = (file) => {
 
     const sourceFile = fs.readFileSync(file);
     const targetFile = path.join(app.getPath('userData'), 'Files', 'Users', `background.${fileType(sourceFile).ext}`);
-    console.log(file, targetFile);
     fs.copy(file, targetFile);
     config.set('homePage.homePage.backgroundImage', `${fileProtocolStr}:///background.${fileType(sourceFile).ext}`);
 }

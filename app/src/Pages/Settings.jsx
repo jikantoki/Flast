@@ -37,11 +37,14 @@ import RadioGroup from '@material-ui/core/RadioGroup';
 import FormHelperText from '@material-ui/core/FormHelperText';
 import FormControlLabel from '@material-ui/core/FormControlLabel';
 import FormLabel from '@material-ui/core/FormLabel';
+import InputLabel from '@material-ui/core/InputLabel';
 import Select from '@material-ui/core/Select';
 import Button from '@material-ui/core/Button';
 import IconButton from '@material-ui/core/IconButton';
 import Switch from '@material-ui/core/Switch';
 import TextField from '@material-ui/core/TextField';
+import OutlinedInput from '@material-ui/core/OutlinedInput';
+import InputAdornment from '@material-ui/core/InputAdornment';
 
 import PaletteIcon from '@material-ui/icons/PaletteOutlined';
 import CloudUploadIcon from '@material-ui/icons/CloudUploadOutlined';
@@ -59,6 +62,9 @@ import RadioIcon from '@material-ui/icons/RadioOutlined';
 import LockIcon from '@material-ui/icons/LockOutlined';
 import FullscreenIcon from '@material-ui/icons/FullscreenOutlined';
 import LaunchIcon from '@material-ui/icons/LaunchOutlined';
+
+import SyncIcon from '@material-ui/icons/SyncOutlined';
+import ArrowBackIcon from '@material-ui/icons/ArrowBackOutlined';
 
 import AddBoxIcon from '@material-ui/icons/AddBox';
 import ArrowUpwardIcon from '@material-ui/icons/ArrowUpward';
@@ -225,7 +231,7 @@ class Settings extends Component {
                                     <Grid container spacing={2}>
                                         <Grid item xs={12} md={2} lg={1}>
                                             <div className={classes.userInfoAvatarRoot}>
-                                                <Avatar alt="Remy Sharp" src={`${fileProtocolStr}:///background.jpg`} className={classes.bigAvatar} />
+                                                <Avatar src={`${fileProtocolStr}:///background.jpg`} className={classes.bigAvatar} />
                                             </div>
                                         </Grid>
                                         <Grid item xs={12} md={10} lg={11} style={{ padding: 18 }}>
@@ -233,9 +239,12 @@ class Settings extends Component {
                                                 <Typography variant="h6">
                                                     {!String(window.getCurrentUser().address).endsWith('@flast.com') ? window.getCurrentUser().name : 'ゲスト / Guest'}
                                                 </Typography>
-                                                <Button variant="contained" color={!String(window.getCurrentUser().address).endsWith('@flast.com') ? 'default' : 'primary'} onClick={() => { this.setState({ isDialogOpened: 'login' }); }} style={{ marginLeft: 'auto' }}>
-                                                    {!String(window.getCurrentUser().address).endsWith('@flast.com') ? window.getLanguageFile().internalPages.settings.sections.user.controls.logout : window.getLanguageFile().internalPages.settings.sections.user.controls.login}
-                                                </Button>
+                                                <div style={{ marginLeft: 'auto' }}>
+                                                    <Button variant="text" color="default" style={{ marginRight: 5 }} component={RouterLink} to="/sync">Sync</Button>
+                                                    <Button variant="contained" color={!String(window.getCurrentUser().address).endsWith('@flast.com') ? 'default' : 'primary'} onClick={() => { this.setState({ isDialogOpened: 'login' }); }}>
+                                                        {!String(window.getCurrentUser().address).endsWith('@flast.com') ? window.getLanguageFile().internalPages.settings.sections.user.controls.logout : window.getLanguageFile().internalPages.settings.sections.user.controls.login}
+                                                    </Button>
+                                                </div>
                                             </div>
                                             <Typography variant="body2" color="textSecondary" gutterBottom>
                                                 {!String(window.getCurrentUser().address).endsWith('@flast.com') ? window.getCurrentUser().address : ''}
@@ -258,18 +267,33 @@ class Settings extends Component {
                         <TextField
                             autoFocus
                             margin="dense"
+                            variant="outlined"
                             id="name"
-                            label="Email Address"
+                            label="表示名"
+                            type="text"
+                            fullWidth
+                            required
+                        />
+                        <Divider />
+                        <TextField
+                            autoFocus
+                            margin="dense"
+                            variant="outlined"
+                            id="mail"
+                            label="メールアドレス"
                             type="email"
                             fullWidth
+                            required
                         />
                         <TextField
                             autoFocus
                             margin="dense"
-                            id="name"
-                            label="Email Address"
-                            type="email"
+                            variant="outlined"
+                            id="pass"
+                            label="パスワード"
+                            type="password"
                             fullWidth
+                            required
                         />
                     </DialogContent>
                     <DialogActions>
@@ -279,7 +303,7 @@ class Settings extends Component {
                         <Button color="primary" variant="outlined" onClick={this.handleDialogClose}>
                             キャンセル
                         </Button>
-                        <Button color="primary" variant="contained" onClick={() => { window.clearBrowserData(true); window.restart(); }}>
+                        <Button color="primary" variant="contained">
                             登録
                         </Button>
                     </DialogActions>
@@ -295,18 +319,22 @@ class Settings extends Component {
                         <TextField
                             autoFocus
                             margin="dense"
-                            id="name"
-                            label="Email Address"
+                            variant="outlined"
+                            id="mail"
+                            label="メールアドレス"
                             type="email"
                             fullWidth
+                            required
                         />
                         <TextField
                             autoFocus
                             margin="dense"
-                            id="name"
-                            label="Email Address"
-                            type="email"
+                            variant="outlined"
+                            id="pass"
+                            label="パスワード"
+                            type="password"
                             fullWidth
+                            required
                         />
                     </DialogContent>
                     <DialogActions>
@@ -316,7 +344,7 @@ class Settings extends Component {
                         <Button color="primary" variant="outlined" onClick={this.handleDialogClose}>
                             キャンセル
                         </Button>
-                        <Button color="primary" variant="contained" onClick={() => { window.clearBrowserData(true); window.restart(); }}>
+                        <Button color="primary" variant="contained">
                             ログイン
                         </Button>
                     </DialogActions>
@@ -339,7 +367,7 @@ class Settings extends Component {
                         <Button color="primary" variant="outlined" onClick={this.handleDialogClose}>
                             キャンセル
                         </Button>
-                        <Button color="primary" variant="contained" onClick={() => { window.clearBrowserData(true); window.restart(); }}>
+                        <Button color="primary" variant="contained">
                             ログアウト
                         </Button>
                     </DialogActions>
@@ -350,6 +378,129 @@ class Settings extends Component {
 }
 
 Settings.propTypes = {
+    classes: PropTypes.object.isRequired,
+};
+
+class SettingsSyncPage extends Component {
+    constructor(props) {
+        super(props);
+
+        this.state = {
+            isDialogOpened: false,
+            code: '',
+            codeInput: '',
+
+            // Snackbar
+            isShowingSnackbar: false,
+            snackBarDuration: 1000 * 3,
+            snackBarText: ''
+        };
+    }
+
+    componentDidMount = () => {
+        document.title = window.getLanguage() === 'ja' ? `同期 - 設定` : `Sync - Settings`;
+    }
+
+    handleDialogClose = () => {
+        this.setState({ isDialogOpened: false });
+    }
+
+    handleSnackbarClose = (e, reason) => {
+        if (reason === 'clickaway')
+            return;
+
+        this.setState({ isShowingSnackbar: false });
+    }
+
+    render() {
+        const { classes } = this.props;
+
+        return (
+            <NavigationBar title={window.getLanguageFile().internalPages.settings.title} buttons={[<Button color="inherit" onClick={() => { window.openInEditor(); }}>テキストエディタで開く</Button>]}>
+                <Container fixed className={classes.containerRoot}>
+                    <Paper className={classes.paperRoot}>
+                        <Grid container spacing={2}>
+                            <Grid item xs={12}>
+                                <div style={{ display: 'flex', height: 30, marginBottom: 4 }}>
+                                    <IconButton size="small" component={RouterLink} to="/">
+                                        <ArrowBackIcon />
+                                    </IconButton>
+                                    <Typography variant="h6" className={classes.paperHeading}>同期</Typography>
+                                </div>
+                                <Divider />
+                            </Grid>
+                            <Grid item xs={12} style={{ padding: '8px 16px' }}>
+                                <div style={{ display: 'flex' }}>
+                                    <Typography variant="subtitle2">
+                                        右のボタンをクリックして同期用のコードを作成するか、<br />
+                                        下の入力欄に同期元のデバイスで表示されたコードを入力してください。
+                                    </Typography>
+                                    <div style={{ display: 'flex', alignItems: 'center', marginLeft: 'auto' }}>
+                                        <div style={{ display: this.state.code !== '' ? 'flex' : 'none', alignItems: 'center', margin: '0px 10px' }}>
+                                            <Typography variant="subtitle2">同期用コード:</Typography>
+                                            <Typography variant="subtitle2" style={{ marginLeft: 5 }}>{this.state.code}</Typography>
+                                        </div>
+                                        <Button variant="outlined" color="primary" onClick={() => { window.syncAccount().then((code) => this.setState({ code })); }}>Sync</Button>
+                                    </div>
+                                </div>
+                            </Grid>
+                            <Grid item xs={12}>
+                                <Divider />
+                            </Grid>
+                            <Grid item xs={12}>
+                                <FormControl variant="outlined">
+                                    <InputLabel htmlFor="sync-code">同期用コード</InputLabel>
+                                    <OutlinedInput
+                                        value={this.state.codeInput}
+                                        onChange={(e) => { this.setState({ codeInput: e.target.value }); }}
+                                        autoFocus
+                                        id="sync-code"
+                                        fullWidth
+                                        required
+                                        variant="outlined"
+                                        labelWidth={95}
+                                        endAdornment={
+                                            <InputAdornment position="end">
+                                                <IconButton edge="end" onClick={() => {
+                                                    window.syncAccount(this.state.codeInput);
+                                                    this.setState({ isShowingSnackbar: true, snackBarText: '同期しました。適用するには再起動が必要です。' });
+                                                }}>
+                                                    <SyncIcon />
+                                                </IconButton>
+                                            </InputAdornment>
+                                        }
+                                    />
+                                </FormControl>
+                            </Grid>
+                        </Grid>
+                    </Paper>
+                </Container>
+                <Snackbar
+                    anchorOrigin={{
+                        vertical: 'bottom',
+                        horizontal: 'left',
+                    }}
+                    open={this.state.isShowingSnackbar}
+                    autoHideDuration={this.state.snackBarDuration}
+                    onClose={this.handleSnackbarClose}
+                    message={this.state.snackBarText}
+                    action={
+                        <React.Fragment>
+                            <Button color="secondary" size="small" onClick={() => { window.restart(); }}>
+                                再起動
+                            </Button>
+                            <IconButton size="small" aria-label="close" color="inherit" onClick={this.handleSnackbarClose}>
+                                <CloseIcon fontSize="small" />
+                            </IconButton>
+                        </React.Fragment>
+                    }
+                />
+            </NavigationBar>
+        );
+    }
+}
+
+SettingsSyncPage.propTypes = {
     classes: PropTypes.object.isRequired,
 };
 
@@ -407,10 +558,9 @@ class SettingsDesignPage extends Component {
         this.setState({ isDialogOpened: false });
     }
 
-    handleSnackbarClose = (event, reason) => {
-        if (reason === 'clickaway') {
+    handleSnackbarClose = (e, reason) => {
+        if (reason === 'clickaway')
             return;
-        }
 
         this.setState({ isShowingSnackbar: false });
     }
@@ -560,7 +710,8 @@ class SettingsDesignPage extends Component {
                                 <Tooltip title={window.getLanguageFile().internalPages.settings.sections.design.controls.accentColor.controls.reset}>
                                     <IconButton size="small" style={{ marginRight: 5 }}
                                         onClick={() => {
-                                            this.setState({ tabAccentColor: '#0a84ff' }); window.setTabAccentColor('#0a84ff');
+                                            this.setState({ tabAccentColor: '#0a84ff' });
+                                            window.setTabAccentColor('#0a84ff');
                                         }}
                                     >
                                         <RestoreIcon />
@@ -674,10 +825,9 @@ class SettingsAdBlockPage extends Component {
         this.setState({ isDialogOpened: false });
     }
 
-    handleSnackbarClose = (event, reason) => {
-        if (reason === 'clickaway') {
+    handleSnackbarClose = (e, reason) => {
+        if (reason === 'clickaway')
             return;
-        }
 
         this.setState({ isShowingSnackbar: false });
     }
@@ -686,7 +836,7 @@ class SettingsAdBlockPage extends Component {
         const { classes } = this.props;
 
         return (
-            <NavigationBar title="設定" buttons={[<Button color="inherit" onClick={() => { window.openInEditor(); }}>テキストエディタで開く</Button>]}>
+            <NavigationBar title={window.getLanguageFile().internalPages.settings.title} buttons={[<Button color="inherit" onClick={() => { window.openInEditor(); }}>テキストエディタで開く</Button>]}>
                 <Container fixed className={classes.containerRoot}>
                     <Paper className={classes.paperRoot}>
                         <Grid container spacing={2}>
@@ -789,17 +939,6 @@ class SettingsHomePage extends Component {
             homePageBackgroundType: window.getHomePageBackgroundType()
         });
 
-        /*
-        document.getElementById('imageUpload').addEventListener('change', (e) => {
-            let file = e.target.files[0];
-            let reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = () => {
-                window.setHomePageImageData(reader.result);
-            }
-        }, false);
-        */
-
         document.title = window.getLanguage() === 'ja' ? `ホームページ - 設定` : `Home Page - Settings`;
     }
 
@@ -807,10 +946,9 @@ class SettingsHomePage extends Component {
         this.setState({ isDialogOpened: false });
     }
 
-    handleSnackbarClose = (event, reason) => {
-        if (reason === 'clickaway') {
+    handleSnackbarClose = (e, reason) => {
+        if (reason === 'clickaway')
             return;
-        }
 
         this.setState({ isShowingSnackbar: false });
     }
@@ -818,23 +956,6 @@ class SettingsHomePage extends Component {
     handleChangeFile = (e) => {
         let file = e.target.files[0];
         window.copyHomePageBackgroundImage(file.path);
-        /*
-        let reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = () => {
-            const dataURI = reader.result;
-            let contents = [];
-
-            let byteString = atob(dataURI.split(",")[1]);
-            let mimeType = dataURI.match(/(:)([a-z\/]+)(;)/)[2];
-
-            for (let i = 0, l = byteString.length, contents = new Uint8Array(l); l > i; i++)
-                contents[i] = byteString.charCodeAt(i);
-
-            let blob = window.URL.createObjectURL(new Blob([contents], { type: mimeType }));
-            window.setHomePageImageData(blob);
-        }
-        */
     }
 
     render() {
@@ -1033,7 +1154,7 @@ class SettingsStartUpPage extends Component {
         const { classes } = this.props;
 
         return (
-            <NavigationBar title="設定" buttons={[<Button color="inherit" onClick={() => { window.openInEditor(); }}>テキストエディタで開く</Button>]}>
+            <NavigationBar title={window.getLanguageFile().internalPages.settings.title} buttons={[<Button color="inherit" onClick={() => { window.openInEditor(); }}>テキストエディタで開く</Button>]}>
                 <Container fixed className={classes.containerRoot}>
                     <Paper className={classes.paperRoot}>
                         <Grid container spacing={2}>
@@ -1169,7 +1290,7 @@ class SettingsSearchEnginePage extends Component {
         const { classes } = this.props;
 
         return (
-            <NavigationBar title="設定" buttons={[<Button color="inherit" onClick={() => { window.openInEditor(); }}>テキストエディタで開く</Button>]}>
+            <NavigationBar title={window.getLanguageFile().internalPages.settings.title} buttons={[<Button color="inherit" onClick={() => { window.openInEditor(); }}>テキストエディタで開く</Button>]}>
                 <Container fixed className={classes.containerRoot}>
                     <Paper className={classes.paperRoot}>
                         <Grid container spacing={2}>
@@ -1273,7 +1394,7 @@ class SettingsPageSettingsPage extends Component {
         const { classes } = this.props;
 
         return (
-            <NavigationBar title="設定" buttons={[<Button color="inherit" onClick={() => { window.openInEditor(); }}>テキストエディタで開く</Button>]}>
+            <NavigationBar title={window.getLanguageFile().internalPages.settings.title} buttons={[<Button color="inherit" onClick={() => { window.openInEditor(); }}>テキストエディタで開く</Button>]}>
                 <Container fixed className={classes.containerRoot}>
                     <Paper className={classes.paperRoot}>
                         <Grid container spacing={2}>
@@ -1595,7 +1716,7 @@ class SettingsAboutPage extends Component {
         const { classes } = this.props;
 
         return (
-            <NavigationBar title="設定" buttons={[<Button color="inherit" onClick={() => { window.openInEditor(); }}>テキストエディタで開く</Button>]}>
+            <NavigationBar title={window.getLanguageFile().internalPages.settings.title} buttons={[<Button color="inherit" onClick={() => { window.openInEditor(); }}>テキストエディタで開く</Button>]}>
                 <Container fixed className={classes.containerRoot}>
                     <Paper className={classes.paperRoot}>
                         <Grid container spacing={2}>
@@ -1733,6 +1854,7 @@ render(
         <BrowserRouter>
             <div>
                 <Route exact path='/' component={Page} />
+                <Route path='/sync' component={withStyles(styles)(SettingsSyncPage)} />
                 <Route path='/design' component={withStyles(styles)(SettingsDesignPage)} />
                 <Route path='/adBlock' component={withStyles(styles)(SettingsAdBlockPage)} />
                 <Route path='/homePage' component={withStyles(styles)(SettingsHomePage)} />

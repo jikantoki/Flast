@@ -55,21 +55,7 @@ const runAdblockService = async (ses) => {
 };
 
 const stopAdblockService = (ses) => {
-	if (!ses.webRequest.removeListener) return;
-
-	if (ses.beforeRequestId) {
-		ses.webRequest.removeListener('onBeforeRequest', ses.beforeRequestId);
-		ses.beforeRequestId = null;
-	}
-
-	if (ses.headersReceivedId) {
-		ses.webRequest.removeListener('onHeadersReceived', ses.headersReceivedId);
-		ses.headersReceivedId = null;
-	}
-
-	ses.setPreloads(ses.getPreloads().filter((p) => p !== PRELOAD_PATH));
-
-	adblockRunning = false;
+	engine.disableBlockingInSession(ses);
 };
 
 const isDisabled = (url) => {

@@ -88,7 +88,7 @@ module.exports = class MainWindow extends BrowserWindow {
         urls.map((url, i) => urlStrings += `${encodeURIComponent(url)}($|$)`);
 
         const startUrl = process.env.ELECTRON_START_URL || format({
-            pathname: path.join(__dirname, '/../../build/index.html'), // 警告：このファイルを移動する場合ここの相対パスの指定に注意してください
+            pathname: path.join(__dirname, '/../../build/index.html'),
             protocol: 'file:',
             slashes: true,
             hash: `/window/${this.windowId}/${urlStrings.substring(0, urlStrings.length - 5)}`,
@@ -1904,9 +1904,7 @@ module.exports = class MainWindow extends BrowserWindow {
                         accelerator: 'Ctrl+H',
                         click: () => {
                             if (this.getBrowserViews()[0] == undefined) return;
-                            const view = this.getBrowserViews()[0];
-
-                            view.webContents.loadURL(`${protocolStr}://history/`);
+                            this.addTabOrLoadUrl(this.getBrowserViews()[0], `${protocolStr}://history/`, true);
                         }
                     },
                     {
@@ -1914,9 +1912,7 @@ module.exports = class MainWindow extends BrowserWindow {
                         accelerator: 'Ctrl+D',
                         click: () => {
                             if (this.getBrowserViews()[0] == undefined) return;
-                            const view = this.getBrowserViews()[0];
-
-                            view.webContents.loadURL(`${protocolStr}://downloads/`);
+                            this.addTabOrLoadUrl(this.getBrowserViews()[0], `${protocolStr}://downloads/`, true);
                         }
                     },
                     {
@@ -1924,14 +1920,25 @@ module.exports = class MainWindow extends BrowserWindow {
                         accelerator: 'Ctrl+B',
                         click: () => {
                             if (this.getBrowserViews()[0] == undefined) return;
-                            const view = this.getBrowserViews()[0];
-
-                            view.webContents.loadURL(`${protocolStr}://bookmarks/`);
+                            this.addTabOrLoadUrl(this.getBrowserViews()[0], `${protocolStr}://bookmarks/`, true);
                         }
                     }
                 ]
             },
         ]);
+    }
+
+    addTabOrLoadUrl = (view, url, isInternal = false) => {
+        if (isInternal) {
+            const u = parse(url);
+
+            if (u.protocol === `${protocolStr}:`)
+                view.webContents.loadURL(url);
+            else
+                this.addView(url, true);
+        } else {
+            this.addView(url, true);
+        }
     }
 
     getThemeType = () => {
@@ -1958,12 +1965,12 @@ module.exports = class MainWindow extends BrowserWindow {
     loadSessionAndProtocolWithPrivateMode = (windowId) => {
         const ses = session.fromPartition(windowId);
         ses.setUserAgent(ses.getUserAgent().replace(/ Electron\/[0-9\.]*/g, '') + ' PrivMode');
-    
+
         ses.protocol.isProtocolHandled(fileProtocolStr).then((handled) => {
             if (!handled) {
                 ses.protocol.registerFileProtocol(protocolStr, (request, callback) => {
                     const parsed = parse(request.url);
-    
+
                     return callback({
                         path: path.join(app.getAppPath(), 'pages', parsed.pathname === '/' || !parsed.pathname.match(/(.*)\.([A-z0-9])\w+/g) ? `${parsed.hostname}.html` : `${parsed.hostname}${parsed.pathname}`),
                     });
@@ -1972,12 +1979,12 @@ module.exports = class MainWindow extends BrowserWindow {
                 });
             }
         });
-    
+
         ses.protocol.isProtocolHandled(fileProtocolStr).then((handled) => {
             if (!handled) {
                 ses.protocol.registerFileProtocol(fileProtocolStr, (request, callback) => {
                     const parsed = parse(request.url);
-    
+
                     return callback({
                         path: path.join(app.getPath('userData'), 'Files', 'Users', parsed.pathname),
                     });
