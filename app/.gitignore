@@ -1,6 +1,9 @@
-electron/Config.js
 node_modules/
-pages/static/Historys.js
-pages/static/Downloads.js
-pages/static/Bookmarks.js
-pages/static/Settings.js
+electron/Config.js
+build/static/
+pages/resources/Home.js
+pages/resources/Bookmarks.js
+pages/resources/History.js
+pages/resources/Downloads.js
+pages/resources/Settings.js
+pages/resources/ErrorPage.js
