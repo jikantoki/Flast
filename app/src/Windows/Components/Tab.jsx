@@ -1,8 +1,18 @@
 import styled from 'styled-components';
 import TabButton from './TabButton';
 
+const { remote, ipcRenderer, shell } = window.require('electron');
+const { app, systemPreferences, Menu, MenuItem, dialog, nativeTheme } = remote;
+
+const path = window.require('path');
+
 const Config = window.require('electron-store');
 const config = new Config();
+const userConfig = new Config({
+  cwd: path.join(app.getPath('userData'), 'Users', config.get('currentUser'))
+});
+
+const lang = window.require(`${app.getAppPath()}/langs/${userConfig.get('language') != undefined ? userConfig.get('language') : 'ja'}.js`);
 
 const buttonSize = 18;
 const paddingSize = 8;
@@ -21,7 +31,7 @@ export const Tab = styled.div`
   padding: 6px ${paddingSize}px;
   position: relative;
   background-color: ${props => props.isActive ? (!props.isDarkModeOrPrivateMode ? '#f9f9fa' : '#353535') : 'initial'};
-  border-top: ${props => props.isActive ? `solid 2px ${props.accentColor !== undefined ? props.accentColor : config.get('design.tabAccentColor')}` : 'solid 2px transparent'};
+  border-top: ${props => `solid ${props.isMaximized ? 3 : 2}px ${props.isActive ? props.accentColor !== undefined ? props.accentColor : userConfig.get('design.tabAccentColor') : 'transparent'}`};
   border-right: solid 0.5px #8b8b8b;
   color: ${props => props.isActive ? (!props.isDarkModeOrPrivateMode ? 'black' : 'white') : props.inActiveColor};
   font-size: 11px;
@@ -33,7 +43,7 @@ export const Tab = styled.div`
   -webkit-app-region: no-drag;
   &:hover {
     background-color: ${props => !props.isActive ? 'rgba(196, 196, 196, 0.4)' : (!props.isDarkModeOrPrivateMode ? '#f9f9fa' : '#353535')};
-    border-top: ${props => props.isActive ? `solid 2px ${props.accentColor !== undefined ? props.accentColor : config.get('design.tabAccentColor')}` : 'solid 2px solid 2px rgba(130, 130, 130, 0.6)'};
+    border-top: ${props => `solid ${props.isMaximized ? 3 : 2}px ${props.isActive ? props.accentColor !== undefined ? props.accentColor : userConfig.get('design.tabAccentColor') : 'rgba(130, 130, 130, 0.6)'}`};
   }
   &:active {
     background-color: ${props => !props.isActive ? 'rgba(130, 130, 130, 0.6)' : (!props.isDarkModeOrPrivateMode ? '#f9f9fa' : '#353535')};

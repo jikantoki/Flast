@@ -20,31 +20,35 @@ const protocolStr = 'flast';
 const fileProtocolStr = `${protocolStr}-file`;
 
 const { download } = require('electron-dl');
+const fetch = require('node-fetch');
 const platform = require('electron-platform');
 const localShortcut = require('electron-localshortcut');
+const imageDataURI = require('image-data-uri');
 
 const Config = require('electron-store');
 const config = new Config();
+const userConfig = new Config({
+    cwd: path.join(app.getPath('userData'), 'Users', config.get('currentUser'))
+});
 
 const { isURL, prefixHttp } = require('../URL');
 
-const lang = require(`${app.getAppPath()}/langs/${config.get('language') != undefined ? config.get('language') : 'ja'}.js`);
+const lang = require(`${app.getAppPath()}/langs/${userConfig.get('language') != undefined ? userConfig.get('language') : 'ja'}.js`);
 const { runAdblockService, stopAdblockService } = require('../AdBlocker');
 
 module.exports = class MainWindow extends BrowserWindow {
 
-    constructor(application, isPrivate = false, db, urls = (config.get('startUp.isDefaultHomePage') ? [`${protocolStr}://home/`] : config.get('startUp.defaultPages'))) {
-        const { width, height, x, y } = config.get('window.bounds');
-
-        const winWidth = config.get('window.isMaximized') ? 1110 : (width !== undefined ? width : 1110);
-        const winHeight = config.get('window.isMaximized') ? 680 : (height !== undefined ? height : 680);
+    constructor(application, defaultConfig, isPrivate = false, db, urls = (userConfig.get('startUp.isDefaultHomePage') ? [`${protocolStr}://home/`] : userConfig.get('startUp.defaultPages'))) {
+        const { width, height, x, y } = userConfig.get('window.bounds');
 
         super({
-            width: winWidth, height: winHeight, minWidth: 500, minHeight: 360, x, y,
+            width: userConfig.get('window.isMaximized') ? 1110 : (width !== undefined ? width : 1110),
+            height: userConfig.get('window.isMaximized') ? 680 : (height !== undefined ? height : 680),
+            minWidth: 500, minHeight: 360, x, y,
             titleBarStyle: 'hiddenInset',
-            frame: !config.get('design.isCustomTitlebar'),
+            frame: !userConfig.get('design.isCustomTitlebar'),
             fullscreenable: true,
-            icon: `${__dirname}/static/app/icon.png`,
+            icon: `${__dirname}/static/app/icon.${platform.isWin32 ? 'ico' : 'png'}`,
             show: false,
             webPreferences: {
                 nodeIntegration: true,
@@ -59,19 +63,19 @@ module.exports = class MainWindow extends BrowserWindow {
 
         this.db = db;
 
-        this.firebase = new Firebase();
+        this.firebase = new Firebase(defaultConfig);
 
         this.views = [];
 
         this.isModuleWindowFocused = false;
-        this.isPreviousFullScreen = false;
+        this.isFullScreenToolbar = false;
         this.isFloatingWindow = false;
 
         this.tabId = 0;
 
         this.windowId = (!isPrivate ? `window-${this.id}` : `private-${this.id}`);
 
-        config.get('window.isMaximized') && this.maximize();
+        userConfig.get('window.isMaximized') && this.maximize();
 
         this.infoWindow = new InfomationWindow(this, this.windowId);
         this.permissionWindow = new PermissionWindow(this, this.windowId);
@@ -83,6 +87,8 @@ module.exports = class MainWindow extends BrowserWindow {
         this.translateWindow = new TranslateWindow(this, this.windowId);
 
         this.setMenu(this.getMainMenu(application, this));
+        this.setMenuBarVisibility(false);
+        this.autoHideMenuBar = true;
 
         let urlStrings = '';
         urls.map((url, i) => urlStrings += `${encodeURIComponent(url)}($|$)`);
@@ -96,9 +102,7 @@ module.exports = class MainWindow extends BrowserWindow {
 
         this.loadURL(startUrl);
 
-        this.once('ready-to-show', () => {
-            this.show();
-        });
+        this.once('ready-to-show', () => this.show());
 
         const id2 = this.id;
         this.on('closed', () => {
@@ -110,8 +114,8 @@ module.exports = class MainWindow extends BrowserWindow {
             application.windows.delete(id2);
         });
         this.on('close', (e) => {
-            config.set('window.isMaximized', this.isMaximized());
-            config.set('window.bounds', this.getBounds());
+            userConfig.set('window.isMaximized', this.isMaximized());
+            userConfig.set('window.bounds', this.getBounds());
         });
 
         this.on('focus', () => {
@@ -162,14 +166,14 @@ module.exports = class MainWindow extends BrowserWindow {
         ses.setPermissionRequestHandler((webContents, permission, callback, details) => {
             const url = parse(webContents.getURL());
             const permName = permission === 'media' ? `${permission}_${details.mediaTypes}` : permission;
-            const configPath = `pageSettings.${permission}${permission === 'media' ? `.${details.mediaTypes}` : ''}`;
+            const userConfigPath = `pageSettings.${permission}${permission === 'media' ? `.${details.mediaTypes}` : ''}`;
 
             db.pageSettings.findOne({ origin: `${url.protocol}//${url.hostname}`, type: permName }, async (err, doc) => {
                 if (doc != undefined) {
                     console.log(doc);
                     return callback(doc.result);
                 } else {
-                    if (config.get(configPath) === null || config.get(configPath) === -1) {
+                    if (userConfig.get(userConfigPath) === null || userConfig.get(userConfigPath) === -1) {
                         const results = await this.permissionWindow.showWindow(permission, webContents.getURL());
                         const result = results[0];
                         const isChecked = true;
@@ -182,9 +186,9 @@ module.exports = class MainWindow extends BrowserWindow {
                             );
                         }
                         callback(result);
-                    } else if (config.get(configPath) === 0) {
+                    } else if (userConfig.get(userConfigPath) === 0) {
                         return callback(false);
-                    } else if (config.get(configPath) === 1) {
+                    } else if (userConfig.get(userConfigPath) === 1) {
                         return callback(true);
                     }
                 }
@@ -238,27 +242,31 @@ module.exports = class MainWindow extends BrowserWindow {
 
         });
 
+        ipcMain.on(`view-focus-${this.id}`, (e, args) => {
+            this.hideWindows();
+            this.resizeWindows();
+        });
+
+
+        ipcMain.on(`window-isFullScreen-toolBar-${id}`, (e, args) => {
+            e.sender.send(`window-isFullScreen-toolBar-${id}`, { result: this.isFullScreenToolbar });
+        });
+
+        ipcMain.on(`window-fullScreen-toolBar-${id}`, (e, args) => {
+            this.isFullScreenToolbar = !this.isFullScreenToolbar;
+            e.sender.send(`window-fullScreen-toolBar-${id}`, { result: this.isFullScreenToolbar });
+        });
+
         ipcMain.on(`window-isFullScreen-${id}`, (e, args) => {
-            e.sender.send(`window-isFullScreen-${id}`, { result: this.isFullScreenUser });
+            e.sender.send(`window-isFullScreen-${id}`, { result: this.isFullScreen() });
         });
 
         ipcMain.on(`window-fullScreen-${id}`, (e, args) => {
-            /*
-            if (this.isMaximized()) {
-                this.isPreviousFullScreen = true;
-                this.unmaximize();
-            }
-            */
-
+            if (this.isFullScreen())
+                this.isFullScreenToolbar = false;
             this.setFullScreen(!this.isFullScreen());
             this.fixBounds();
-
-            /*
-            if (!this.isFullScreen() && this.isPreviousFullScreen) {
-                this.isPreviousFullScreen = false;
-                this.maximize();
-            }
-            */
+            e.sender.send(`window-fullScreen-${id}`, { result: this.isFullScreen() });
         });
 
         ipcMain.on(`window-infoWindow-${id}`, (e, args) => {
@@ -280,12 +288,11 @@ module.exports = class MainWindow extends BrowserWindow {
         ipcMain.on(`window-menuWindow-${id}`, (e, args) => {
             this.hideWindows();
             if (!this.menuWindow.isVisible()) {
-
                 this.views.filter((view, i) => {
                     if (view.view.webContents.id == args.id) {
                         let webContents = this.views[i].view.webContents;
 
-                        this.menuWindow.showWindow(args.url, webContents.getZoomFactor());
+                        this.menuWindow.showWindow(args.url, webContents.zoomFactor);
                     }
                 });
             } else {
@@ -392,12 +399,15 @@ module.exports = class MainWindow extends BrowserWindow {
                 if (view.view.webContents.id == args.id) {
                     let webContents = this.views[i].view.webContents;
 
-                    webContents.loadURL(config.get('homePage.homeButton.isDefaultHomePage') ? `${protocolStr}://home/` : config.get('homePage.homeButton.defaultPage'));
+                    webContents.loadURL(userConfig.get('homePage.homeButton.isDefaultHomePage') ? `${protocolStr}://home/` : userConfig.get('homePage.homeButton.defaultPage'));
                 }
             });
         });
 
         ipcMain.on(`browserView-loadURL-${id}`, (e, args) => {
+            const url = String(args.url);
+            const pattern = /^(file:\/\/\S.*)\S*$/;
+
             this.infoWindow.hide();
             this.suggestWindow.hide();
 
@@ -405,7 +415,7 @@ module.exports = class MainWindow extends BrowserWindow {
                 if (view.view.webContents.id == args.id) {
                     let webContents = this.views[i].view.webContents;
 
-                    webContents.loadURL(args.url);
+                    !pattern.test(url) ? webContents.loadURL(url) : webContents.loadFile(url.replace(/^(file:\/\/\/?)/, ''));
                 }
             });
         });
@@ -423,22 +433,19 @@ module.exports = class MainWindow extends BrowserWindow {
         });
 
         ipcMain.on(`browserView-zoom-${id}`, (e, args) => {
-            this.views.filter((view, i) => {
-                if (view.view.webContents.id == args.id) {
-                    let webContents = this.views[i].view.webContents;
-                    e.sender.send(`browserView-zoom-${id}`, { result: webContents.getZoomFactor() });
-                }
-            });
+            this.getZoom(args.id);
         });
 
         ipcMain.on(`browserView-zoomIn-${id}`, (e, args) => {
             this.views.filter((view, i) => {
                 if (view.view.webContents.id == args.id) {
                     let webContents = this.views[i].view.webContents;
-                    console.log(webContents.getZoomFactor());
-                    webContents.setZoomFactor(webContents.getZoomFactor() + 0.1);
 
+                    if (webContents.zoomFactor > 4.9) return;
+
+                    webContents.zoomFactor = webContents.zoomFactor + 0.1;
                     this.getZoom(args.id);
+                    this.webContents.send(`menuWindow-${this.windowId}`, { url: webContents.getURL(), zoomSize: webContents.zoomFactor });
                 }
             });
         });
@@ -447,10 +454,12 @@ module.exports = class MainWindow extends BrowserWindow {
             this.views.filter((view, i) => {
                 if (view.view.webContents.id == args.id) {
                     let webContents = this.views[i].view.webContents;
-                    console.log(webContents.getZoomFactor());
-                    webContents.setZoomFactor(webContents.getZoomFactor() - 0.1);
 
+                    if (webContents.zoomFactor < 0.2) return;
+
+                    webContents.zoomFactor = webContents.zoomFactor - 0.1;
                     this.getZoom(args.id);
+                    this.webContents.send(`menuWindow-${this.windowId}`, { url: webContents.getURL(), zoomSize: webContents.zoomFactor });
                 }
             });
         });
@@ -459,9 +468,10 @@ module.exports = class MainWindow extends BrowserWindow {
             this.views.filter((view, i) => {
                 if (view.view.webContents.id == args.id) {
                     let webContents = this.views[i].view.webContents;
-                    webContents.setZoomFactor(config.get('pageSettings.defaultZoomSize'));
 
+                    webContents.zoomFactor = userConfig.get('pageSettings.defaultZoomSize');
                     this.getZoom(args.id);
+                    this.webContents.send(`menuWindow-${this.windowId}`, { url: webContents.getURL(), zoomSize: webContents.zoomFactor });
                 }
             });
         });
@@ -549,48 +559,44 @@ module.exports = class MainWindow extends BrowserWindow {
 
             this.focus();
 
-            this.views.filter((view, i) => {
-                if (view.view.webContents.id == args.id) {
-                    let webContents = this.views[i].view.webContents;
+            this.views.filter((item, i) => {
+                if (item.view.webContents.id == args.id) {
+                    let webContents = item.view.webContents;
                     webContents.loadFile(args.url);
                 }
             });
         });
 
         ipcMain.on(`data-bookmark-add-${id}`, (e, args) => {
-            this.views.filter((view, i) => {
-                if (view.view.webContents.id == args.id) {
-                    let v = this.views[i].view;
-                    this.firebase.addBookmark(v.webContents.getTitle(), v.webContents.getURL(), args.isPrivate);
-                    // this.db.bookmarks.insert({ title: v.webContents.getTitle(), url: v.webContents.getURL(), isPrivate: args.isPrivate });
-                    this.updateViewState(v);
+            this.views.filter((item, i) => {
+                if (item.view.webContents.id == args.id) {
+                    const view = item.view;
+
+                    this.getFavicon(view.webContents.getURL()).then((favicon) => this.firebase.addBookmark(view.webContents.getTitle(), view.webContents.getURL(), favicon, args.isFolder, args.isPrivate));
+                    this.updateViewState(view);
                 }
             });
         });
 
         ipcMain.on(`data-bookmark-remove-${id}`, (e, args) => {
-            this.views.filter((view, i) => {
-                if (view.view.webContents.id == args.id) {
-                    let v = this.views[i].view;
-                    this.firebase.removeBookmark(v.webContents.getURL(), args.isPrivate);
-                    // this.db.bookmarks.remove({ url: v.webContents.getURL(), isPrivate: args.isPrivate }, {});
-                    this.updateViewState(v);
+            this.views.filter((item, i) => {
+                if (item.view.webContents.id == args.id) {
+                    const view = item.view;
+
+                    this.firebase.removeBookmark(view.webContents.getURL(), args.isPrivate);
+                    this.updateViewState(view);
                 }
             });
         });
 
         ipcMain.on(`data-bookmark-has-${id}`, (e, args) => {
-            this.views[id].filter((view, i) => {
-                if (view.view.webContents.id == args.id) {
-                    let v = this.views[i].view;
+            this.views.filter((item, i) => {
+                if (item.view.webContents.id == args.id) {
+                    let view = item.view;
 
-                    this.firebase.isBookmarked(v.webContents.getURL(), args.isPrivate).then((result) => {
-                        e.sender.send(`data-bookmark-has-${id}`, { isBookmarked: result });
-                    });
+                    this.firebase.isBookmarked(view.webContents.getURL(), args.isPrivate).then((result) => e.sender.send(`data-bookmark-has-${id}`, { isBookmarked: result }));
                     /*
-                    this.db.bookmarks.find({ url: v.webContents.getURL(), isPrivate: args.isPrivate }, (err, docs) => {
-                        e.sender.send(`data-bookmark-has-${id}`, { isBookmarked: (docs.length > 0 ? true : false) });
-                    });
+                    this.db.bookmarks.find({ url: view.webContents.getURL(), isPrivate: args.isPrivate }, (err, docs) => e.sender.send(`data-bookmark-has-${id}`, { isBookmarked: (docs.length > 0 ? true : false) }));
                     */
                 }
             });
@@ -599,7 +605,7 @@ module.exports = class MainWindow extends BrowserWindow {
 
     getFavicon = (url) => {
         return new Promise((resolve, reject) => {
-            this.db.favicons.findOne({ url: url }, async (err, doc) => {
+            this.db.favicons.findOne({ url }, async (err, doc) => {
                 const parsed = parse(url);
                 resolve(url.startsWith(`${protocolStr}://`) || url.startsWith(`${fileProtocolStr}://`) ? undefined : (doc != undefined ? doc.favicon : `https://www.google.com/s2/favicons?domain=${parsed.protocol}//${parsed.hostname}`));
             });
@@ -608,12 +614,23 @@ module.exports = class MainWindow extends BrowserWindow {
 
     getZoom = (id) => {
         if (this.isDestroyed()) return;
-        this.views.filter((view, i) => {
-            if (view.view.webContents.id == id) {
-                let webContents = this.views[i].view.webContents;
-                this.webContents.send(`browserView-zoom-${this.windowId}`, { result: webContents.getZoomFactor() });
+        this.views.filter((item, i) => {
+            if (item.view.webContents.id == id) {
+                if (item.view.isDestroyed()) return;
+                let webContents = item.view.webContents;
+
+                console.log(webContents.zoomFactor);
+                this.webContents.send(`browserView-zoom-${this.windowId}`, { result: webContents.zoomFactor });
+                this.webContents.send(`browserView-zoom-menu-${this.windowId}`, { result: webContents.zoomFactor });
             }
         });
+    }
+
+    getSearchEngine = () => {
+        for (var i = 0; i < userConfig.get('searchEngine.searchEngines').length; i++)
+            if (userConfig.get('searchEngine.searchEngines')[i].name === userConfig.get('searchEngine.defaultEngine'))
+                return userConfig.get('searchEngine.searchEngines')[i];
+        return userConfig.get('searchEngine.searchEngines')[0];
     }
 
     updateNavigationState = (view) => {
@@ -634,15 +651,11 @@ module.exports = class MainWindow extends BrowserWindow {
 
         if (url.startsWith(`${protocolStr}://error`)) return;
         this.firebase.isBookmarked(view.webContents.getURL(), String(this.windowId).startsWith('private')).then((result) => {
-            this.getFavicon(url).then((favicon) => {
-                this.webContents.send(`browserView-load-${this.windowId}`, { id: view.webContents.id, title: view.webContents.getTitle(), url: url, icon: favicon, color: config.get('design.tabAccentColor'), isAudioPlaying: !view.webContents.isCurrentlyAudible(), isBookmarked: result });
-            });
+            this.getFavicon(url).then((favicon) => this.webContents.send(`browserView-load-${this.windowId}`, { id: view.webContents.id, title: view.webContents.getTitle(), url: url, icon: favicon, color: userConfig.get('design.tabAccentColor'), isAudioPlaying: !view.webContents.isCurrentlyAudible(), isBookmarked: result }));
         });
         /*
         this.db.bookmarks.find({ url: view.webContents.getURL(), isPrivate: (String(this.windowId).startsWith('private')) }, (err, docs) => {
-            this.getFavicon(url).then((favicon) => {
-                this.webContents.send(`browserView-load-${this.windowId}`, { id: view.webContents.id, title: view.webContents.getTitle(), url: url, icon: favicon, color: config.get('design.tabAccentColor'), isAudioPlaying: !view.webContents.isCurrentlyAudible(), isBookmarked: (docs.length > 0 ? true : false) });
-            });
+            this.getFavicon(url).then((favicon) => this.webContents.send(`browserView-load-${this.windowId}`, { id: view.webContents.id, title: view.webContents.getTitle(), url: url, icon: favicon, color: userConfig.get('design.tabAccentColor'), isAudioPlaying: !view.webContents.isCurrentlyAudible(), isBookmarked: (docs.length > 0 ? true : false) }));
         });
         */
     }
@@ -659,7 +672,7 @@ module.exports = class MainWindow extends BrowserWindow {
                             }
                         } 
                     })()`, false, async (result) => {
-                    resolve(result !== null ? result : config.get('design.tabAccentColor'));
+                    resolve(result !== null ? result : userConfig.get('design.tabAccentColor'));
                 });
             } else {
                 reject(new Error('WebContents are not available'));
@@ -700,18 +713,20 @@ module.exports = class MainWindow extends BrowserWindow {
             this.setVisibleOnAllWorkspaces(false);
 
             if (this.isFullScreen()) {
+                const toolBarHeight = 40;
+
                 view.setBounds({
                     x: 0,
-                    y: 0,
+                    y: this.isFullScreenToolbar ? toolBarHeight : 0,
                     width: width,
-                    height: height,
+                    height: this.isFullScreenToolbar ? height - toolBarHeight : height,
                 });
             } else {
                 view.setBounds({
-                    x: this.isMaximized() ? 0 : config.get('design.isCustomTitlebar') ? 1 : 0,
-                    y: this.isMaximized() ? this.getHeight(true, height) : config.get('design.isCustomTitlebar') ? this.getHeight(true, height) + 1 : this.getHeight(true, height),
-                    width: this.isMaximized() ? width : config.get('design.isCustomTitlebar') ? width - 2 : width,
-                    height: this.isMaximized() ? this.getHeight(false, height) : (config.get('design.isCustomTitlebar') ? (this.getHeight(false, height)) - 2 : this.getHeight(false, height)),
+                    x: this.isMaximized() ? 1 : userConfig.get('design.isCustomTitlebar') ? 1 : 0,
+                    y: this.isMaximized() ? this.getHeight(true, height) : userConfig.get('design.isCustomTitlebar') ? this.getHeight(true, height) + 1 : this.getHeight(true, height),
+                    width: this.isMaximized() ? width - 2 : userConfig.get('design.isCustomTitlebar') ? width - 2 : width,
+                    height: this.isMaximized() ? this.getHeight(false, height) : (userConfig.get('design.isCustomTitlebar') ? (this.getHeight(false, height)) - 2 : this.getHeight(false, height)),
                 });
             }
         }
@@ -725,25 +740,22 @@ module.exports = class MainWindow extends BrowserWindow {
         const baseBarHeight = titleBarHeight + toolBarHeight;
         const bookMarkBarHeight = 28;
 
-        return b ? (config.get('design.isBookmarkBar') ? (baseBarHeight + bookMarkBarHeight) : baseBarHeight) : (height - (config.get('design.isBookmarkBar') ? (baseBarHeight + bookMarkBarHeight) : baseBarHeight));
+        return b ? (userConfig.get('design.isBookmarkBar') ? (baseBarHeight + bookMarkBarHeight) : baseBarHeight) : (height - (userConfig.get('design.isBookmarkBar') ? (baseBarHeight + bookMarkBarHeight) : baseBarHeight));
     }
 
     getDomain = (url) => {
         let hostname = url;
 
-        if (hostname.indexOf('http://') !== -1 || hostname.indexOf('https://') !== -1) {
+        if (hostname.indexOf('http://') !== -1 || hostname.indexOf('https://') !== -1)
             hostname = hostname.split('://')[1];
-        }
 
-        if (hostname.indexOf('?') !== -1) {
+        if (hostname.indexOf('?') !== -1)
             hostname = hostname.split('?')[0];
-        }
 
-        if (hostname.indexOf('://') !== -1) {
+        if (hostname.indexOf('://') !== -1)
             hostname = `${hostname.split('://')[0]}://${hostname.split('/')[2]}`;
-        } else {
+        else
             hostname = hostname.split('/')[0];
-        }
 
         return hostname;
     }
@@ -769,6 +781,8 @@ module.exports = class MainWindow extends BrowserWindow {
                     let certificate = res.connection.getPeerCertificate();
                     if (certificate.subject == null) return;
 
+                    console.log(certificate);
+
                     const data = {
                         type: 'Secure',
                         title: certificate.subject.O,
@@ -784,7 +798,7 @@ module.exports = class MainWindow extends BrowserWindow {
         });
     }
 
-    addView = (url = config.get('homePage.newTab.defaultPage'), isActive = true) => {
+    addView = (url = userConfig.get('homePage.newTab.defaultPage'), isActive = true) => {
         if (String(this.windowId).startsWith('private'))
             this.loadSessionAndProtocolWithPrivateMode(this.windowId);
 
@@ -868,7 +882,7 @@ module.exports = class MainWindow extends BrowserWindow {
                 const url = item.view.webContents.getURL();
 
                 this.getFavicon(url).then(favicon => {
-                    const view = { id: item.view.webContents.id, title: item.view.webContents.getTitle(), url, icon: favicon, color: config.get('design.tabAccentColor'), isAudioStatus: !item.view.webContents.audioMuted ? (item.view.webContents.isCurrentlyAudible() ? 1 : 0) : -1, isFixed: item.isFixed, isBookmarked: false };
+                    const view = { id: item.view.webContents.id, title: item.view.webContents.getTitle(), url, icon: favicon, color: userConfig.get('design.tabAccentColor'), isAudioStatus: !item.view.webContents.audioMuted ? (item.view.webContents.isCurrentlyAudible() ? 1 : 0) : -1, isFixed: item.isFixed, isBookmarked: false };
                     this.webContents.send(`tab-get-${this.windowId}`, { id, view });
                 });
             }
@@ -881,7 +895,7 @@ module.exports = class MainWindow extends BrowserWindow {
         this.views.map((item) => {
             const url = item.view.webContents.getURL();
 
-            datas.push({ id: item.view.webContents.id, title: item.view.webContents.getTitle(), url, icon: undefined, color: config.get('design.tabAccentColor'), isAudioStatus: !item.view.webContents.audioMuted ? (item.view.webContents.isCurrentlyAudible() ? 1 : 0) : -1, isFixed: item.isFixed, isBookmarked: false });
+            datas.push({ id: item.view.webContents.id, title: item.view.webContents.getTitle(), url, icon: undefined, color: userConfig.get('design.tabAccentColor'), isAudioStatus: !item.view.webContents.audioMuted ? (item.view.webContents.isCurrentlyAudible() ? 1 : 0) : -1, isFixed: item.isFixed, isBookmarked: false });
         });
 
         this.webContents.send(`tab-get-${this.windowId}`, { views: datas });
@@ -891,13 +905,13 @@ module.exports = class MainWindow extends BrowserWindow {
             const url = item.view.webContents.getURL();
 
             this.getFavicon(url).then(favicon => {
-                const view = { id: item.view.webContents.id, title: item.view.webContents.getTitle(), url, icon: favicon, color: config.get('design.tabAccentColor'), isAudioStatus: !item.view.webContents.audioMuted ? (item.view.webContents.isCurrentlyAudible() ? 1 : 0) : -1, isFixed: item.isFixed, isBookmarked: false };
+                const view = { id: item.view.webContents.id, title: item.view.webContents.getTitle(), url, icon: favicon, color: userConfig.get('design.tabAccentColor'), isAudioStatus: !item.view.webContents.audioMuted ? (item.view.webContents.isCurrentlyAudible() ? 1 : 0) : -1, isFixed: item.isFixed, isBookmarked: false };
                 this.webContents.send(`tab-get-${this.windowId}`, { id: item.view.webContents.id, view });
             });
         });
     }
 
-    addTab = (url = config.get('homePage.newTab.defaultPage'), isActive = true) => {
+    addTab = (url = userConfig.get('homePage.newTab.defaultPage'), isActive = true) => {
         const view = new BrowserView({
             webPreferences: {
                 nodeIntegration: false,
@@ -914,11 +928,12 @@ module.exports = class MainWindow extends BrowserWindow {
         view.webContents.setVisualZoomLevelLimits(1, 3);
 
         const id = view.webContents.id;
+        this.tabId = id;
 
         const executeJs = this.getRandString(12);
         let viewId = '';
 
-        if (config.get('adBlock.isAdBlock'))
+        if (userConfig.get('adBlock.isAdBlock'))
             runAdblockService(view.webContents.session);
         else
             stopAdblockService(view.webContents.session);
@@ -937,16 +952,19 @@ module.exports = class MainWindow extends BrowserWindow {
         view.webContents.on('did-start-navigation', async (e, url, isInPlace, isMainFrame, processId, routingId) => {
             if (view.isDestroyed()) return;
 
+            this.updateViewState(view);
+            this.updateNavigationState(view);
+
             if (isMainFrame) {
                 this.infoWindow.hide();
                 this.permissionWindow.hide();
                 this.suggestWindow.hide();
 
-                if (url.startsWith('https://twitter.com') && !config.get('pageSettings.pages.twitter.oldDesignIgnore')) {
-                    const b = config.get('pageSettings.pages.twitter.oldDesign');
+                if (url.startsWith('https://twitter.com') && !userConfig.get('pageSettings.pages.twitter.oldDesignIgnore')) {
+                    const b = userConfig.get('pageSettings.pages.twitter.oldDesign');
                     const result = await this.infoWindow.showWindow('Twitter', 'Twitter の旧デザインが利用できます。\n今すぐ変更しますか？', 'https://twitter.com/', true);
-                    config.set('pageSettings.pages.twitter.oldDesign', result);
-                    config.set('pageSettings.pages.twitter.oldDesignIgnore', true);
+                    userConfig.set('pageSettings.pages.twitter.oldDesign', result);
+                    userConfig.set('pageSettings.pages.twitter.oldDesignIgnore', true);
 
                     if (result != b) {
                         view.webContents.session.clearStorageData({
@@ -962,15 +980,13 @@ module.exports = class MainWindow extends BrowserWindow {
                     this.infoWindow.hide();
                 }
             }
-
-            this.updateNavigationState(view);
         });
 
         const filter = {
             urls: ['https://twitter.com/*']
         }
         view.webContents.session.webRequest.onBeforeSendHeaders(filter, (details, callback) => {
-            if (!config.get('pageSettings.pages.twitter.oldDesign')) return callback({ requestHaders: details.requestHeaders });
+            if (!userConfig.get('pageSettings.pages.twitter.oldDesign')) return callback(details);
 
             details.requestHeaders['User-Agent'] = 'Internet Explorer 11 (Mozilla/5.0 (Windows NT 9.0; WOW64; Trident/7.0; rv:11.0) like Gecko)';
             return callback({ requestHeaders: details.requestHeaders });
@@ -981,9 +997,7 @@ module.exports = class MainWindow extends BrowserWindow {
 
             viewId = this.getRandString(12);
 
-            this.getCertificate(view.webContents.getURL()).then((certificate) => {
-                this.webContents.send(`browserView-certificate-${this.windowId}`, { id, certificate });
-            });
+            this.getCertificate(view.webContents.getURL()).then((certificate) => this.webContents.send(`browserView-certificate-${this.windowId}`, { id, certificate }));
 
             this.setTitle(`${view.webContents.getTitle()} - ${pkg.name}`);
 
@@ -995,7 +1009,6 @@ module.exports = class MainWindow extends BrowserWindow {
         view.webContents.on('did-fail-load', (e, code, description, url, isMainFrame, processId, routingId) => {
             if (view.isDestroyed() || !isMainFrame || code === -3) return;
 
-            // dialog.showMessageBox({ message: `${code}: ${description}` });
             view.webContents.loadURL(`${protocolStr}://error/#${description}/${encodeURIComponent(url)}`);
         });
 
@@ -1003,8 +1016,7 @@ module.exports = class MainWindow extends BrowserWindow {
             if (view.isDestroyed()) return;
 
             if (!String(this.windowId).startsWith('private') && !(view.webContents.getURL().startsWith(`${protocolStr}://`) || view.webContents.getURL().startsWith(`${fileProtocolStr}://`)))
-                this.firebase.addHistory(title, view.webContents.getURL());
-            // this.db.historys.update({ url: view.webContents.getURL() }, { id: viewId, title, url: view.webContents.getURL() }, { upsert: true });
+                this.getFavicon(view.webContents.getURL()).then((favicon) => this.firebase.addHistory(title, view.webContents.getURL(), favicon));
 
             this.setTitle(`${title} - ${pkg.name}`);
 
@@ -1017,9 +1029,11 @@ module.exports = class MainWindow extends BrowserWindow {
             if (view.isDestroyed()) return;
 
             if (!String(this.windowId).startsWith('private') && !(view.webContents.getURL().startsWith(`${protocolStr}://`) || view.webContents.getURL().startsWith(`${fileProtocolStr}://`))) {
-                this.firebase.addHistory(view.webContents.getTitle(), view.webContents.getURL());
-                // this.db.historys.update({ url: view.webContents.getURL() }, { id: viewId, title: view.webContents.getTitle(), url: view.webContents.getURL() }, { upsert: true });
-                this.db.favicons.update({ url: view.webContents.getURL() }, { url: view.webContents.getURL(), favicon: favicons[0] }, { upsert: true });
+                imageDataURI.encodeFromURL(favicons[0])
+                    .then((res) => {
+                        this.db.favicons.update({ url: view.webContents.getURL() }, { url: view.webContents.getURL(), favicon: res }, { upsert: true });
+                        this.firebase.addHistory(view.webContents.getTitle(), view.webContents.getURL(), res);
+                    });
             }
 
             this.setTitle(`${view.webContents.getTitle()} - ${pkg.name}`);
@@ -1033,8 +1047,7 @@ module.exports = class MainWindow extends BrowserWindow {
             if (view.isDestroyed()) return;
 
             if (!String(this.windowId).startsWith('private') && !(view.webContents.getURL().startsWith(`${protocolStr}://`) || view.webContents.getURL().startsWith(`${fileProtocolStr}://`)))
-                this.firebase.addHistory(view.webContents.getTitle(), view.webContents.getURL());
-            // this.db.historys.update({ url: view.webContents.getURL() }, { id: viewId, title: view.webContents.getTitle(), url: view.webContents.getURL() }, { upsert: true });
+                this.getFavicon(view.webContents.getURL()).then((favicon) => this.firebase.addHistory(view.webContents.getTitle(), view.webContents.getURL(), favicon));
 
             this.setTitle(`${view.webContents.getTitle()} - ${pkg.name}`);
 
@@ -1173,11 +1186,11 @@ module.exports = class MainWindow extends BrowserWindow {
                         },
                         {
                             label: lang.window.view.contextMenu.link.newWindow,
-                            click: () => { this.application.addWindow(false, params.linkURL); }
+                            click: () => { this.application.addWindow(false, [params.linkURL]); }
                         },
                         {
                             label: lang.window.view.contextMenu.link.openPrivateWindow,
-                            click: () => { this.application.addWindow(true, params.linkURL); }
+                            click: () => { this.application.addWindow(true, [params.linkURL]); }
                         },
                         { type: 'separator' },
                         {
@@ -1216,10 +1229,7 @@ module.exports = class MainWindow extends BrowserWindow {
                             label: lang.window.view.contextMenu.image.saveImage,
                             enabled: !view.webContents.getURL().startsWith(`${protocolStr}://`),
                             click: () => {
-                                download(this, params.srcURL, {
-                                    directory: app.getPath('downloads'),
-                                    saveAs: true
-                                });
+                                view.webContents.downloadURL(params.srcURL);
                             }
                         },
                         {
@@ -1261,11 +1271,11 @@ module.exports = class MainWindow extends BrowserWindow {
                         },
                         {
                             label: lang.window.view.contextMenu.link.newWindow,
-                            click: () => { this.application.addWindow(false, params.linkURL); }
+                            click: () => { this.application.addWindow(false, [params.linkURL]); }
                         },
                         {
                             label: lang.window.view.contextMenu.link.openPrivateWindow,
-                            click: () => { this.application.addWindow(true, params.linkURL); }
+                            click: () => { this.application.addWindow(true, [params.linkURL]); }
                         },
                         { type: 'separator' },
                         {
@@ -1288,10 +1298,7 @@ module.exports = class MainWindow extends BrowserWindow {
                             label: lang.window.view.contextMenu.image.saveImage,
                             enabled: !view.webContents.getURL().startsWith(`${protocolStr}://`),
                             click: () => {
-                                download(this, params.srcURL, {
-                                    directory: app.getPath('downloads'),
-                                    saveAs: true
-                                });
+                                view.webContents.downloadURL(params.srcURL);
                             }
                         },
                         {
@@ -1381,10 +1388,10 @@ module.exports = class MainWindow extends BrowserWindow {
                         ...(params.editFlags.canCopy ? [
                             { type: 'separator' },
                             {
-                                label: String(lang.window.view.contextMenu.selection.textSearch).replace(/{name}/, 'Google').replace(/{text}/, params.selectionText.replace(/([\n\t])+/g, ' ')),
+                                label: String(lang.window.view.contextMenu.selection.textSearch).replace(/{name}/, this.getSearchEngine().name).replace(/{text}/, params.selectionText.replace(/([\n\t])+/g, ' ')),
                                 visible: params.editFlags.canCopy && !isURL(params.selectionText.replace(/([\n\t])+/g, ' ')),
                                 click: () => {
-                                    this.addView(`https://www.google.co.jp/search?q=${params.selectionText.replace(/([\n\t])+/g, ' ')}`, true);
+                                    this.addView(this.getSearchEngine().url.replace('%s', encodeURIComponent(params.selectionText.replace(/([\n\t])+/g, ' '))), true);
                                 }
                             },
                             {
@@ -1418,10 +1425,10 @@ module.exports = class MainWindow extends BrowserWindow {
                             click: () => { view.webContents.copy(); }
                         },
                         {
-                            label: String(lang.window.view.contextMenu.selection.textSearch).replace(/{name}/, 'Google').replace(/{text}/, params.selectionText.replace(/([\n\t])+/g, ' ')),
+                            label: String(lang.window.view.contextMenu.selection.textSearch).replace(/{name}/, this.getSearchEngine().name).replace(/{text}/, params.selectionText.replace(/([\n\t])+/g, ' ')),
                             visible: !isURL(params.selectionText.replace(/([\n\t])+/g, ' ')),
                             click: () => {
-                                this.addView(`https://www.google.co.jp/search?q=${params.selectionText.replace(/([\n\t])+/g, ' ')}`, true);
+                                this.addView(this.getSearchEngine().url.replace('%s', encodeURIComponent(params.selectionText.replace(/([\n\t])+/g, ' '))), true);
                             }
                         },
                         {
@@ -1448,6 +1455,26 @@ module.exports = class MainWindow extends BrowserWindow {
             } else {
                 menu = Menu.buildFromTemplate(
                     [
+                        ...(this.isFullScreen() ? [
+                            {
+                                label: lang.window.view.contextMenu.fullScreen.fullScreenExit,
+                                icon: `${app.getAppPath()}/static/${this.getThemeType() ? 'dark' : 'light'}/fullscreen_exit.png`,
+                                accelerator: 'F11',
+                                click: () => {
+                                    this.setFullScreen(!this.isFullScreen());
+                                    this.fixBounds();
+                                }
+                            },
+                            {
+                                label: lang.window.view.contextMenu.fullScreen.toolBar,
+                                click: () => {
+                                    this.isFullScreenToolbar = !this.isFullScreenToolbar;
+                                    this.fixBounds();
+                                    this.webContents.send(`window-fullScreen-toolBar-${this.windowId}`, { result: this.isFullScreenToolbar });
+                                }
+                            },
+                            { type: 'separator' },
+                        ] : []),
                         {
                             label: lang.window.view.contextMenu.back,
                             icon: `${app.getAppPath()}/static/${!view.webContents.canGoBack() ? 'arrow_back_inactive' : `${this.getThemeType() ? 'dark' : 'light'}/arrow_back`}.png`,
@@ -1488,7 +1515,7 @@ module.exports = class MainWindow extends BrowserWindow {
                             { type: 'separator' },
                             {
                                 label: view.webContents.audioMuted ? lang.window.view.contextMenu.media.audioMuteExit : lang.window.view.contextMenu.media.audioMute,
-                                icon: `${app.getAppPath()}/static/${this.getThemeType() ? 'dark' : 'light'}/${view.webContents.audioMuted ? 'volume_up' : 'volume_off'}.png`,
+                                icon: `${app.getAppPath()}/static/${this.getThemeType() ? 'dark' : 'light'}/audio${view.webContents.audioMuted ? '' : '_mute'}.png`,
                                 click: () => {
                                     view.webContents.audioMuted = !view.webContents.audioMuted;
 
@@ -1537,6 +1564,22 @@ module.exports = class MainWindow extends BrowserWindow {
                             icon: `${app.getAppPath()}/static/${this.getThemeType() ? 'dark' : 'light'}/translate.png`,
                             enabled: !view.webContents.getURL().startsWith(`${protocolStr}://`),
                             click: () => {
+                                /*
+                                view.webContents.executeJavaScript(
+                                    `(function () {
+                                        fetch('https://script.google.com/macros/s/AKfycbyR_DvrDkeXOBWtA-0Zk8BO8ChnIAnunZrKIE4fpveX2P9IL3L8/exec?text=' + encodeURIComponent(document.body.innerText) + '&target=en&source=', {
+                                            method: 'GET'
+                                        }).then((res) => {
+                                            const json = res.json();
+                                            console.log(json);
+                                            if (!json.result) return;
+
+                                            document.body.innerText = decodeURIComponent(json.targetText);
+                                        });
+                                    })()`
+                                );
+                                */
+
                                 this.hideWindows();
                                 if (!this.translateWindow.isVisible()) {
                                     this.translateWindow.showWindow(view.webContents.getURL());
@@ -1549,7 +1592,7 @@ module.exports = class MainWindow extends BrowserWindow {
                             label: lang.window.view.contextMenu.floatingWindow,
                             type: 'checkbox',
                             checked: this.isFloatingWindow,
-                            enabled: (!this.isFullScreen() && !this.isMaximized() && config.get('design.isCustomTitlebar')),
+                            enabled: (!this.isFullScreen() && !this.isMaximized() && userConfig.get('design.isCustomTitlebar')),
                             click: () => {
                                 this.isFloatingWindow = !this.isFloatingWindow;
                                 this.fixBounds();
@@ -1583,10 +1626,34 @@ module.exports = class MainWindow extends BrowserWindow {
         view.webContents.session.on('will-download', (e, item, webContents) => {
             if (id !== webContents.id) return;
 
+            const str = this.getRandString(12);
             if (item.getMimeType() == 'application/pdf') {
-                item.setSavePath(path.join(app.getPath('userData'), 'Files', 'Users', `${item.getFilename()}.pdf`));
+                item.savePath = path.join(app.getPath('userData'), 'Users', config.get('currentUser'), `${item.getFilename()}.pdf`);
+
+                item.once('done', (e, state) => {
+                    const filePath = item.savePath;
+                    this.db.downloads.update({ id: str }, { id: str, name: item.getFilename(), url: item.getURL(), type: item.getMimeType(), size: item.getTotalBytes(), path: item.getSavePath(), status: item.getState() }, { upsert: true });
+                    if (state === 'completed') {
+                        this.webContents.send(`notification-${this.windowId}`, { id: id, content: `${item.getFilename()} のダウンロードが完了しました。` });
+
+                        if (!Notification.isSupported()) return;
+                        const notify = new Notification({
+                            icon: path.join(app.getAppPath(), 'static', 'app', 'icon.png'),
+                            title: 'ダウンロード完了',
+                            body: `${item.getFilename()} のダウンロードが完了しました。\n詳細はここをクリックしてください。`
+                        });
+
+                        notify.show();
+
+                        notify.on('click', (e) => {
+                            if (filePath !== undefined)
+                                shell.openItem(filePath);
+                        });
+                    } else {
+                        console.log(`Download failed: ${state}`);
+                    }
+                });
             } else {
-                const str = this.getRandString(12);
                 this.db.downloads.update({ id: str }, { id: str, name: item.getFilename(), url: item.getURL(), type: item.getMimeType(), size: item.getTotalBytes(), path: item.getSavePath(), status: item.getState() }, { upsert: true });
 
                 item.on('updated', (e, state) => {
@@ -1594,7 +1661,7 @@ module.exports = class MainWindow extends BrowserWindow {
                 });
 
                 item.once('done', (e, state) => {
-                    const filePath = item.getSavePath();
+                    const filePath = item.savePath;
                     this.db.downloads.update({ id: str }, { id: str, name: item.getFilename(), url: item.getURL(), type: item.getMimeType(), size: item.getTotalBytes(), path: item.getSavePath(), status: item.getState() }, { upsert: true });
                     if (state === 'completed') {
                         this.webContents.send(`notification-${this.windowId}`, { id: id, content: `${item.getFilename()} のダウンロードが完了しました。` });
@@ -1691,19 +1758,15 @@ module.exports = class MainWindow extends BrowserWindow {
                     {
                         accelerator: 'CmdOrCtrl+W',
                         label: 'Close tab',
-                        click() {
-                            this.removeView();
-                        }
+                        click: () => this.removeView()
                     },
                     {
                         accelerator: 'CmdOrCtrl+Shift+W',
                         label: 'Close current window',
-                        click() {
-                            this.close();
-                        }
+                        click: () => this.close()
                     },
                     { type: 'separator' },
-                    { role: 'quit' },
+                    { role: 'quit' }
                 ],
             },
             {
@@ -1895,7 +1958,7 @@ module.exports = class MainWindow extends BrowserWindow {
                             if (this.getBrowserViews()[0] == undefined) return;
                             const view = this.getBrowserViews()[0];
 
-                            view.webContents.loadURL(config.get('homePage.homeButton.isDefaultHomePage') ? `${protocolStr}://home/` : config.get('homePage.homeButton.defaultPage'));
+                            view.webContents.loadURL(userConfig.get('homePage.homeButton.isDefaultHomePage') ? `${protocolStr}://home/` : userConfig.get('homePage.homeButton.defaultPage'));
                         }
                     },
                     { type: 'separator' },
@@ -1925,6 +1988,34 @@ module.exports = class MainWindow extends BrowserWindow {
                     }
                 ]
             },
+            {
+                label: `${lang.main.help.label}(&H)`,
+                accelerator: 'Alt+N',
+                submenu: [
+                    {
+                        label: lang.main.help.help,
+                        accelerator: 'F1',
+                        click: () => {
+                            if (this.getBrowserViews()[0] == undefined) return;
+                            this.addTabOrLoadUrl(this.getBrowserViews()[0], `${protocolStr}://help/`, true);
+                        }
+                    },
+                    { type: 'separator' },
+                    {
+                        label: lang.main.help.feedback,
+                        accelerator: 'Alt+Shift+I',
+                        click: () => this.application.addAppWindow(`${protocolStr}://feedback/`, 550, 430, false)
+                    },
+                    { type: 'separator' },
+                    {
+                        label: lang.main.help.about,
+                        click: () => {
+                            if (this.getBrowserViews()[0] == undefined) return;
+                            this.addTabOrLoadUrl(this.getBrowserViews()[0], `${protocolStr}://settings/about`, true);
+                        }
+                    }
+                ]
+            },
         ]);
     }
 
@@ -1942,11 +2033,11 @@ module.exports = class MainWindow extends BrowserWindow {
     }
 
     getThemeType = () => {
-        if (config.get('design.theme') === -1)
+        if (userConfig.get('design.theme') === -1)
             return nativeTheme.shouldUseDarkColors;
-        else if (config.get('design.theme') === 0)
+        else if (userConfig.get('design.theme') === 0)
             return false;
-        else if (config.get('design.theme') === 1)
+        else if (userConfig.get('design.theme') === 1)
             return true;
     }
 
@@ -1955,9 +2046,8 @@ module.exports = class MainWindow extends BrowserWindow {
         const charLength = char.length;
 
         let str = '';
-        for (var i = 0; i < length; i++) {
+        for (var i = 0; i < length; i++)
             str += char[Math.floor(Math.random() * charLength)];
-        }
 
         return str;
     }
@@ -1966,32 +2056,28 @@ module.exports = class MainWindow extends BrowserWindow {
         const ses = session.fromPartition(windowId);
         ses.setUserAgent(ses.getUserAgent().replace(/ Electron\/[0-9\.]*/g, '') + ' PrivMode');
 
-        ses.protocol.isProtocolHandled(fileProtocolStr).then((handled) => {
-            if (!handled) {
-                ses.protocol.registerFileProtocol(protocolStr, (request, callback) => {
-                    const parsed = parse(request.url);
+        if (!ses.protocol.isProtocolRegistered(protocolStr)) {
+            ses.protocol.registerFileProtocol(protocolStr, (request, callback) => {
+                const parsed = parse(request.url);
 
-                    return callback({
-                        path: path.join(app.getAppPath(), 'pages', parsed.pathname === '/' || !parsed.pathname.match(/(.*)\.([A-z0-9])\w+/g) ? `${parsed.hostname}.html` : `${parsed.hostname}${parsed.pathname}`),
-                    });
-                }, (error) => {
-                    if (error) console.error(`[Error] Failed to register protocol: ${error}`);
+                return callback({
+                    path: path.join(app.getAppPath(), 'pages', parsed.pathname === '/' || !parsed.pathname.match(/(.*)\.([A-z0-9])\w+/g) ? `${parsed.hostname}.html` : `${parsed.hostname}${parsed.pathname}`),
                 });
-            }
-        });
+            }, (error) => {
+                if (error) console.error(`[Error] Failed to register protocol: ${error}`);
+            });
+        }
 
-        ses.protocol.isProtocolHandled(fileProtocolStr).then((handled) => {
-            if (!handled) {
-                ses.protocol.registerFileProtocol(fileProtocolStr, (request, callback) => {
-                    const parsed = parse(request.url);
+        if (!ses.protocol.isProtocolRegistered(fileProtocolStr)) {
+            ses.protocol.registerFileProtocol(fileProtocolStr, (request, callback) => {
+                const parsed = parse(request.url);
 
-                    return callback({
-                        path: path.join(app.getPath('userData'), 'Files', 'Users', parsed.pathname),
-                    });
-                }, (error) => {
-                    if (error) console.error(`[Error] Failed to register protocol: ${error}`);
+                return callback({
+                    path: path.join(app.getPath('userData'), 'Files', 'Users', parsed.pathname),
                 });
-            }
-        });
+            }, (error) => {
+                if (error) console.error(`[Error] Failed to register protocol: ${error}`);
+            });
+        }
     }
 }

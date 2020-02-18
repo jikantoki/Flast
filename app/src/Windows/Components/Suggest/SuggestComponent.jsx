@@ -14,11 +14,17 @@ import { parse } from 'url';
 import { isURL, prefixHttp } from '../../../Utils/URL';
 
 const { remote, ipcRenderer, shell } = window.require('electron');
-const { app, systemPreferences, Menu, MenuItem, dialog } = remote;
+const { app, systemPreferences, Menu, MenuItem, dialog, nativeTheme } = remote;
+
+const path = window.require('path');
+
 const Config = window.require('electron-store');
 const config = new Config();
+const userConfig = new Config({
+	cwd: path.join(app.getPath('userData'), 'Users', config.get('currentUser'))
+});
 
-const lang = window.require(`${app.getAppPath()}/langs/${config.get('language') != undefined ? config.get('language') : 'ja'}.js`);
+const lang = window.require(`${app.getAppPath()}/langs/${userConfig.get('language') != undefined ? userConfig.get('language') : 'ja'}.js`);
 
 class SuggestComponent extends Component {
 	constructor(props) {
@@ -35,7 +41,7 @@ class SuggestComponent extends Component {
 	}
 
 	componentDidMount = async () => {
-		config.get('searchEngine.searchEngines').forEach((item, i) => {
+		userConfig.get('searchEngine.searchEngines').forEach((item, i) => {
 			this.setState(state => { return { searchEngines: [...state.searchEngines, item] }; });
 		});
 
@@ -45,7 +51,7 @@ class SuggestComponent extends Component {
 	componentDidUpdate = async (props) => {
 		if (this.props.text !== props.text) {
 			this.setState({ searchEngines: [] });
-			config.get('searchEngine.searchEngines').forEach((item, i) => {
+			userConfig.get('searchEngine.searchEngines').forEach((item, i) => {
 				this.setState(state => { return { searchEngines: [...state.searchEngines, item] }; });
 			});
 
@@ -59,11 +65,9 @@ class SuggestComponent extends Component {
 		let suggestions = [];
 
 		console.log(data);
-		for (const item of data[1]) {
-			if (suggestions.indexOf(item) === -1) {
+		for (const item of data[1])
+			if (suggestions.indexOf(item) === -1)
 				suggestions.push(String(item).toLowerCase());
-			}
-		}
 
 		this.setState({
 			suggestions: suggestions.sort((a, b) => a.length - b.length).slice(0, 5),
@@ -102,22 +106,21 @@ class SuggestComponent extends Component {
 		});
 
 	getSearchEngine = () => {
-		for (var i = 0; i < config.get('searchEngine.searchEngines').length; i++) {
-			if (config.get('searchEngine.searchEngines')[i].name == config.get('searchEngine.defaultEngine')) {
-				return config.get('searchEngine.searchEngines')[i];
-			}
-		}
+		for (var i = 0; i < userConfig.get('searchEngine.searchEngines').length; i++)
+			if (userConfig.get('searchEngine.searchEngines')[i].name === userConfig.get('searchEngine.defaultEngine'))
+				return userConfig.get('searchEngine.searchEngines')[i];
+		return userConfig.get('searchEngine.searchEngines')[0];
 	}
 
 	getSuggestIcon = () => {
 		const value = this.props.text;
 
 		if (isURL(value) && !value.includes('://'))
-			return config.get('design.isDarkTheme') || String(this.props.windowId).startsWith('private') ? DarkFileIcon : LightFileIcon;
+			return userConfig.get('design.isDarkTheme') || String(this.props.windowId).startsWith('private') ? DarkFileIcon : LightFileIcon;
 		else if (!value.includes('://'))
-			return config.get('design.isDarkTheme') || String(this.props.windowId).startsWith('private') ? DarkSearchIcon : LightSearchIcon;
+			return userConfig.get('design.isDarkTheme') || String(this.props.windowId).startsWith('private') ? DarkSearchIcon : LightSearchIcon;
 		else
-			return config.get('design.isDarkTheme') || String(this.props.windowId).startsWith('private') ? DarkFileIcon : LightFileIcon;
+			return userConfig.get('design.isDarkTheme') || String(this.props.windowId).startsWith('private') ? DarkFileIcon : LightFileIcon;
 	}
 
 	getSuggestSecondaryText = () => {
@@ -159,11 +162,11 @@ class SuggestComponent extends Component {
 
 	render() {
 		const webView = this.props.webView;
-		
+
 		return (
-			<Suggest width={this.props.textBoxWidth} top={this.props.textBoxTop} left={this.props.textBoxLeft} isShowing={this.props.isShowing} isDarkModeOrPrivateMode={config.get('design.isDarkTheme') || String(this.props.windowId).startsWith('private')}>
+			<Suggest width={this.props.textBoxWidth} top={this.props.textBoxTop} left={this.props.textBoxLeft} isShowing={this.props.isShowing} isDarkModeOrPrivateMode={userConfig.get('design.isDarkTheme') || String(this.props.windowId).startsWith('private')}>
 				<SuggestListContainer>
-					<SuggestListItem style={{ borderBottom: this.state.suggestions.length > 0 ? 'solid 1px #c1c1c1' : 'none', color: config.get('design.isDarkTheme') || String(this.props.windowId).startsWith('private') ? '#f9f9fa' : '#353535' }} windowId={this.props.windowId} onClick={() => { this.props.loadURL(this.props.text); }}>
+					<SuggestListItem style={{ borderBottom: this.state.suggestions.length > 0 ? 'solid 1px #c1c1c1' : 'none', color: userConfig.get('design.isDarkTheme') || String(this.props.windowId).startsWith('private') ? '#f9f9fa' : '#353535' }} windowId={this.props.windowId} onClick={() => { this.props.loadURL(this.props.text); }}>
 						<SuggestListItemIcon src={this.getSuggestIcon()} size={17} />
 						<SuggestListItemPrimaryText>{this.props.text}</SuggestListItemPrimaryText>
 						<SuggestListItemSecondaryText>
@@ -173,8 +176,8 @@ class SuggestComponent extends Component {
 					</SuggestListItem>
 					{this.state.suggestions.map((item, i) => {
 						return (
-							<SuggestListItem tabIndex={i} key={i} style={{ color: config.get('design.isDarkTheme') || String(this.props.windowId).startsWith('private') ? '#f9f9fa' : '#353535' }} windowId={this.props.windowId} onClick={() => { this.props.loadURL(this.getSearchEngine().url.replace('%s', encodeURIComponent(item))); }}>
-								<SuggestListItemIcon src={config.get('design.isDarkTheme') || String(this.props.windowId).startsWith('private') ? DarkSearchIcon : LightSearchIcon} size={17} />
+							<SuggestListItem tabIndex={i} key={i} style={{ color: userConfig.get('design.isDarkTheme') || String(this.props.windowId).startsWith('private') ? '#f9f9fa' : '#353535' }} windowId={this.props.windowId} onClick={() => { this.props.loadURL(this.getSearchEngine().url.replace('%s', encodeURIComponent(item))); }}>
+								<SuggestListItemIcon src={userConfig.get('design.isDarkTheme') || String(this.props.windowId).startsWith('private') ? DarkSearchIcon : LightSearchIcon} size={17} />
 								<SuggestListItemPrimaryText>{item}</SuggestListItemPrimaryText>
 								<SuggestListItemSecondaryText>
 									<span style={{ margin: '0px 4px' }}>&mdash;</span>
@@ -184,7 +187,7 @@ class SuggestComponent extends Component {
 						);
 					})}
 				</SuggestListContainer>
-				<ul style={{ margin: 0, padding: 0, backgroundColor: config.get('design.isDarkTheme') || String(this.props.windowId).startsWith('private') ? '#5a5a5a' : '#eaeaea', borderTop: 'solid 1px #c1c1c1' }}>
+				<ul style={{ margin: 0, padding: 0, backgroundColor: userConfig.get('design.isDarkTheme') || String(this.props.windowId).startsWith('private') ? '#5a5a5a' : '#eaeaea', borderTop: 'solid 1px #c1c1c1' }}>
 					<SuggestButton style={{ listStyle: 'none', borderRight: 'solid 1px #c1c1c1', padding: '5px 15px', display: 'inline-table' }} title={this.getSearchEngine().name} onClick={() => { this.props.loadURL(this.getSearchEngine().url.replace('%s', encodeURIComponent(this.props.text))); }}>
 						<img src={`https://www.google.com/s2/favicons?domain=${parse(this.getSearchEngine().url).protocol}//${parse(this.getSearchEngine().url).hostname}`} alt={this.getSearchEngine().name} style={{ verticalAlign: 'middle' }} />
 						<span style={{ marginLeft: 8, verticalAlign: 'middle' }}>{String(lang.window.toolBar.addressBar.textBox.suggest.search).replace(/{replace}/, this.getSearchEngine().name)}</span>
@@ -201,7 +204,7 @@ class SuggestComponent extends Component {
 					})}
 
 					<SuggestButton style={{ listStyle: 'none', float: 'right', padding: '5px 10px', display: 'inline-table' }} onClick={() => this.props.loadURL()}>
-						<svg name="TitleBarClose" width="12" height="12" viewBox="0 0 12 12" fill={config.get('design.isDarkTheme') || String(this.props.windowId).startsWith('private') ? '#f9f9fa' : '#353535'} style={{ verticalAlign: 'middle' }}>
+						<svg name="TitleBarClose" width="12" height="12" viewBox="0 0 12 12" fill={userConfig.get('design.isDarkTheme') || String(this.props.windowId).startsWith('private') ? '#f9f9fa' : '#353535'} style={{ verticalAlign: 'middle' }}>
 							<polygon fill-rule="evenodd" points="11 1.576 6.583 6 11 10.424 10.424 11 6 6.583 1.576 11 1 10.424 5.417 6 1 1.576 1.576 1 6 5.417 10.424 1" />
 						</svg>
 					</SuggestButton>

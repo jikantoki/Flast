@@ -15,13 +15,17 @@ const localShortcut = require('electron-localshortcut');
 
 const Config = require('electron-store');
 const config = new Config();
+const userConfig = new Config({
+    cwd: path.join(app.getPath('userData'), 'Users', config.get('currentUser'))
+});
+
+const lang = require(`${app.getAppPath()}/langs/${userConfig.get('language') != undefined ? userConfig.get('language') : 'ja'}.js`);
 
 module.exports = class InfomationWindow extends BrowserWindow {
     
     constructor(appWindow, windowId) {
         super({
             width: 320,
-            height: 160,
             frame: false,
             resizable: false,
             transparent: true,
@@ -83,7 +87,7 @@ module.exports = class InfomationWindow extends BrowserWindow {
     fixBounds = () => {
         const bounds = this.appWindow.getContentBounds();
         this.setBounds({
-            x: bounds.x + (config.get('design.isHomeButton') ? (platform.isWin32 || platform.isDarwin ? (this.appWindow.isMaximized() ? 147 : 148) : 151) : (platform.isWin32 || platform.isDarwin ? (this.appWindow.isMaximized() ? 112 : 113) : 116)),
+            x: bounds.x + (userConfig.get('design.isHomeButton') ? (platform.isWin32 || platform.isDarwin ? (this.appWindow.isMaximized() ? 147 : 148) : 151) : (platform.isWin32 || platform.isDarwin ? (this.appWindow.isMaximized() ? 112 : 113) : 116)),
             y: this.appWindow.isFullScreen() ? bounds.y : bounds.y + 70 + 1
         });
     }

@@ -7,10 +7,16 @@ import Button from './Components/Button';
 const { remote, ipcRenderer, shell } = window.require('electron');
 const { app, systemPreferences, Menu, MenuItem, dialog, nativeTheme } = remote;
 
-const platform = require('electron-platform');
+const platform = window.require('electron-platform');
+const path = window.require('path');
 
 const Config = window.require('electron-store');
 const config = new Config();
+const userConfig = new Config({
+    cwd: path.join(app.getPath('userData'), 'Users', config.get('currentUser'))
+});
+
+const lang = window.require(`${app.getAppPath()}/langs/${userConfig.get('language') != undefined ? userConfig.get('language') : 'ja'}.js`);
 
 const Window = styled.div`
   width: auto;
@@ -47,26 +53,18 @@ class InfomationWindow extends Component {
 	}
 
 	getTheme = () => {
-		if (config.get('design.theme') === -1)
+		if (userConfig.get('design.theme') === -1)
 			return nativeTheme.shouldUseDarkColors;
-		else if (config.get('design.theme') === 0)
+		else if (userConfig.get('design.theme') === 0)
 			return false;
-		else if (config.get('design.theme') === 1)
+		else if (userConfig.get('design.theme') === 1)
 			return true;
 	}
 
 	isDisabledSite = (url) => {
-		for (const item of config.get('adBlock.disabledSites')) {
-			if (item.isSubDomain) {
-				if (String(url).endsWith(item.url)) {
-					return true;
-				}
-			} else {
-				if (String(url) === String(item.url)) {
-					return true;
-				}
-			}
-		}
+		for (const item of userConfig.get('adBlock.disabledSites'))
+			if (String(url).startsWith(item.url))
+				return true;
 		return false;
 	}
 

@@ -8,15 +8,16 @@ build({
         'appId': pkg.flast_package_id,
         'productName': pkg.name,
         'copyright': `Copyright 2019 ${pkg.author.name}. All rights reserved.`,
+        'icon': './static/icon.png',
         'asar': true,
+        'directories': {
+            'output': `dist/${pkg.flast_channel}/${process.platform}`,
+            'buildResources': 'static'
+        },
         'publish': {
             'provider': 'generic',
             'url': `http://aoichaan0513.xyz/flast/${process.platform}/${process.arch}/${pkg.flast_channel}`,
             'channel': pkg.flast_channel
-        },
-        'directories': {
-            'buildResources': 'static',
-            'output': 'dist'
         },
         'fileAssociations': [
             {

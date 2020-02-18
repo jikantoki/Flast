@@ -8,16 +8,20 @@ import LightBackIcon from './Resources/light/arrow_back.svg';
 const { remote, ipcRenderer, shell } = window.require('electron');
 const { app, systemPreferences, Menu, MenuItem, dialog, nativeTheme } = remote;
 
+const platform = window.require('electron-platform');
+const path = window.require('path');
+
 const pkg = window.require(`${app.getAppPath()}/package.json`);
 const protocolStr = 'flast';
 const fileProtocolStr = `${protocolStr}-file`;
 
-const platform = require('electron-platform');
-
 const Config = window.require('electron-store');
 const config = new Config();
+const userConfig = new Config({
+    cwd: path.join(app.getPath('userData'), 'Users', config.get('currentUser'))
+});
 
-const lang = window.require(`${app.getAppPath()}/langs/${config.get('language') != undefined ? config.get('language') : 'ja'}.js`);
+const lang = window.require(`${app.getAppPath()}/langs/${userConfig.get('language') != undefined ? userConfig.get('language') : 'ja'}.js`);
 
 const buttonHeight = 27;
 
@@ -184,11 +188,11 @@ class MenuWindow extends Component {
 	}
 
 	getTheme = () => {
-		if (config.get('design.theme') === -1)
+		if (userConfig.get('design.theme') === -1)
 			return nativeTheme.shouldUseDarkColors;
-		else if (config.get('design.theme') === 0)
+		else if (userConfig.get('design.theme') === 0)
 			return false;
-		else if (config.get('design.theme') === 1)
+		else if (userConfig.get('design.theme') === 1)
 			return true;
 	}
 
@@ -200,7 +204,7 @@ class MenuWindow extends Component {
 		return ((((r * 299) + (g * 587) + (b * 114)) / 1000) < 128) ? '#ffffff' : '#000000';
 	}
 
-	addTab = (url = (config.get('homePage.isDefaultHomePage') ? `${protocolStr}://home/` : config.get('homePage.defaultPage')), isInternal = false) => {
+	addTab = (url = (userConfig.get('homePage.isDefaultHomePage') ? `${protocolStr}://home/` : userConfig.get('homePage.defaultPage')), isInternal = false) => {
 		if (isInternal) {
 			const u = parse(this.state.url);
 			console.log(u.protocol);

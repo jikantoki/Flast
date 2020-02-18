@@ -15,9 +15,14 @@ const localShortcut = require('electron-localshortcut');
 
 const Config = require('electron-store');
 const config = new Config();
+const userConfig = new Config({
+    cwd: path.join(app.getPath('userData'), 'Users', config.get('currentUser'))
+});
 
-const width = 330;
-const height = 510;
+const lang = require(`${app.getAppPath()}/langs/${userConfig.get('language') != undefined ? userConfig.get('language') : 'ja'}.js`);
+
+const width = 350;
+const height = 600;
 
 module.exports = class InfomationWindow extends BrowserWindow {
     constructor(appWindow, windowId, tabId) {
@@ -49,8 +54,8 @@ module.exports = class InfomationWindow extends BrowserWindow {
         this.windowId = windowId;
         this.tabId = tabId;
 
-        const startUrl = process.env.ELECTRON_START_URL || format({
-            pathname: path.join(__dirname, '/../../build/index.html'), // 警告：このファイルを移動する場合ここの相対パスの指定に注意してください
+        const startUrl = format({
+            pathname: path.join(__dirname, '/../../build/index.html'),
             protocol: 'file:',
             slashes: true,
             hash: `/menu/${windowId}/${tabId}`,
@@ -70,6 +75,8 @@ module.exports = class InfomationWindow extends BrowserWindow {
         this.webContents.send(`menuWindow-${this.windowId}`, { url, zoomSize });
         this.fixBounds();
         this.show();
+
+        // this.webContents.openDevTools({ mode: 'detach' });
 
         ipcMain.once(`menuWindow-close-${this.windowId}`, (e, result) => {
             if (this.isDestroyed()) return;

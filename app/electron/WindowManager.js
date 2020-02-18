@@ -16,76 +16,68 @@ const fileProtocolStr = `${protocolStr}-file`;
 const { download } = require('electron-dl');
 const platform = require('electron-platform');
 const localShortcut = require('electron-localshortcut');
+const isOnline = require('is-online');
 
 const Config = require('electron-store');
 const config = new Config();
+const userConfig = new Config({
+    cwd: path.join(app.getPath('userData'), 'Users', config.get('currentUser'))
+});
 
-const lang = require(`${app.getAppPath()}/langs/${config.get('language') != undefined ? config.get('language') : 'ja'}.js`);
+const lang = require(`${app.getAppPath()}/langs/${userConfig.get('language') != undefined ? userConfig.get('language') : 'ja'}.js`);
 const { loadFilters } = require('./AdBlocker');
 
 const Datastore = require('nedb');
-let db = {};
-db.pageSettings = new Datastore({
-    filename: path.join(app.getPath('userData'), 'Files', 'PageSettings.db'),
-    autoload: true,
-    timestampData: true
-});
-db.favicons = new Datastore({
-    filename: path.join(app.getPath('userData'), 'Files', 'Favicons.db'),
-    autoload: true,
-    timestampData: true
-});
-
-db.historys = new Datastore({
-    filename: path.join(app.getPath('userData'), 'Files', 'History.db'),
-    autoload: true,
-    timestampData: true
-});
-db.downloads = new Datastore({
-    filename: path.join(app.getPath('userData'), 'Files', 'Download.db'),
-    autoload: true,
-    timestampData: true
-});
-db.bookmarks = new Datastore({
-    filename: path.join(app.getPath('userData'), 'Files', 'Bookmarks.db'),
-    autoload: true,
-    timestampData: true
-});
-
-db.apps = new Datastore({
-    filename: path.join(app.getPath('userData'), 'Files', 'Apps.db'),
-    autoload: true,
-    timestampData: true
-});
 
 let floatingWindows = [];
 
-getBaseWindow = (width = 1100, height = 680, minWidth = 500, minHeight = 360, x, y, frame = false) => {
-    return new BrowserWindow({
-        width, height, minWidth, minHeight, x, y, titleBarStyle: 'hidden', frame, fullscreenable: true,
-        icon: `${__dirname}/static/app/icon.png`,
-        show: false,
-        webPreferences: {
-            nodeIntegration: true,
-            webviewTag: true,
-            plugins: true,
-            experimentalFeatures: true,
-            contextIsolation: false,
-        }
-    });
-}
-
 module.exports = class WindowManager {
-    constructor() {
+
+    constructor(defualtConfig) {
         this.windows = new Map();
 
-        this.firebase = new Firebase();
+        this.defualtConfig = defualtConfig;
+        this.firebase = new Firebase(defualtConfig);
 
-        if (config.get('design.theme') === -1)
+        this.db = {};
+        this.db.pageSettings = new Datastore({
+            filename: path.join(app.getPath('userData'), 'Users', config.get('currentUser'), 'PageSettings.db'),
+            autoload: true,
+            timestampData: true
+        });
+        this.db.favicons = new Datastore({
+            filename: path.join(app.getPath('userData'), 'Files', 'Favicons.db'),
+            autoload: true,
+            timestampData: true
+        });
+
+        this.db.historys = new Datastore({
+            filename: path.join(app.getPath('userData'), 'Users', config.get('currentUser'), 'History.db'),
+            autoload: true,
+            timestampData: true
+        });
+        this.db.downloads = new Datastore({
+            filename: path.join(app.getPath('userData'), 'Users', config.get('currentUser'), 'Download.db'),
+            autoload: true,
+            timestampData: true
+        });
+        this.db.bookmarks = new Datastore({
+            filename: path.join(app.getPath('userData'), 'Users', config.get('currentUser'), 'Bookmarks.db'),
+            autoload: true,
+            timestampData: true
+        });
+
+        this.db.apps = new Datastore({
+            filename: path.join(app.getPath('userData'), 'Users', config.get('currentUser'), 'Apps.db'),
+            autoload: true,
+            timestampData: true
+        });
+
+        if (userConfig.get('design.theme') === -1)
             nativeTheme.themeSource = 'system';
-        else if (config.get('design.theme') === 0)
+        else if (userConfig.get('design.theme') === 0)
             nativeTheme.themeSource = 'light';
-        else if (config.get('design.theme') === 1)
+        else if (userConfig.get('design.theme') === 1)
             nativeTheme.themeSource = 'dark';
 
         this.currentWindow = null;
@@ -94,14 +86,16 @@ module.exports = class WindowManager {
             this.addWindow(args.isPrivate);
         });
 
+        ipcMain.on('feedbackWindow-open', (e, args) => {
+            this.addAppWindow(`${protocolStr}://feedback/`, 550, 430, false);
+        });
+
         ipcMain.on('appWindow-add', (e, args) => {
             this.addAppWindow(args.url);
         });
 
         ipcMain.on('window-fixBounds', (e, args) => {
-            this.windows.forEach((value, key) => {
-                value.window.fixBounds();
-            });
+            this.windows.forEach((value, key) => value.window.fixBounds());
         });
 
         ipcMain.on('window-change-settings', (e, args) => {
@@ -115,86 +109,119 @@ module.exports = class WindowManager {
             loadFilters(true);
         });
 
+        /*
+         * ブックマーク・履歴・ダウンロード
+         */
+        ipcMain.on(`data-bookmark-add`, (e, args) => {
+            const { title, url, isFolder, isPrivate } = args;
+
+            isFolder ? this.firebase.addBookmark(title, url, null, isFolder, isPrivate) : this.getFavicon().then((favicon) => this.firebase.addBookmark(title, url, favicon, isFolder, isPrivate));
+        });
+
+        ipcMain.on(`data-bookmark-remove`, (e, args) => {
+            this.firebase.removeBookmark(args.url, args.isPrivate);
+        });
+
+        ipcMain.on('data-bookmarks-get', (e, args) => {
+            isOnline().then((result) => {
+                if (result) {
+                    this.firebase.getBookmarks(args.isPrivate)
+                        .then((items) => {
+                            let datas = [];
+                            items.forEach((item, i) => datas.push({ id: item.id, title: item.data().title, url: item.data().url, favicon: item.data().favicon, isFolder: item.data().isFolder, createdAt: item.data().date.toDate() }));
+                            e.sender.send('data-bookmarks-get', { bookmarks: datas });
+                        })
+                        .catch((err) => {
+                            console.log(`Test: ${err}`);
+                            this.db.bookmarks.find({ isPrivate: args.isPrivate }).sort({ createdAt: -1 }).exec((err, docs) => {
+                                e.sender.send('data-bookmarks-get', { bookmarks: docs });
+                            });
+                        });
+                } else {
+                    console.log(`Offline Mode`);
+                    this.db.bookmarks.find({ isPrivate: args.isPrivate }).sort({ createdAt: -1 }).exec((err, docs) => {
+                        e.sender.send('data-bookmarks-get', { bookmarks: docs });
+                    });
+                }
+            });
+        });
+
+        ipcMain.on('data-bookmarks-clear', (e, args) => {
+            this.db.bookmarks.remove({}, { multi: true });
+        });
+
         ipcMain.on('data-history-get', (e, args) => {
-            this.firebase.getHistorys().then((items) => {
-                let datas = [];
-                items.forEach((item, i) => {
-                    datas.push({ url: item.data().url, title: item.data().title, createdAt: item.data().date.toDate() });
-                });
-                e.sender.send('data-history-get', { historys: datas });
+            isOnline().then((result) => {
+                if (result) {
+                    this.firebase.getHistorys()
+                        .then((items) => {
+                            let datas = [];
+                            items.forEach((item, i) => datas.push({ title: item.data().title, url: item.data().url, favicon: item.data().favicon, createdAt: item.data().date.toDate() }));
+                            e.sender.send('data-history-get', { historys: datas });
+                        })
+                        .catch((err) => {
+                            console.log(`Test: ${err}`);
+                            this.db.historys.find({}).sort({ createdAt: -1 }).exec((err, docs) => {
+                                e.sender.send('data-history-get', { historys: docs });
+                            });
+                        });
+                } else {
+                    console.log(`Offline Mode`);
+                    this.db.historys.find({}).sort({ createdAt: -1 }).exec((err, docs) => {
+                        e.sender.send('data-history-get', { historys: docs });
+                    });
+                }
             });
-            /*
-            db.historys.find({}).sort({ createdAt: -1 }).exec((err, docs) => {
-                e.sender.send('data-history-get', { historys: docs });
-            });
-            */
         });
 
         ipcMain.on('data-history-clear', (e, args) => {
             this.firebase.clearHistorys();
-            // db.historys.remove({}, { multi: true });
+            this.db.historys.remove({}, { multi: true });
         });
 
         ipcMain.on('data-downloads-get', (e, args) => {
-            db.downloads.find({}).sort({ createdAt: -1 }).exec((err, docs) => {
+            this.db.downloads.find({}).sort({ createdAt: -1 }).exec((err, docs) => {
                 e.sender.send('data-downloads-get', { downloads: docs });
             });
         });
 
         ipcMain.on('data-downloads-clear', (e, args) => {
-            db.downloads.remove({}, { multi: true });
+            this.db.downloads.remove({}, { multi: true });
         });
 
-        ipcMain.on('data-bookmarks-get', (e, args) => {
-            this.firebase.getBookmarks(args.isPrivate).then((items) => {
-                let datas = [];
-                items.forEach((item, i) => {
-                    datas.push({ url: item.data().url, title: item.data().title, createdAt: item.data().date.toDate() });
-                });
-                e.sender.send('data-bookmarks-get', { bookmarks: datas });
-            });
-
-            /*
-            db.bookmarks.find({ isPrivate: args.isPrivate }).sort({ createdAt: -1 }).exec((err, docs) => {
-                e.sender.send('data-bookmarks-get', { bookmarks: docs });
-            });
-            */
-        });
-
-        ipcMain.on('data-bookmarks-clear', (e, args) => {
-            db.bookmarks.remove({}, { multi: true });
-        });
-
+        /*
+         * アプリ
+         */
         ipcMain.on('data-apps-add', (e, args) => {
-            db.apps.update({ id: args.id }, { id: args.id, name: args.name, description: args.description, url: args.url }, { upsert: true });
+            this.db.apps.update({ id: args.id }, { id: args.id, name: args.name, description: args.description, url: args.url }, { upsert: true });
 
-            db.apps.find({}).sort({ createdAt: -1 }).exec();
+            this.db.apps.find({}).sort({ createdAt: -1 }).exec();
         });
 
         ipcMain.on('data-apps-remove', (e, args) => {
-            db.apps.remove({ id: args.id }, {});
+            this.db.apps.remove({ id: args.id }, {});
         });
 
         ipcMain.on('data-apps-get', (e, args) => {
-            db.apps.find({}).sort({ createdAt: -1 }).exec((err, docs) => {
+            this.db.apps.find({}).sort({ createdAt: -1 }).exec((err, docs) => {
                 e.sender.send('data-apps-get', { apps: docs });
             });
         });
 
         ipcMain.on('data-apps-is', (e, args) => {
-            db.apps.find({ id: args.id }).exec((err, docs) => {
+            this.db.apps.find({ id: args.id }).exec((err, docs) => {
                 e.sender.send('data-apps-is', { id: args.id, isInstalled: (docs.length > 0 ? true : false) });
             });
         });
 
         ipcMain.on('data-apps-clear', (e, args) => {
-            db.apps.remove({}, { multi: true });
+            this.db.apps.remove({}, { multi: true });
         });
 
         ipcMain.on('clear-browsing-data', () => {
             const ses = session.defaultSession;
-            ses.clearCache();
 
+            ses.clearCache();
             ses.clearStorageData({
                 storages: [
                     'appcache',
@@ -206,17 +233,21 @@ module.exports = class WindowManager {
                     'websql',
                     'serviceworkers',
                     'cachestorage',
-                ],
+                ]
             });
 
             config.clear();
-            db.pageSettings.remove({}, { multi: true });
+            userConfig.clear();
+            this.db.favicons.remove({}, { multi: true });
+            this.db.pageSettings.remove({}, { multi: true });
 
-            db.historys.remove({}, { multi: true });
-            db.downloads.remove({}, { multi: true });
-            db.bookmarks.remove({}, { multi: true });
-            db.apps.remove({}, { multi: true });
+            this.db.bookmarks.remove({}, { multi: true });
+            this.db.historys.remove({}, { multi: true });
+            this.db.downloads.remove({}, { multi: true });
+            this.db.apps.remove({}, { multi: true });
         });
+
+        this.updateDatabases();
     }
 
     getWindows = () => {
@@ -227,29 +258,29 @@ module.exports = class WindowManager {
         return this.currentWindow;
     }
 
-    addWindow = (isPrivate = false, urls = (config.get('startUp.isDefaultHomePage') ? [`${protocolStr}://home/`] : config.get('startUp.defaultPages'))) => {
-        const window = new MainWindow(this, isPrivate, db, urls);
+    addWindow = (isPrivate = false, urls = (userConfig.get('startUp.isDefaultHomePage') ? [`${protocolStr}://home/`] : userConfig.get('startUp.defaultPages'))) => {
+        const window = new MainWindow(this, this.defualtConfig, isPrivate, this.db, urls);
         const id = window.id;
 
         !isPrivate ? this.loadSessionAndProtocol() : this.loadSessionAndProtocolWithPrivateMode(window.getWindowId());
 
         this.windows.set(id, { window, isPrivate });
-        window.on('closed', () => { this.windows.delete(id); });
+        window.on('closed', () => this.windows.delete(id));
 
         return window;
     }
 
-    addAppWindow = (url = config.get('homePage.defaultPage')) => {
+    addAppWindow = (url = userConfig.get('homePage.defaultPage'), width = userConfig.get('window.bounds').width, height = userConfig.get('window.bounds').height, resizable = true) => {
         this.loadSessionAndProtocol();
 
-        const { width, height, x, y } = config.get('window.bounds');
-        const window = getBaseWindow(config.get('window.isMaximized') ? 1110 : width, config.get('window.isMaximized') ? 680 : height, 500, 360, x, y, !config.get('design.isCustomTitlebar'));
+        const { x, y } = userConfig.get('window.bounds');
+        const window = this.getBaseWindow(resizable && userConfig.get('window.isMaximized') ? 1110 : width, resizable && userConfig.get('window.isMaximized') ? 680 : height, 500, 360, x, y, !userConfig.get('design.isCustomTitlebar'), resizable, resizable, resizable);
         const id = window.id;
 
-        config.get('window.isMaximized') && window.maximize();
+        resizable && userConfig.get('window.isMaximized') && window.maximize();
 
-        const startUrl = process.env.ELECTRON_START_URL || format({
-            pathname: path.join(__dirname, '/../build/index.html'), // 警告：このファイルを移動する場合ここの相対パスの指定に注意してください
+        const startUrl = format({
+            pathname: path.join(__dirname, '/../build/index.html'),
             protocol: 'file:',
             slashes: true,
             hash: `/app/${id}/${encodeURIComponent(url)}`,
@@ -257,10 +288,54 @@ module.exports = class WindowManager {
 
         window.loadURL(startUrl);
 
-        window.once('ready-to-show', () => { window.show(); });
+        window.once('ready-to-show', () => window.show());
+        window.on('focus', () => window.webContents.send(`window-focus-${id}`, {}));
+        window.on('blur', () => window.webContents.send(`window-blur-${id}`, {}));
+    }
 
-        window.on('focus', () => { window.webContents.send(`window-focus-${id}`, {}); });
-        window.on('blur', () => { window.webContents.send(`window-blur-${id}`, {}); });
+    getFavicon = (url) => {
+        return new Promise((resolve, reject) => {
+            this.db.favicons.findOne({ url }, async (err, doc) => {
+                const parsed = parse(url);
+                resolve(url.startsWith(`${protocolStr}://`) || url.startsWith(`${fileProtocolStr}://`) ? undefined : (doc != undefined ? doc.favicon : `https://www.google.com/s2/favicons?domain=${parsed.protocol}//${parsed.hostname}`));
+            });
+        });
+    }
+
+    updateDatabases = () => {
+        isOnline().then((result) => {
+            if (!result) return;
+
+            this.db.bookmarks.remove({}, { multi: true });
+            this.db.historys.remove({}, { multi: true });
+
+            this.firebase.getBookmarks(true)
+                .then((items) => {
+
+                    let datas = [];
+                    items.forEach((item, i) => datas.push({ url: item.data().url, title: item.data().title, createdAt: item.data().date.toDate() }));
+                    console.log(datas);
+
+                    this.db.bookmarks.insert(datas, (err, newDocs) => { });
+                })
+                .catch((err) => console.log(err));
+            this.firebase.getBookmarks(false)
+                .then((items) => {
+                    let datas = [];
+                    items.forEach((item, i) => datas.push({ url: item.data().url, title: item.data().title, createdAt: item.data().date.toDate() }));
+
+                    this.db.bookmarks.insert(datas, (err, newDocs) => { });
+                })
+                .catch((err) => console.log(err));
+            this.firebase.getHistorys()
+                .then((items) => {
+                    let datas = [];
+                    items.forEach((item, i) => datas.push({ url: item.data().url, title: item.data().title, createdAt: item.data().date.toDate() }));
+
+                    this.db.historys.insert(datas, (err, newDocs) => { });
+                })
+                .catch((err) => console.log(err));
+        });
     }
 
     fixBounds = (window) => {
@@ -296,10 +371,10 @@ module.exports = class WindowManager {
                 });
             } else {
                 view.setBounds({
-                    x: window.isMaximized() ? 0 : config.get('design.isCustomTitlebar') ? 1 : 0,
-                    y: window.isMaximized() ? this.getHeight(true, height) : config.get('design.isCustomTitlebar') ? this.getHeight(true, height) + 1 : this.getHeight(true, height),
-                    width: window.isMaximized() ? width : config.get('design.isCustomTitlebar') ? width - 2 : width,
-                    height: window.isMaximized() ? this.getHeight(false, height) : (config.get('design.isCustomTitlebar') ? (this.getHeight(false, height)) - 2 : (this.getHeight(false, height)) - 1),
+                    x: window.isMaximized() ? 0 : userConfig.get('design.isCustomTitlebar') ? 1 : 0,
+                    y: window.isMaximized() ? this.getHeight(true, height) : userConfig.get('design.isCustomTitlebar') ? this.getHeight(true, height) + 1 : this.getHeight(true, height),
+                    width: window.isMaximized() ? width : userConfig.get('design.isCustomTitlebar') ? width - 2 : width,
+                    height: window.isMaximized() ? this.getHeight(false, height) : (userConfig.get('design.isCustomTitlebar') ? (this.getHeight(false, height)) - 2 : (this.getHeight(false, height)) - 1),
                 });
             }
         }
@@ -313,70 +388,84 @@ module.exports = class WindowManager {
         const baseBarHeight = titleBarHeight + toolBarHeight;
         const bookMarkBarHeight = 28;
 
-        return b ? (config.get('design.isBookmarkBar') ? (baseBarHeight + bookMarkBarHeight) : baseBarHeight) : (height - (config.get('design.isBookmarkBar') ? (baseBarHeight + bookMarkBarHeight) : baseBarHeight));
+        return b ? (userConfig.get('design.isBookmarkBar') ? (baseBarHeight + bookMarkBarHeight) : baseBarHeight) : (height - (userConfig.get('design.isBookmarkBar') ? (baseBarHeight + bookMarkBarHeight) : baseBarHeight));
     }
-    
+
+
+
+    getBaseWindow = (width = 1100, height = 680, minWidth = 500, minHeight = 360, x, y, frame = false, resizable = true, minimizable = true, maximizable = true) => {
+        return new BrowserWindow({
+            width, height, minWidth, minHeight, x, y,
+            titleBarStyle: 'hidden',
+            frame,
+            resizable,
+            minimizable,
+            maximizable,
+            icon: `${__dirname}/static/app/icon.png`,
+            fullscreenable: true,
+            show: false,
+            webPreferences: {
+                nodeIntegration: true,
+                webviewTag: true,
+                plugins: true,
+                experimentalFeatures: true,
+                contextIsolation: false,
+            }
+        });
+    }
 
     loadSessionAndProtocol = () => {
-        protocol.isProtocolHandled(protocolStr).then((handled) => {
-            if (!handled) {
-                protocol.registerFileProtocol(protocolStr, (request, callback) => {
-                    const parsed = parse(request.url);
-    
-                    return callback({
-                        path: path.join(app.getAppPath(), 'pages', parsed.pathname === '/' || !parsed.pathname.match(/(.*)\.([A-z0-9])\w+/g) ? `${parsed.hostname}.html` : `${parsed.hostname}${parsed.pathname}`),
-                    });
-                }, (error) => {
-                    if (error) console.error(`[Error] Failed to register protocol: ${error}`);
+        if (!protocol.isProtocolRegistered(protocolStr)) {
+            protocol.registerFileProtocol(protocolStr, (request, callback) => {
+                const parsed = parse(request.url);
+
+                return callback({
+                    path: path.join(app.getAppPath(), 'pages', parsed.pathname === '/' || !parsed.pathname.match(/(.*)\.([A-z0-9])\w+/g) ? `${parsed.hostname}.html` : `${parsed.hostname}${parsed.pathname}`),
                 });
-            }
-        });
-    
-        protocol.isProtocolHandled(fileProtocolStr).then((handled) => {
-            if (!handled) {
-                protocol.registerFileProtocol(fileProtocolStr, (request, callback) => {
-                    const parsed = parse(request.url);
-    
-                    return callback({
-                        path: path.join(app.getPath('userData'), 'Files', 'Users', parsed.pathname),
-                    });
-                }, (error) => {
-                    if (error) console.error(`[Error] Failed to register protocol: ${error}`);
+            }, (error) => {
+                if (error) console.error(`[Error] Failed to register protocol: ${error}`);
+            });
+        }
+
+        if (!protocol.isProtocolRegistered(fileProtocolStr)) {
+            protocol.registerFileProtocol(fileProtocolStr, (request, callback) => {
+                const parsed = parse(request.url);
+
+                return callback({
+                    path: path.join(app.getPath('userData'), 'Users', config.get('currentUser'), parsed.pathname),
                 });
-            }
-        });
+            }, (error) => {
+                if (error) console.error(`[Error] Failed to register protocol: ${error}`);
+            });
+        }
     }
-    
+
     loadSessionAndProtocolWithPrivateMode = (windowId) => {
         const ses = session.fromPartition(windowId);
         ses.setUserAgent(ses.getUserAgent().replace(/ Electron\/[0-9\.]*/g, '') + ' PrivMode');
-    
-        ses.protocol.isProtocolHandled(fileProtocolStr).then((handled) => {
-            if (!handled) {
-                ses.protocol.registerFileProtocol(protocolStr, (request, callback) => {
-                    const parsed = parse(request.url);
-    
-                    return callback({
-                        path: path.join(app.getAppPath(), 'pages', parsed.pathname === '/' || !parsed.pathname.match(/(.*)\.([A-z0-9])\w+/g) ? `${parsed.hostname}.html` : `${parsed.hostname}${parsed.pathname}`),
-                    });
-                }, (error) => {
-                    if (error) console.error(`[Error] Failed to register protocol: ${error}`);
+
+        if (!ses.protocol.isProtocolRegistered(protocolStr)) {
+            ses.protocol.registerFileProtocol(protocolStr, (request, callback) => {
+                const parsed = parse(request.url);
+
+                return callback({
+                    path: path.join(app.getAppPath(), 'pages', parsed.pathname === '/' || !parsed.pathname.match(/(.*)\.([A-z0-9])\w+/g) ? `${parsed.hostname}.html` : `${parsed.hostname}${parsed.pathname}`),
                 });
-            }
-        });
-    
-        ses.protocol.isProtocolHandled(fileProtocolStr).then((handled) => {
-            if (!handled) {
-                ses.protocol.registerFileProtocol(fileProtocolStr, (request, callback) => {
-                    const parsed = parse(request.url);
-    
-                    return callback({
-                        path: path.join(app.getPath('userData'), 'Files', 'Users', parsed.pathname),
-                    });
-                }, (error) => {
-                    if (error) console.error(`[Error] Failed to register protocol: ${error}`);
+            }, (error) => {
+                if (error) console.error(`[Error] Failed to register protocol: ${error}`);
+            });
+        }
+
+        if (!ses.protocol.isProtocolRegistered(fileProtocolStr)) {
+            ses.protocol.registerFileProtocol(fileProtocolStr, (request, callback) => {
+                const parsed = parse(request.url);
+
+                return callback({
+                    path: path.join(app.getPath('userData'), 'Users', config.get('currentUser'), parsed.pathname),
                 });
-            }
-        });
+            }, (error) => {
+                if (error) console.error(`[Error] Failed to register protocol: ${error}`);
+            });
+        }
     }
 }

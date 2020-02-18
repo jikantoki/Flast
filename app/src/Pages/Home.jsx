@@ -475,33 +475,26 @@ class Home extends Component {
                                     <Typography className={window.getThemeType() ? classes.pageHeaderDark : classes.pageHeaderLight} component="h4">{window.getLanguageFile().internalPages.home.bookmarks.title}</Typography>
                                     <Paper className={classes.root}>
                                         <Table className={classes.table}>
-                                            <TableHead>
-                                                <TableRow>
-                                                    <TableCell className={classes.tableIcon} style={{ userSelect: 'none', pointerEvents: 'none' }}></TableCell>
-                                                    <TableCell className={classes.tableTitle} style={{ userSelect: 'none', pointerEvents: 'none' }}>{window.getLanguageFile().internalPages.home.bookmarks.table.title}</TableCell>
-                                                    <TableCell className={classes.tableUrl} style={{ userSelect: 'none', pointerEvents: 'none' }}>{window.getLanguageFile().internalPages.home.bookmarks.table.url}</TableCell>
-                                                    <TableCell className={classes.tableDate} style={{ userSelect: 'none', pointerEvents: 'none' }}>{window.getLanguageFile().internalPages.home.bookmarks.table.date}</TableCell>
-                                                </TableRow>
-                                            </TableHead>
                                             <TableBody>
                                                 {this.state.bookMarks.map((item, i) => {
+                                                    if (item.isFolder) return;
                                                     if (i < 10) {
                                                         return (
                                                             <TableRow key={i}>
-                                                                <TableCell className={classes.tableIcon}><img src={new URL(item.url).protocol === `${protocolStr}:` ? `${fileProtocolStr}:///public.svg` : `http://www.google.com/s2/favicons?domain=${new URL(item.url).origin}`} style={{ width: 16, height: 16, verticalAlign: 'sub' }} /></TableCell>
+                                                                <TableCell className={classes.tableDate}><Moment format="YYYY/MM/DD HH:mm">{item.createdAt}</Moment></TableCell>
+                                                                <TableCell className={classes.tableIcon}><img src={String(item.url).startsWith(`${protocolStr}://`) || String(item.url).startsWith(`${fileProtocolStr}://`) ? `${protocolStr}://resources/icons/public.svg` : (item.favicon ? item.favicon : `http://www.google.com/s2/favicons?domain=${new URL(item.url).origin}`)} style={{ width: 16, height: 16, verticalAlign: 'sub' }} /></TableCell>
                                                                 <TableCell component="th" scope="row" className={classes.tableTitle}><Link href={item.url} title={item.title} color="inherit">{item.title}</Link></TableCell>
                                                                 <TableCell title={item.url} className={classes.tableUrl}>{item.url}</TableCell>
-                                                                <TableCell className={classes.tableDate}><Moment format="YYYY/MM/DD HH:mm">{item.createdAt}</Moment></TableCell>
                                                             </TableRow>
                                                         )
                                                     }
                                                 })}
                                                 {this.state.bookMarks.length > 10 &&
                                                     <TableRow>
+                                                        <TableCell className={classes.tableDate} />
                                                         <TableCell className={classes.tableIcon} />
                                                         <TableCell component="th" scope="row" className={classes.tableTitle}><Link href={`${protocolStr}://bookmarks`} title={window.getLanguageFile().internalPages.home.bookmarks.title} color="inherit">{window.getLanguageFile().internalPages.home.bookmarks.title}</Link></TableCell>
                                                         <TableCell className={classes.tableUrl} />
-                                                        <TableCell className={classes.tableDate} />
                                                     </TableRow>
                                                 }
                                             </TableBody>
@@ -513,33 +506,25 @@ class Home extends Component {
                             <Typography className={window.getThemeType() ? classes.pageHeaderDark : classes.pageHeaderLight} component="h4">{window.getLanguageFile().internalPages.home.history.title}</Typography>
                             <Paper className={classes.root}>
                                 <Table className={classes.table}>
-                                    <TableHead>
-                                        <TableRow>
-                                            <TableCell className={classes.tableIcon} style={{ userSelect: 'none', pointerEvents: 'none' }}></TableCell>
-                                            <TableCell className={classes.tableTitle} style={{ userSelect: 'none', pointerEvents: 'none' }}>{window.getLanguageFile().internalPages.home.history.table.title}</TableCell>
-                                            <TableCell className={classes.tableUrl} style={{ userSelect: 'none', pointerEvents: 'none' }}>{window.getLanguageFile().internalPages.home.history.table.url}</TableCell>
-                                            <TableCell className={classes.tableDate} style={{ userSelect: 'none', pointerEvents: 'none' }}>{window.getLanguageFile().internalPages.home.history.table.date}</TableCell>
-                                        </TableRow>
-                                    </TableHead>
                                     <TableBody>
                                         {this.state.historys.map((item, i) => {
                                             if (i < 10) {
                                                 return (
                                                     <TableRow key={i}>
-                                                        <TableCell className={classes.tableIcon}><img src={new URL(item.url).protocol === `${protocolStr}:` ? `${fileProtocolStr}:///public.svg` : `http://www.google.com/s2/favicons?domain=${new URL(item.url).origin}`} style={{ width: 16, height: 16, verticalAlign: 'sub' }} /></TableCell>
+                                                        <TableCell className={classes.tableDate}><Moment format="YYYY/MM/DD HH:mm">{item.createdAt}</Moment></TableCell>
+                                                        <TableCell className={classes.tableIcon}><img src={String(item.url).startsWith(`${protocolStr}://`) || String(item.url).startsWith(`${fileProtocolStr}://`) ? `${protocolStr}://resources/icons/public.svg` : (item.favicon ? item.favicon : `http://www.google.com/s2/favicons?domain=${new URL(item.url).origin}`)} style={{ width: 16, height: 16, verticalAlign: 'sub' }} /></TableCell>
                                                         <TableCell component="th" scope="row" className={classes.tableTitle}><Link href={item.url} title={item.title} color="inherit">{item.title}</Link></TableCell>
                                                         <TableCell title={item.url} className={classes.tableUrl}>{item.url}</TableCell>
-                                                        <TableCell className={classes.tableDate}><Moment format="YYYY/MM/DD HH:mm">{item.createdAt}</Moment></TableCell>
                                                     </TableRow>
                                                 );
                                             }
                                         })}
                                         {this.state.historys.length > 10 &&
                                             <TableRow>
+                                                <TableCell className={classes.tableDate} />
                                                 <TableCell className={classes.tableIcon} />
                                                 <TableCell component="th" scope="row" className={classes.tableTitle}><Link href={`${protocolStr}://history`} title={window.getLanguageFile().internalPages.home.history.title} color="inherit">{window.getLanguageFile().internalPages.home.history.title}</Link></TableCell>
                                                 <TableCell className={classes.tableUrl} />
-                                                <TableCell className={classes.tableDate} />
                                             </TableRow>
                                         }
                                     </TableBody>

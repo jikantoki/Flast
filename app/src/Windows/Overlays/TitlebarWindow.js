@@ -15,19 +15,21 @@ import { isURL, prefixHttp } from '../../Utils/URL';
 const { remote, ipcRenderer, shell } = window.require('electron');
 const { app, systemPreferences, Menu, MenuItem, dialog, nativeTheme } = remote;
 
-const pkg = window.require(`${app.getAppPath()}/package.json`);
-const protocolStr = 'flast';
-const fileProtocolStr = `${protocolStr}-file`;
-
 const platform = window.require('electron-platform');
 const path = window.require('path');
 const process = window.require('process');
 
+const pkg = window.require(`${app.getAppPath()}/package.json`);
+const protocolStr = 'flast';
+const fileProtocolStr = `${protocolStr}-file`;
+
 const Config = window.require('electron-store');
 const config = new Config();
+const userConfig = new Config({
+    cwd: path.join(app.getPath('userData'), 'Users', config.get('currentUser'))
+});
 
-const lang = window.require(`${app.getAppPath()}/langs/${config.get('language') != undefined ? config.get('language') : 'ja'}.js`);
-
+const lang = window.require(`${app.getAppPath()}/langs/${userConfig.get('language') != undefined ? userConfig.get('language') : 'ja'}.js`);
 
 class TitlebarWindow extends Component {
 
@@ -38,11 +40,11 @@ class TitlebarWindow extends Component {
 	}
 
 	getTheme = () => {
-		if (config.get('design.theme') === -1)
+		if (userConfig.get('design.theme') === -1)
 			return nativeTheme.shouldUseDarkColors;
-		else if (config.get('design.theme') === 0)
+		else if (userConfig.get('design.theme') === 0)
 			return false;
-		else if (config.get('design.theme') === 1)
+		else if (userConfig.get('design.theme') === 1)
 			return true;
 	}
 
@@ -68,7 +70,7 @@ class TitlebarWindow extends Component {
 
 	render() {
 		return (
-			<Window isActive={remote.getCurrentWindow().isFocused()} isMaximized={remote.getCurrentWindow().isMaximized()} color={this.getColor()} isCustomTitlebar={config.get('design.isCustomTitlebar')}>
+			<Window isActive={remote.getCurrentWindow().isFocused()} isMaximized={remote.getCurrentWindow().isMaximized()} color={this.getColor()} isCustomTitlebar={userConfig.get('design.isCustomTitlebar')}>
 				<Menubar color={this.getColor()} onMouseEnter={(e) => { remote.getCurrentWindow().setIgnoreMouseEvents(false); }} onMouseLeave={(e) => {
 					remote.getCurrentWindow().setIgnoreMouseEvents(true, { forward: true });
 					ipcRenderer.send(`infoWindow-close-${remote.getCurrentWindow().id}`, {});

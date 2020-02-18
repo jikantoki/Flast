@@ -2,6 +2,7 @@ const { remote, ipcRenderer, shell } = require('electron');
 const { app, systemPreferences, nativeTheme } = remote;
 const path = require('path');
 const fs = require('fs-extra');
+const os = require('os');
 const fileType = require('file-type');
 const isOnline = require('is-online');
 
@@ -16,6 +17,9 @@ const fileProtocolStr = `${protocolStr}-file`;
 
 const Config = require('electron-store');
 const config = new Config();
+const userConfig = new Config({
+    cwd: path.join(app.getPath('userData'), 'Users', config.get('currentUser'))
+});
 
 // ファイルタイプの列挙体（のつもり）
 const FileType = {
@@ -87,7 +91,7 @@ const listFiles = dirPath => {
 global.getConfigPath = () => {
     if (location.protocol !== `${protocolStr}:` && location.protocol !== `${fileProtocolStr}:`) return;
 
-    return config.path;
+    return userConfig.path;
 }
 
 global.getFiles = (pathName) => {
@@ -116,7 +120,7 @@ global.getFile = (path, json = false) => {
 global.openInEditor = () => {
     if (location.protocol !== `${protocolStr}:` && location.protocol !== `${fileProtocolStr}:`) return;
 
-    config.openInEditor();
+    userConfig.openInEditor();
 }
 
 /*
@@ -159,6 +163,12 @@ global.getChromiumVersion = () => {
     if (location.protocol !== `${protocolStr}:` && location.protocol !== `${fileProtocolStr}:`) return;
 
     return process.versions.chrome;
+}
+
+global.getOSVersion = () => {
+    if (location.protocol !== `${protocolStr}:` && location.protocol !== `${fileProtocolStr}:`) return;
+
+    return `${os.type()} ${process.getSystemVersion()}`;
 }
 
 global.getUpdateStatus = () => new Promise((resolve) => {
@@ -204,6 +214,40 @@ global.updateFilters = () => {
 // ====================================================================== //
 */
 
+/*
+ * ブックマーク
+ */
+global.addBookmark = (title, url, isFolder = false, isPrivate = false) => {
+    if (location.protocol !== `${protocolStr}:` && location.protocol !== `${fileProtocolStr}:`) return;
+
+    ipcRenderer.send(`data-bookmark-add`, { title, url, isFolder, isPrivate });
+}
+
+global.removeBookmark = (url, isPrivate = false) => {
+    if (location.protocol !== `${protocolStr}:` && location.protocol !== `${fileProtocolStr}:`) return;
+
+    ipcRenderer.send(`data-bookmark-remove`, { url, isPrivate });
+}
+
+global.getBookmarks = (isPrivate = false) => new Promise((resolve) => {
+    if (location.protocol !== `${protocolStr}:` && location.protocol !== `${fileProtocolStr}:`) return;
+
+    ipcRenderer.send('data-bookmarks-get', { isPrivate });
+    ipcRenderer.on('data-bookmarks-get', (e, args) => {
+        console.log(args.bookmarks);
+        resolve(args.bookmarks);
+    });
+});
+
+global.clearBookmarks = (b) => {
+    if (location.protocol !== `${protocolStr}:` && location.protocol !== `${fileProtocolStr}:`) return;
+
+    b && ipcRenderer.send('data-bookmarks-clear', {});
+}
+
+/*
+ * 履歴
+ */
 global.getHistorys = () => new Promise((resolve) => {
     if (location.protocol !== `${protocolStr}:` && location.protocol !== `${fileProtocolStr}:`) return;
 
@@ -219,6 +263,9 @@ global.clearHistorys = (b) => {
     b && ipcRenderer.send('data-history-clear', {});
 }
 
+/*
+ * ダウンロード
+ */
 global.getDownloads = () => new Promise((resolve) => {
     if (location.protocol !== `${protocolStr}:` && location.protocol !== `${fileProtocolStr}:`) return;
 
@@ -232,21 +279,6 @@ global.clearDownloads = (b) => {
     if (location.protocol !== `${protocolStr}:` && location.protocol !== `${fileProtocolStr}:`) return;
 
     b && ipcRenderer.send('data-downloads-clear', {});
-}
-
-global.getBookmarks = (isPrivate) => new Promise((resolve) => {
-    if (location.protocol !== `${protocolStr}:` && location.protocol !== `${fileProtocolStr}:`) return;
-
-    ipcRenderer.send('data-bookmarks-get', { isPrivate });
-    ipcRenderer.on('data-bookmarks-get', (e, args) => {
-        resolve(args.bookmarks);
-    });
-});
-
-global.clearBookmarks = (b) => {
-    if (location.protocol !== `${protocolStr}:` && location.protocol !== `${fileProtocolStr}:`) return;
-
-    b && ipcRenderer.send('data-bookmarks-clear', {});
 }
 
 /*
@@ -280,8 +312,36 @@ global.clearApps = (b) => {
 global.getCurrentUser = () => {
     if (location.protocol !== `${protocolStr}:` && location.protocol !== `${fileProtocolStr}:`) return;
 
-    return config.get('profile');
+    return userConfig.get('profile');
 }
+
+global.loginAccount = (email, password) => new Promise((resolve) => {
+    if (location.protocol !== `${protocolStr}:` && location.protocol !== `${fileProtocolStr}:`) return;
+
+    ipcRenderer.send('login-account', { email, password });
+    ipcRenderer.once('login-account', (e, result) => {
+        console.log(result);
+    });
+});
+
+global.createAccount = (email, password) => new Promise((resolve) => {
+    if (location.protocol !== `${protocolStr}:` && location.protocol !== `${fileProtocolStr}:`) return;
+
+    ipcRenderer.send('create-account', { email, password });
+    ipcRenderer.once('create-account', (e, result) => {
+        console.log(result);
+    });
+});
+
+global.logoutAccount = () => new Promise((resolve) => {
+    if (location.protocol !== `${protocolStr}:` && location.protocol !== `${fileProtocolStr}:`) return;
+
+    ipcRenderer.send('logout-account', {});
+    ipcRenderer.once('logout-account', (e, result) => {
+        console.log(result);
+        resolve(result);
+    });
+});
 
 global.syncAccount = (id = undefined) => new Promise((resolve) => {
     if (location.protocol !== `${protocolStr}:` && location.protocol !== `${fileProtocolStr}:`) return;
@@ -292,12 +352,14 @@ global.syncAccount = (id = undefined) => new Promise((resolve) => {
     });
 });
 
-
-global.getUser = () => {
+global.updateAccount = (email, password, displayName) => new Promise((resolve) => {
     if (location.protocol !== `${protocolStr}:` && location.protocol !== `${fileProtocolStr}:`) return;
 
-    // return new Firebase();
-}
+    ipcRenderer.send('update-account', { email, password, displayName });
+    ipcRenderer.once('update-account', (e, result) => {
+        console.log(result);
+    });
+});
 
 /*
 // ====================================================================== //
@@ -308,43 +370,43 @@ global.getUser = () => {
 global.getHomeButton = () => {
     if (location.protocol !== `${protocolStr}:` && location.protocol !== `${fileProtocolStr}:`) return;
 
-    return config.get('design.isHomeButton');
+    return userConfig.get('design.isHomeButton');
 }
 
 global.setHomeButton = (b) => {
     if (location.protocol !== `${protocolStr}:` && location.protocol !== `${fileProtocolStr}:`) return;
 
-    config.set('design.isHomeButton', b);
+    userConfig.set('design.isHomeButton', b);
     ipcRenderer.send('window-change-settings', {});
 }
 
 global.getBookmarkBar = () => {
     if (location.protocol !== `${protocolStr}:` && location.protocol !== `${fileProtocolStr}:`) return;
 
-    return config.get('design.isBookmarkBar');
+    return userConfig.get('design.isBookmarkBar');
 }
 
 global.setBookmarkBar = (b) => {
     if (location.protocol !== `${protocolStr}:` && location.protocol !== `${fileProtocolStr}:`) return;
 
-    config.set('design.isBookmarkBar', b);
+    userConfig.set('design.isBookmarkBar', b);
     ipcRenderer.send('window-change-settings', {});
     ipcRenderer.send('window-fixBounds', {});
 }
 
 global.getThemeType = () => {
-    if (config.get('design.theme') === -1)
+    if (userConfig.get('design.theme') === -1)
         return nativeTheme.shouldUseDarkColors;
-    else if (config.get('design.theme') === 0)
+    else if (userConfig.get('design.theme') === 0)
         return false;
-    else if (config.get('design.theme') === 1)
+    else if (userConfig.get('design.theme') === 1)
         return true;
 }
 
 global.getTheme = () => {
     if (location.protocol !== `${protocolStr}:` && location.protocol !== `${fileProtocolStr}:`) return;
 
-    return config.get('design.theme');
+    return userConfig.get('design.theme');
 }
 
 global.setTheme = (i) => {
@@ -357,33 +419,33 @@ global.setTheme = (i) => {
     else if (i === 1)
         nativeTheme.themeSource = 'dark';
 
-    config.set('design.theme', i);
+    userConfig.set('design.theme', i);
     ipcRenderer.send('window-change-settings', {});
 }
 
 global.getTabAccentColor = () => {
     if (location.protocol !== `${protocolStr}:` && location.protocol !== `${fileProtocolStr}:`) return;
 
-    return config.get('design.tabAccentColor');
+    return userConfig.get('design.tabAccentColor');
 }
 
 global.setTabAccentColor = (color) => {
     if (location.protocol !== `${protocolStr}:` && location.protocol !== `${fileProtocolStr}:`) return;
 
-    config.set('design.tabAccentColor', color);
+    userConfig.set('design.tabAccentColor', color);
     ipcRenderer.send('window-change-settings', {});
 }
 
 global.getCustomTitlebar = () => {
     if (location.protocol !== `${protocolStr}:` && location.protocol !== `${fileProtocolStr}:`) return;
 
-    return config.get('design.isCustomTitlebar');
+    return userConfig.get('design.isCustomTitlebar');
 }
 
 global.setCustomTitlebar = (b) => {
     if (location.protocol !== `${protocolStr}:` && location.protocol !== `${fileProtocolStr}:`) return;
 
-    config.set('design.isCustomTitlebar', b);
+    userConfig.set('design.isCustomTitlebar', b);
 }
 
 /*
@@ -395,58 +457,58 @@ global.setCustomTitlebar = (b) => {
 global.getButtonDefaultHomePage = () => {
     if (location.protocol !== `${protocolStr}:` && location.protocol !== `${fileProtocolStr}:`) return;
 
-    return config.get('homePage.homeButton.isDefaultHomePage');
+    return userConfig.get('homePage.homeButton.isDefaultHomePage');
 }
 
 global.setButtonDefaultHomePage = (b) => {
     if (location.protocol !== `${protocolStr}:` && location.protocol !== `${fileProtocolStr}:`) return;
 
-    config.set('homePage.homeButton.isDefaultHomePage', b);
+    userConfig.set('homePage.homeButton.isDefaultHomePage', b);
 }
 
 global.getButtonStartPage = (b = true) => {
     if (location.protocol !== `${protocolStr}:` && location.protocol !== `${fileProtocolStr}:`) return;
 
-    return b ? (config.get('homePage.homeButton.isDefaultHomePage') ? `${protocolStr}://home/` : config.get('homePage.homeButton.defaultPage')) : config.get('homePage.homeButton.defaultPage');
+    return b ? (userConfig.get('homePage.homeButton.isDefaultHomePage') ? `${protocolStr}://home/` : userConfig.get('homePage.homeButton.defaultPage')) : userConfig.get('homePage.homeButton.defaultPage');
 }
 
 global.setButtonStartPage = (url) => {
     if (location.protocol !== `${protocolStr}:` && location.protocol !== `${fileProtocolStr}:`) return;
 
-    config.set('homePage.homeButton.defaultPage', url);
+    userConfig.set('homePage.homeButton.defaultPage', url);
 }
 
 global.getHomePageBackgroundType = () => {
     if (location.protocol !== `${protocolStr}:` && location.protocol !== `${fileProtocolStr}:`) return;
 
-    return config.get('homePage.homePage.backgroundType');
+    return userConfig.get('homePage.homePage.backgroundType');
 }
 
 global.setHomePageBackgroundType = (type) => {
     if (!(location.protocol !== `${protocolStr}://` || location.protocol !== `${fileProtocolStr}://`) || type < -1 || type > 1) return;
 
-    config.set('homePage.homePage.backgroundType', type);
+    userConfig.set('homePage.homePage.backgroundType', type);
 }
 
 global.getHomePageBackgroundImage = () => {
     if (location.protocol !== `${protocolStr}:` && location.protocol !== `${fileProtocolStr}:`) return;
 
-    return config.get('homePage.homePage.backgroundImage');
+    return userConfig.get('homePage.homePage.backgroundImage');
 }
 
 global.setHomePageBackgroundImage = (data) => {
     if (location.protocol !== `${protocolStr}:` && location.protocol !== `${fileProtocolStr}:`) return;
 
-    config.set('homePage.homePage.backgroundImage', data);
+    userConfig.set('homePage.homePage.backgroundImage', data);
 }
 
 global.copyHomePageBackgroundImage = (file) => {
     if (location.protocol !== `${protocolStr}:` && location.protocol !== `${fileProtocolStr}:`) return;
 
     const sourceFile = fs.readFileSync(file);
-    const targetFile = path.join(app.getPath('userData'), 'Files', 'Users', `background.${fileType(sourceFile).ext}`);
+    const targetFile = path.join(app.getPath('userData'), 'Users', config.get('currentUser'), `background.${fileType(sourceFile).ext}`);
     fs.copy(file, targetFile);
-    config.set('homePage.homePage.backgroundImage', `${fileProtocolStr}:///background.${fileType(sourceFile).ext}`);
+    userConfig.set('homePage.homePage.backgroundImage', `${fileProtocolStr}:///background.${fileType(sourceFile).ext}`);
 }
 
 /*
@@ -457,25 +519,25 @@ global.copyHomePageBackgroundImage = (file) => {
 global.getNewTabDefaultHomePage = () => {
     if (location.protocol !== `${protocolStr}:` && location.protocol !== `${fileProtocolStr}:`) return;
 
-    return config.get('homePage.newTab.isDefaultHomePage');
+    return userConfig.get('homePage.newTab.isDefaultHomePage');
 }
 
 global.setNewTabDefaultHomePage = (b) => {
     if (location.protocol !== `${protocolStr}:` && location.protocol !== `${fileProtocolStr}:`) return;
 
-    config.set('homePage.newTab.isDefaultHomePage', b);
+    userConfig.set('homePage.newTab.isDefaultHomePage', b);
 }
 
 global.getNewTabStartPage = (b = true) => {
     if (location.protocol !== `${protocolStr}:` && location.protocol !== `${fileProtocolStr}:`) return;
 
-    return b ? (config.get('homePage.newTab.isDefaultHomePage') ? `${protocolStr}://home/` : config.get('homePage.newTab.defaultPage')) : config.get('homePage.newTab.defaultPage');
+    return b ? (userConfig.get('homePage.newTab.isDefaultHomePage') ? `${protocolStr}://home/` : userConfig.get('homePage.newTab.defaultPage')) : userConfig.get('homePage.newTab.defaultPage');
 }
 
 global.setNewTabStartPage = (url) => {
     if (location.protocol !== `${protocolStr}:` && location.protocol !== `${fileProtocolStr}:`) return;
 
-    config.set('homePage.newTab.defaultPage', url);
+    userConfig.set('homePage.newTab.defaultPage', url);
 }
 
 /*
@@ -487,25 +549,25 @@ global.setNewTabStartPage = (url) => {
 global.getDefaultHomePage = () => {
     if (location.protocol !== `${protocolStr}:` && location.protocol !== `${fileProtocolStr}:`) return;
 
-    return config.get('startUp.isDefaultHomePage');
+    return userConfig.get('startUp.isDefaultHomePage');
 }
 
 global.setDefaultHomePage = (b) => {
     if (location.protocol !== `${protocolStr}:` && location.protocol !== `${fileProtocolStr}:`) return;
 
-    config.set('startUp.isDefaultHomePage', b);
+    userConfig.set('startUp.isDefaultHomePage', b);
 }
 
 global.getStartPages = (b = true) => {
     if (location.protocol !== `${protocolStr}:` && location.protocol !== `${fileProtocolStr}:`) return;
 
-    return b ? (config.get('startUp.isDefaultHomePage') ? [`${protocolStr}://home/`] : config.get('startUp.defaultPages')) : config.get('startUp.defaultPages');
+    return b ? (userConfig.get('startUp.isDefaultHomePage') ? [`${protocolStr}://home/`] : userConfig.get('startUp.defaultPages')) : userConfig.get('startUp.defaultPages');
 }
 
 global.setStartPages = (urls) => {
     if (location.protocol !== `${protocolStr}:` && location.protocol !== `${fileProtocolStr}:`) return;
 
-    config.set('startUp.defaultPages', urls);
+    userConfig.set('startUp.defaultPages', urls);
 }
 
 /*
@@ -517,15 +579,15 @@ global.setStartPages = (urls) => {
 global.getSearchEngines = () => {
     if (location.protocol !== `${protocolStr}:` && location.protocol !== `${fileProtocolStr}:`) return;
 
-    return config.get('searchEngine.searchEngines');
+    return userConfig.get('searchEngine.searchEngines');
 }
 
 global.getSearchEngine = () => {
     if (location.protocol !== `${protocolStr}:` && location.protocol !== `${fileProtocolStr}:`) return;
 
-    for (var i = 0; i < config.get('searchEngine.searchEngines').length; i++) {
-        if (config.get('searchEngine.searchEngines')[i].name == config.get('searchEngine.defaultEngine')) {
-            return config.get('searchEngine.searchEngines')[i];
+    for (var i = 0; i < userConfig.get('searchEngine.searchEngines').length; i++) {
+        if (userConfig.get('searchEngine.searchEngines')[i].name == userConfig.get('searchEngine.defaultEngine')) {
+            return userConfig.get('searchEngine.searchEngines')[i];
         }
     }
 }
@@ -535,7 +597,7 @@ global.setSearchEngine = (name) => {
 
     getSearchEngines().some((item, i) => {
         if (item.name && item.name === name)
-            config.set('searchEngine.defaultEngine', name);
+            userConfig.set('searchEngine.defaultEngine', name);
     });
 }
 
@@ -548,98 +610,98 @@ global.setSearchEngine = (name) => {
 global.getVideoCamera = () => {
     if (location.protocol !== `${protocolStr}:` && location.protocol !== `${fileProtocolStr}:`) return;
 
-    return config.get('pageSettings.media.video');
+    return userConfig.get('pageSettings.media.video');
 }
 
 global.setVideoCamera = (v) => {
     if (location.protocol !== `${protocolStr}:` && location.protocol !== `${fileProtocolStr}:`) return;
 
-    config.set('pageSettings.media.video', v);
+    userConfig.set('pageSettings.media.video', v);
 }
 
 global.getMicroPhone = () => {
     if (location.protocol !== `${protocolStr}:` && location.protocol !== `${fileProtocolStr}:`) return;
 
-    return config.get('pageSettings.media.audio');
+    return userConfig.get('pageSettings.media.audio');
 }
 
 global.setMicroPhone = (v) => {
     if (location.protocol !== `${protocolStr}:` && location.protocol !== `${fileProtocolStr}:`) return;
 
-    config.set('pageSettings.media.audio', v);
+    userConfig.set('pageSettings.media.audio', v);
 }
 
 
 global.getGeolocation = () => {
     if (location.protocol !== `${protocolStr}:` && location.protocol !== `${fileProtocolStr}:`) return;
 
-    return config.get('pageSettings.geolocation');
+    return userConfig.get('pageSettings.geolocation');
 }
 
 global.setGeolocation = (v) => {
     if (location.protocol !== `${protocolStr}:` && location.protocol !== `${fileProtocolStr}:`) return;
 
-    config.set('pageSettings.geolocation', v);
+    userConfig.set('pageSettings.geolocation', v);
 }
 
 global.getNotifications = () => {
     if (location.protocol !== `${protocolStr}:` && location.protocol !== `${fileProtocolStr}:`) return;
 
-    return config.get('pageSettings.notifications');
+    return userConfig.get('pageSettings.notifications');
 }
 
 global.setNotifications = (v) => {
     if (location.protocol !== `${protocolStr}:` && location.protocol !== `${fileProtocolStr}:`) return;
 
-    config.set('pageSettings.notifications', v);
+    userConfig.set('pageSettings.notifications', v);
 }
 
 global.getMidiSysex = () => {
     if (location.protocol !== `${protocolStr}:` && location.protocol !== `${fileProtocolStr}:`) return;
 
-    return config.get('pageSettings.midiSysex');
+    return userConfig.get('pageSettings.midiSysex');
 }
 
 global.setMidiSysex = (v) => {
     if (location.protocol !== `${protocolStr}:` && location.protocol !== `${fileProtocolStr}:`) return;
 
-    config.set('pageSettings.midiSysex', v);
+    userConfig.set('pageSettings.midiSysex', v);
 }
 
 global.getPointerLock = () => {
     if (location.protocol !== `${protocolStr}:` && location.protocol !== `${fileProtocolStr}:`) return;
 
-    return config.get('pageSettings.pointerLock');
+    return userConfig.get('pageSettings.pointerLock');
 }
 
 global.setPointerLock = (v) => {
     if (location.protocol !== `${protocolStr}:` && location.protocol !== `${fileProtocolStr}:`) return;
 
-    config.set('pageSettings.pointerLock', v);
+    userConfig.set('pageSettings.pointerLock', v);
 }
 
 global.getFullScreen = () => {
     if (location.protocol !== `${protocolStr}:` && location.protocol !== `${fileProtocolStr}:`) return;
 
-    return config.get('pageSettings.fullscreen');
+    return userConfig.get('pageSettings.fullscreen');
 }
 
 global.setFullScreen = (v) => {
     if (location.protocol !== `${protocolStr}:` && location.protocol !== `${fileProtocolStr}:`) return;
 
-    config.set('pageSettings.fullscreen', v);
+    userConfig.set('pageSettings.fullscreen', v);
 }
 
 global.getOpenExternal = () => {
     if (location.protocol !== `${protocolStr}:` && location.protocol !== `${fileProtocolStr}:`) return;
 
-    return config.get('pageSettings.openExternal');
+    return userConfig.get('pageSettings.openExternal');
 }
 
 global.setOpenExternal = (v) => {
     if (location.protocol !== `${protocolStr}:` && location.protocol !== `${fileProtocolStr}:`) return;
 
-    config.set('pageSettings.openExternal', v);
+    userConfig.set('pageSettings.openExternal', v);
 }
 
 /*
@@ -651,13 +713,26 @@ global.setOpenExternal = (v) => {
 global.getAdBlock = () => {
     if (location.protocol !== `${protocolStr}:` && location.protocol !== `${fileProtocolStr}:`) return;
 
-    return config.get('adBlock.isAdBlock');
+    return userConfig.get('adBlock.isAdBlock');
 }
 
 global.setAdBlock = (b) => {
     if (location.protocol !== `${protocolStr}:` && location.protocol !== `${fileProtocolStr}:`) return;
 
-    config.set('adBlock.isAdBlock', b);
+    userConfig.set('adBlock.isAdBlock', b);
+    ipcRenderer.send('window-change-settings', {});
+}
+
+global.getFilters = () => {
+    if (location.protocol !== `${protocolStr}:` && location.protocol !== `${fileProtocolStr}:`) return;
+
+    return userConfig.get('adBlock.filters');
+}
+
+global.setFilters = (list) => {
+    if (location.protocol !== `${protocolStr}:` && location.protocol !== `${fileProtocolStr}:`) return;
+
+    userConfig.set('adBlock.filters', list);
     ipcRenderer.send('window-change-settings', {});
 }
 
@@ -669,19 +744,19 @@ global.setAdBlock = (b) => {
 
 global.getLanguage = () => {
     if (location.protocol !== `${protocolStr}:` && location.protocol !== `${fileProtocolStr}:`) return;
-    return config.get('language') != undefined ? config.get('language') : 'ja';
+    return userConfig.get('language') != undefined ? userConfig.get('language') : 'ja';
 }
 
 global.setLanguage = (language) => {
     if (location.protocol !== `${protocolStr}:` && location.protocol !== `${fileProtocolStr}:`) return;
 
-    config.set('language', language);
+    userConfig.set('language', language);
     ipcRenderer.send('window-change-settings', {});
 }
 
 global.getLanguageFile = () => {
     if (location.protocol !== `${protocolStr}:` && location.protocol !== `${fileProtocolStr}:`) return;
-    return require(`${remote.app.getAppPath()}/langs/${config.get('language') != undefined ? config.get('language') : 'ja'}.js`);
+    return require(`${remote.app.getAppPath()}/langs/${userConfig.get('language') != undefined ? userConfig.get('language') : 'ja'}.js`);
 }
 
 /*
@@ -700,10 +775,7 @@ global.restart = () => {
 global.isURL = (input) => {
     const pattern = /^((?:\w+:)?\/\/([^\s.]+\.\S{2}|localhost[:?\d]*)|flast:\/\/\S.*|flast-file:\/\/\S.*|file:\/\/\S.*)\S*$/;
 
-    if (pattern.test(input)) {
-        return true;
-    }
-    return pattern.test(`http://${input}`);
+    return pattern.test(input) ? true : pattern.test(`http://${input}`);
 };
 
 global.installApp = (id, name, description, url) => {
@@ -762,12 +834,24 @@ onload = () => {
 
     delete global.updateFilters;
 
+    delete global.addBookmark;
+    delete global.removeBookmark;
+    delete global.getBookmarks;
+    delete global.clearBookmarks;
     delete global.getHistorys;
     delete global.clearHistory;
     delete global.getDownloads;
     delete global.clearDownloads;
-    delete global.getBookmarks;
-    delete global.clearBookmarks;
+
+    delete global.getApps;
+    delete global.clearApps;
+
+    delete global.getCurrentUser;
+    delete global.loginAccount;
+    delete global.createAccount;
+    delete global.logoutAccount;
+    delete global.syncAccount;
+    delete global.updateAccount;
 
     delete global.getHomeButton;
     delete global.setHomeButton;
@@ -819,7 +903,7 @@ onload = () => {
 }
 
 onfocus = (e) => {
-    ipcRenderer.send('view-focus', {});
+    ipcRenderer.send(`view-focus-${remote.getCurrentWindow().id}`, {});
 }
 
 onmousedown = (e) => {
@@ -833,14 +917,18 @@ onmousedown = (e) => {
         if (url.startsWith(`${protocolStr}://error`)) {
             if (view.webContents.canGoBack())
                 view.webContents.goBack();
+            return;
         }
+        return;
     } else if (e.button == 4) {
         if (view.webContents.canGoForward())
             view.webContents.goForward();
         if (url.startsWith(`${protocolStr}://error`)) {
             if (view.webContents.canGoForward())
                 view.webContents.goForward();
+            return;
         }
+        return;
     }
 }
 

@@ -8,9 +8,10 @@ build({
         'appId': pkg.flast_package_id,
         'productName': pkg.name,
         'copyright': `Copyright 2019 ${pkg.author.name}. All rights reserved.`,
+        'icon': './static/icon.png',
         'asar': true,
         'directories': {
-            'output': 'dist',
+            'output': `dist/${pkg.flast_channel}/${process.platform}`,
             'buildResources': 'static'
         },
         'publish': {
@@ -27,6 +28,11 @@ build({
             }
         ],
         'nsis': {
+            'include': 'static/installer.nsh',
+            'installerIcon': 'static/icon.ico',
+            'uninstallerIcon': 'static/icon.ico'
+        },
+        'nsisWeb': {
             'include': 'static/installer.nsh',
             'installerIcon': 'static/icon.ico',
             'uninstallerIcon': 'static/icon.ico'

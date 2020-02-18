@@ -15,6 +15,11 @@ const localShortcut = require('electron-localshortcut');
 
 const Config = require('electron-store');
 const config = new Config();
+const userConfig = new Config({
+    cwd: path.join(app.getPath('userData'), 'Users', config.get('currentUser'))
+});
+
+const lang = require(`${app.getAppPath()}/langs/${userConfig.get('language') != undefined ? userConfig.get('language') : 'ja'}.js`);
 
 module.exports = class SuggestWindow extends BrowserWindow {
     constructor(appWindow, windowId) {
@@ -77,8 +82,8 @@ module.exports = class SuggestWindow extends BrowserWindow {
         const isMaximized = this.appWindow.isMaximized();
         const bounds = this.appWindow.getContentBounds();
 
-        const x = bounds.x + ((40 * (config.get('design.isHomeButton') ? 5 : 4)) - (config.get('design.isHomeButton') ? 52 : 48));
-        const width = bounds.width - ((40 * (config.get('design.isHomeButton') ? 8 : 7)) - (config.get('design.isHomeButton') ? 11 : 5));
+        const x = bounds.x + ((40 * (userConfig.get('design.isHomeButton') ? 5 : 4)) - (userConfig.get('design.isHomeButton') ? 53 : 48));
+        const width = bounds.width - ((40 * (userConfig.get('design.isHomeButton') ? 8 : 7)) - (userConfig.get('design.isHomeButton') ? 10 : 4));
 
         this.setBounds({
             x: isMaximized ? x : x + 1,

@@ -2,7 +2,7 @@ const { app } = require('electron');
 const { ElectronBlocker, Request } = require('@cliqz/adblocker-electron');
 const fetch = require('node-fetch');
 const Axios = require('axios');
-const { existsSync, readFile, writeFile, mkdirSync } = require('fs');
+const { exists, existsSync, readFile, readFileSync, writeFile, mkdir } = require('fs');
 const { resolve, join } = require('path');
 const tldts = require('tldts');
 const { parse, format } = require('url');
@@ -11,55 +11,46 @@ const lists = require('./Lists.json');
 
 const Config = require('electron-store');
 const config = new Config();
+const userConfig = new Config({
+	cwd: join(app.getPath('userData'), 'Users', config.get('currentUser'))
+});
 
 const PRELOAD_PATH = join(__dirname, './Preloads/Preload.js');
 
-let engine;
+let blocker;
 
+/*
 if (!existsSync(join(app.getPath('userData'), 'Files')))
 	mkdirSync(join(app.getPath('userData'), 'Files'));
+*/
 
 const loadFilters = async (forceDownload = false) => {
-	const filePath = resolve(join(app.getPath('userData'), 'Files', 'Ads.dat'));
+	const filters = [];
+	/*
+	for await (const item of userConfig.get('adBlock.filters').filter((value) => value.isEnabled))
+		filters.push(item.url);
+	*/
+	await userConfig.get('adBlock.filters').filter((value) => value.isEnabled).forEach((item) => { //　→ await a.forEach(... と書いても結果は同じです。
+		filters.push(item.url);
+	});
 
-	const downloadFilters = async () => {
-		engine = await ElectronBlocker.fromPrebuiltAdsAndTracking(fetch);
-
-		await writeFile(filePath, engine.serialize(), (err) => { if (err) return console.error(err); });
-	};
-
-	if (!forceDownload && existsSync(filePath)) {
-		try {
-			await readFile(resolve(filePath), (err, data) => {
-				try {
-					engine = ElectronBlocker.deserialize(data);
-				} catch (e) {
-					return downloadFilters();
-				}
-			});
-		} catch (err) {
-			return console.error(err);
-		}
-	} else {
-		return downloadFilters();
-	}
+	blocker = await ElectronBlocker.fromLists(fetch, filters);
 };
 
 let adblockRunning = false;
 
 const runAdblockService = async (ses) => {
-	if (!engine)
-		await loadFilters();
-
-	engine.enableBlockingInSession(ses);
+	if (!blocker)
+		await loadFilters(false);
+	blocker.enableBlockingInSession(ses);
 };
 
-const stopAdblockService = (ses) => {
-	engine.disableBlockingInSession(ses);
+const stopAdblockService = async (ses) => {
+	blocker.disableBlockingInSession(ses);
 };
 
 const isDisabled = (url) => {
-	for (const item of config.get('adBlock.disabledSites'))
+	for (const item of userConfig.get('adBlock.disabledSites'))
 		if (String(url).startsWith(item.url))
 			return true;
 	return false;

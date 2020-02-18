@@ -42,6 +42,12 @@ module.exports = {
             history: 'History',
             downloads: 'Downloads',
             bookmarks: 'Bookmarks'
+        },
+        help: {
+            label: 'Help',
+            help: 'Help',
+            feedback: 'Send Feedback',
+            about: `About ${pkg.name}`
         }
     },
     window: {
@@ -153,6 +159,11 @@ module.exports = {
                     },
                     print: 'Print',
                     find: 'Find on page',
+                    share: {
+                        name: 'Share',
+                        linkCopy: 'Copy link',
+                        qrCode: 'QR Code'
+                    },
                     otherTools: {
                         name: 'Other Tools',
                         savePage: 'Save page',
@@ -160,7 +171,11 @@ module.exports = {
                         devTool: 'Developer Tool',
                     },
                     settings: 'Settings',
-                    help: 'Help',
+                    help: {
+                        name: 'Help',
+                        feedback: 'Send Feedback',
+                        about: `About ${pkg.name}`
+                    },
                     close: 'Close'
                 }
             }
@@ -247,7 +262,10 @@ module.exports = {
                     textSearch: 'Search {name} for "{text}"',
                     textLoad: 'Go to {text}'
                 },
-                fullScreenExit: '全画面表示を終了',
+                fullScreen: {
+                    fullScreenExit: 'Exit full screen',
+                    toolBar: 'Toggle toolbar',
+                },
                 back: 'Back',
                 forward: 'Forward',
                 reload: {

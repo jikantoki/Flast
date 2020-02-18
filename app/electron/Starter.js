@@ -1,4 +1,8 @@
 const Application = require('./Application');
 
-global.Application = new Application();
-global.Application.loadApplication();
+async function run() {
+    global.Application = new Application();
+    await global.Application.loadApplication();
+}
+
+run();

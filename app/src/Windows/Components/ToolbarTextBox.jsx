@@ -56,12 +56,41 @@ export const ToolbarTextBox = styled.input`
   padding: 3px 5px;
   left: ${buttonSize}px;
   right: ${buttonSize}px;
+  display: ${props => props.isShowing ? 'block' : 'none'};
   position: absolute;
   box-sizing: border-box;
   outline: none;
-  cursor: initial;
   background: unset;
   border: none;
+  font-family: 'Roboto Mono', 'SourceHanCodeJP Light';
+  cursor: initial;
+  /* border-left: solid 1px #c1c1c1; */
+  /* border-right: solid 1px #c1c1c1; */
+`;
+
+export const ToolbarDummyTextBox = styled.div`
+  width: calc(100% - (${buttonSize}px * ${props => props.buttonCount})) !important;
+  height: 100% !important;
+  margin: 0px !important;
+  padding: 3px 5px !important;
+  left: ${buttonSize}px !important;
+  right: ${buttonSize}px !important;
+  display: ${props => props.isShowing ? 'block' : 'none'};
+  position: absolute !important;
+  box-sizing: border-box;
+  outline: none;
+  background: unset;
+  border: none;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-family: 'Roboto Mono', 'SourceHanCodeJP Light';
+  cursor: text;
+
+  & span {
+    cursor: text;
+  }
+  
   /* border-left: solid 1px #c1c1c1; */
   /* border-right: solid 1px #c1c1c1; */
 `;

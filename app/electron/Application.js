@@ -15,145 +15,232 @@ const { autoUpdater } = require('electron-updater');
 const { ExtensibleSession } = require('electron-extensions/main');
 const cfg = require('./Config');
 
+const defaultConfig = {
+    profile: {
+        id: '',
+        name: '',
+        address: '',
+        token: '',
+        refresh: ''
+    },
+    design: {
+        isHomeButton: false,
+        isBookmarkBar: false,
+        theme: -1,
+        tabAccentColor: '#0a84ff',
+        isCustomTitlebar: true
+    },
+    homePage: {
+        homeButton: {
+            isDefaultHomePage: true,
+            defaultPage: `${protocolStr}://home`
+        },
+        newTab: {
+            isDefaultHomePage: true,
+            defaultPage: `${protocolStr}://home`
+        },
+        homePage: {
+            backgroundType: 0,
+            backgroundImage: ''
+        }
+    },
+    startUp: {
+        isDefaultHomePage: true,
+        defaultPages: ['flast://home']
+    },
+    searchEngine: {
+        defaultEngine: 'Google',
+        searchEngines: [
+            {
+                name: 'Google',
+                url: 'https://www.google.com/search?q=%s'
+            },
+            {
+                name: 'Bing',
+                url: 'https://www.bing.com/search?q=%s'
+            },
+            {
+                name: 'Yahoo! Japan',
+                url: 'https://search.yahoo.co.jp/search?p=%s'
+            },
+            {
+                name: 'goo',
+                url: 'https://search.goo.ne.jp/web.jsp?MT=%s'
+            },
+            {
+                name: 'OCN',
+                url: 'https://search.goo.ne.jp/web.jsp?MT=%s'
+            },
+            {
+                name: 'Baidu',
+                url: 'https://www.baidu.com/s?wd=%s'
+            },
+            {
+                name: 'Google Translate',
+                url: 'https://translate.google.com/?text=%s'
+            },
+            {
+                name: 'Youtube',
+                url: 'https://www.youtube.com/results?search_query=%s'
+            },
+            {
+                name: 'NicoVideo',
+                url: 'https://www.nicovideo.jp/search/%s'
+            },
+            {
+                name: 'Twitter',
+                url: 'https://www.twitter.com/search?q=%s'
+            },
+            {
+                name: 'GitHub',
+                url: 'https://github.com/search?q=%s'
+            },
+            {
+                name: 'DuckDuckGo',
+                url: 'https://duckduckgo.com/?q=%s'
+            },
+            {
+                name: 'Yahoo',
+                url: 'https://search.yahoo.com/search?p=%s'
+            },
+            {
+                name: 'Amazon',
+                url: 'https://www.amazon.co.jp/s?k=%s'
+            }
+        ]
+    },
+    pageSettings: {
+        defaultZoomSize: 1,
+        media: {
+            video: -1,
+            audio: -1,
+        },
+        geolocation: -1,
+        notifications: -1,
+        midiSysex: -1,
+        pointerLock: -1,
+        fullscreen: 1,
+        openExternal: -1,
+        pages: {
+            twitter: {
+                url: 'https://twitter.com/*',
+                oldDesign: false,
+                oldDesignIgnore: false
+            }
+        }
+    },
+    adBlock: {
+        isAdBlock: true,
+        filters: [
+            {
+                name: 'AdBlock Custom Filters',
+                url: 'https://cdn.adblockcdn.com/filters/adblock_custom.txt',
+                isEnabled: true
+            },
+            {
+                name: 'EasyList',
+                url: 'https://easylist-downloads.adblockplus.org/easylist.txt',
+                isEnabled: true
+            },
+            {
+                name: 'Acceptable Ads',
+                url: 'https://easylist-downloads.adblockplus.org/exceptionrules.txt',
+                isEnabled: true
+            },
+            {
+                name: 'Anti-Circumvention Filters',
+                url: 'https://easylist-downloads.adblockplus.org/abp-filters-anti-cv.txt',
+                isEnabled: true
+            },
+            {
+                name: 'EasyPrivacy (privacy protection)',
+                url: 'https://easylist.to/easylist/easyprivacy.txt',
+                isEnabled: true
+            },
+            {
+                name: 'JustDomains',
+                url: 'http://mirror1.malwaredomains.com/files/justdomains',
+                isEnabled: false
+            },
+            {
+                name: 'Adblock Warning Removal list',
+                url: 'https://easylist-downloads.adblockplus.org/antiadblockfilters.txt',
+                isEnabled: true
+            },
+            {
+                name: 'Antisocial filter list',
+                url: 'https://easylist-downloads.adblockplus.org/fanboy-social.txt',
+                isEnabled: false
+            },
+            {
+                name: 'Cryptocurrency (Bitcoin) Mining Protection List',
+                url: 'https://raw.githubusercontent.com/hoshsadiq/adblock-nocoin-list/master/nocoin.txt',
+                isEnabled: false
+            },
+            {
+                name: 'Fanboy\'s Annoyances',
+                url: 'https://easylist-downloads.adblockplus.org/fanboy-annoyance.txt',
+                isEnabled: false
+            },
+            {
+                name: 'Malware protection',
+                url: 'https://easylist-downloads.adblockplus.org/malwaredomains_full.txt',
+                isEnabled: true
+            },
+            {
+                name: 'uBlock Origin Filters',
+                url: 'https://raw.githubusercontent.com/uBlockOrigin/uAssets/master/filters/filters.txt',
+                isEnabled: false
+            },
+            {
+                name: 'uBlock Origin Badware filters',
+                url: 'https://raw.githubusercontent.com/uBlockOrigin/uAssets/master/filters/badware.txt',
+                isEnabled: false
+            },
+            {
+                name: 'uBlock Origin Privacy filters',
+                url: 'https://raw.githubusercontent.com/uBlockOrigin/uAssets/master/filters/privacy.txt',
+                isEnabled: false
+            },
+            {
+                name: 'uBlock Origin Unbreak filters',
+                url: 'https://raw.githubusercontent.com/uBlockOrigin/uAssets/master/filters/unbreak.txt',
+                isEnabled: false
+            }
+        ],
+        disabledSites: []
+    },
+    language: 'ja',
+    window: {
+        isCloseConfirm: true,
+        isMaximized: false,
+        bounds: {
+            width: 1100,
+            height: 680
+        }
+    },
+    meta: {
+        version: '1.0.0'
+    }
+};
+
 const Config = require('electron-store');
 const config = new Config({
     defaults: {
-        profile: {
-            id: '',
-            name: '',
-            address: '',
-            token: '',
-            refresh: ''
-        },
-        design: {
-            isHomeButton: false,
-            isBookmarkBar: false,
-            theme: -1,
-            tabAccentColor: '#0a84ff',
-            isCustomTitlebar: true
-        },
-        homePage: {
-            homeButton: {
-                isDefaultHomePage: true,
-                defaultPage: `${protocolStr}://home`
-            },
-            newTab: {
-                isDefaultHomePage: true,
-                defaultPage: `${protocolStr}://home`
-            },
-            homePage: {
-                backgroundType: 0,
-                backgroundImage: ''
-            }
-        },
-        startUp: {
-            isDefaultHomePage: true,
-            defaultPages: ['flast://home']
-        },
-        searchEngine: {
-            defaultEngine: 'Google',
-            searchEngines: [
-                {
-                    name: 'Google',
-                    url: 'https://www.google.com/search?q=%s'
-                },
-                {
-                    name: 'Bing',
-                    url: 'https://www.bing.com/search?q=%s'
-                },
-                {
-                    name: 'Yahoo! Japan',
-                    url: 'https://search.yahoo.co.jp/search?p=%s'
-                },
-                {
-                    name: 'goo',
-                    url: 'https://search.goo.ne.jp/web.jsp?MT=%s'
-                },
-                {
-                    name: 'OCN',
-                    url: 'https://search.goo.ne.jp/web.jsp?MT=%s'
-                },
-                {
-                    name: 'Baidu',
-                    url: 'https://www.baidu.com/s?wd=%s'
-                },
-                {
-                    name: 'Google Translate',
-                    url: 'https://translate.google.com/?text=%s'
-                },
-                {
-                    name: 'Youtube',
-                    url: 'https://www.youtube.com/results?search_query=%s'
-                },
-                {
-                    name: 'NicoVideo',
-                    url: 'https://www.nicovideo.jp/search/%s'
-                },
-                {
-                    name: 'Twitter',
-                    url: 'https://www.twitter.com/search?q=%s'
-                },
-                {
-                    name: 'GitHub',
-                    url: 'https://github.com/search?q=%s'
-                },
-                {
-                    name: 'DuckDuckGo',
-                    url: 'https://duckduckgo.com/?q=%s'
-                },
-                {
-                    name: 'Yahoo',
-                    url: 'https://search.yahoo.com/search?p=%s'
-                },
-                {
-                    name: 'Amazon',
-                    url: 'https://www.amazon.co.jp/s?k=%s'
-                }
-            ]
-        },
-        pageSettings: {
-            defaultZoomSize: 1,
-            media: {
-                video: -1,
-                audio: -1,
-            },
-            geolocation: -1,
-            notifications: -1,
-            midiSysex: -1,
-            pointerLock: -1,
-            fullscreen: 1,
-            openExternal: -1,
-            pages: {
-                twitter: {
-                    url: 'https://twitter.com/*',
-                    oldDesign: false,
-                    oldDesignIgnore: false
-                }
-            }
-        },
-        adBlock: {
-            isAdBlock: true,
-            disabledSites: []
-        },
-        language: 'ja',
-        window: {
-            isCloseConfirm: true,
-            isMaximized: false,
-            bounds: {
-                width: 1100,
-                height: 680
-            }
-        },
+        currentUser: '',
         meta: {
             version: '1.0.0'
         }
     },
 });
+const userConfig = config.get('currentUser') !== '' ? new Config({
+    cwd: join(app.getPath('userData'), 'Users', config.get('currentUser')),
+    defaults: defaultConfig
+}) : undefined;
 
-const lang = require(`${app.getAppPath()}/langs/${config.get('language') != undefined ? config.get('language') : 'ja'}.js`);
+const lang = require(`${app.getAppPath()}/langs/${userConfig ? userConfig.get('language') != undefined ? userConfig.get('language') : 'ja' : 'ja'}.js`);
 
 const WindowManager = require('./WindowManager');
-const windowManager = new WindowManager();
 
 const Firebase = require('./Firebase');
 
@@ -178,7 +265,7 @@ getBaseWindow = (width = 1100, height = 680, minWidth = 500, minHeight = 360, x,
 
 module.exports = class Application {
 
-    loadApplication = () => {
+    loadApplication = async () => {
         protocol.registerSchemesAsPrivileged([
             { scheme: protocolStr, privileges: { standard: true, bypassCSP: true, secure: true } },
             { scheme: fileProtocolStr, privileges: { standard: false, bypassCSP: true, secure: true } }
@@ -214,8 +301,8 @@ module.exports = class Application {
 
             console.log(this.updateStatus);
         });
-        autoUpdater.on('download-progress', (progressObj) => {
-            console.log('Download speed: ' + progressObj.bytesPerSecond + ' - Downloaded ' + progressObj.percent + '% (' + progressObj.transferred + "/" + progressObj.total + ')');
+        autoUpdater.on('download-progress', (progress) => {
+            console.log(`Download speed: ${progress.bytesPerSecond} - Downloaded ${progress.percent}% (${progress.transferred} / ${progressObj.total})`);
 
             this.updateStatus = 'downloading';
 
@@ -234,13 +321,32 @@ module.exports = class Application {
             e.sender.send('app-updateStatus', { result: this.updateStatus });
         });
 
-        const firebase = new Firebase();
-        firebase.login();
+        const firebase = new Firebase(defaultConfig);
+        await firebase.login();
+
+        ipcMain.on('login-account', async (e, args) => {
+            e.sender.send('login-account', await firebase.loginAccount(args.email, args.password));
+        });
+
+        ipcMain.on('create-account', async (e, args) => {
+            e.sender.send('create-account', await firebase.createAccount(args.email, args.password));
+        });
+
+        ipcMain.on('logout-account', async (e, args) => {
+            e.sender.send('logout-account', await firebase.logout());
+        });
+
+        ipcMain.on('update-account', async (e, args) => {
+            const result = await firebase.updateAccount(args.email, args.password, args.displayName);
+            e.sender.send('update-account', result);
+        });
 
         ipcMain.on('sync-account', (e, args) => {
             const id = firebase.syncAccount(args.id);
             e.sender.send('sync-account', { id });
         });
+
+        this.windowManager = new WindowManager(defaultConfig);
 
         if (!singleInstance) {
             app.quit();
@@ -253,10 +359,10 @@ module.exports = class Application {
                         const ext = extname(path);
 
                         if (ext === '.html' || ext === '.htm') {
-                            if (BrowserWindow.getAllWindows().length < 1 || windowManager.getCurrentWindow() == null) {
-                                windowManager.addWindow(false, [`file:///${path}`]);
+                            if (BrowserWindow.getAllWindows().length < 1 || this.windowManager.getCurrentWindow() == null) {
+                                this.windowManager.addWindow(false, [`file:///${path}`]);
                             } else {
-                                const window = windowManager.getWindows().get(windowManager.getCurrentWindow().id).window;
+                                const window = this.windowManager.getWindows().get(this.windowManager.getCurrentWindow().id).window;
                                 window.addView(`file:///${path}`, false);
                                 window.show();
                             }
@@ -264,16 +370,16 @@ module.exports = class Application {
                     }
                     return;
                 } else if (isURL(path)) {
-                    if (BrowserWindow.getAllWindows().length < 1 || windowManager.getCurrentWindow() == null) {
-                        windowManager.addWindow(false, [prefixHttp(path)]);
+                    if (BrowserWindow.getAllWindows().length < 1 || this.windowManager.getCurrentWindow() == null) {
+                        this.windowManager.addWindow(false, [prefixHttp(path)]);
                     } else {
-                        const window = windowManager.getWindows().get(windowManager.getCurrentWindow().id).window;
+                        const window = this.windowManager.getWindows().get(this.windowManager.getCurrentWindow().id).window;
                         window.addView(prefixHttp(path), false);
                         window.show();
                     }
                     return;
                 } else {
-                    windowManager.addWindow();
+                    this.windowManager.addWindow();
                     return;
                 }
             });
@@ -287,346 +393,17 @@ module.exports = class Application {
                 autoUpdater.checkForUpdatesAndNotify();
                 Menu.setApplicationMenu(null);
 
-                windowManager.addWindow();
+                this.windowManager.addWindow();
             });
 
+            app.on('before-quit', async () => {
+                await this.windowManager.updateDatabases();
+            });
             app.on('window-all-closed', () => {
                 if (process.platform !== 'darwin')
                     app.quit();
             });
-
-            app.on('activate', () => {
-            });
-
-            /*
-            app.on('login', (e, webContents, request, authInfo, callback) => {
-                e.preventDefault();
-    
-                subWindow = getBaseWindow(320, 230, 320, 230);
-                // subWindow.setParentWindow(mainWindow);
-                subWindow.setMovable(false);
-                subWindow.setResizable(false);
-                subWindow.setMinimizable(false);
-                subWindow.setMaximizable(false);
-                const startUrl = process.env.ELECTRON_START_URL || url.format({
-                    pathname: join(__dirname, '/../build/index.html'),
-                    protocol: 'file:',
-                    slashes: true,
-                    hash: '/authentication',
-                });
-    
-                subWindow.loadURL(startUrl);
-                loginCallback = callback;
-            });
-    
-            ipcMain.on('authorization', (event, arg) => {
-                loginCallback(arg.username, arg.password);
-                subWindow.close();
-            });
-            */
         }
-    }
-
-    getMainMenu = (windowManager) => {
-        return Menu.buildFromTemplate([
-            {
-                label: lang.main.file.label,
-                submenu: [
-                    {
-                        accelerator: 'CmdOrCtrl+T',
-                        label: lang.main.file.newTab,
-                        click() {
-                            windowManager.getCurrentWindow().addView();
-                        }
-                    },
-                    {
-                        accelerator: 'CmdOrCtrl+N',
-                        label: lang.main.file.newWindow,
-                        click() {
-                            windowManager.addWindow();
-                        }
-                    },
-                    {
-                        accelerator: 'CmdOrCtrl+Shift+N',
-                        label: lang.main.file.openPrivateWindow,
-                        click() {
-                            windowManager.addWindow(true);
-                        }
-                    },
-                    { type: 'separator' },
-                    {
-                        label: lang.main.file.savePage,
-                        accelerator: 'CmdOrCtrl+S',
-                        click: () => {
-                            if (windowManager.getCurrentWindow().getBrowserViews()[0] == undefined) return;
-                            const view = windowManager.getCurrentWindow().getBrowserViews()[0];
-
-                            dialog.showSaveDialog({
-                                defaultPath: `${app.getPath('downloads')}/${view.webContents.getTitle()}.html`,
-                                filters: [
-                                    { name: 'HTML', extensions: ['htm', 'html'] },
-                                    { name: 'All Files', extensions: ['*'] }
-                                ]
-                            }, (fileName) => {
-                                if (fileName === undefined || fileName === null) return;
-                                view.webContents.savePage(fileName, 'HTMLComplete', (err) => {
-                                    if (!err) console.log('Page Save successfully');
-                                });
-                            });
-                        }
-                    },
-                    {
-                        label: lang.main.file.print,
-                        accelerator: 'CmdOrCtrl+P',
-                        click: () => {
-                            if (windowManager.getCurrentWindow().getBrowserViews()[0] == undefined) return;
-                            const view = windowManager.getCurrentWindow().getBrowserViews()[0];
-
-                            view.webContents.print();
-                        }
-                    },
-                    { type: 'separator' },
-                    {
-                        accelerator: 'CmdOrCtrl+W',
-                        label: 'Close tab',
-                        click() {
-                            windowManager.getCurrentWindow().removeView();
-                        }
-                    },
-                    {
-                        accelerator: 'CmdOrCtrl+Shift+W',
-                        label: 'Close current window',
-                        click() {
-                            windowManager.getCurrentWindow().close();
-                        }
-                    },
-                    { type: 'separator' },
-                    { role: 'quit' },
-                ],
-            },
-            {
-                label: lang.main.edit.label,
-                submenu: [
-                    {
-                        label: lang.main.edit.undo,
-                        role: 'undo'
-                    },
-                    {
-                        label: lang.main.edit.redo,
-                        role: 'redo'
-                    },
-                    { type: 'separator' },
-                    {
-                        label: lang.main.edit.cut,
-                        role: 'cut'
-                    },
-                    {
-                        label: lang.main.edit.copy,
-                        role: 'copy'
-                    },
-                    {
-                        label: lang.main.edit.paste,
-                        role: 'paste'
-                    },
-                    {
-                        label: lang.main.edit.delete,
-                        accelerator: 'Delete',
-                        role: 'delete'
-                    },
-                    { type: 'separator' },
-                    {
-                        label: lang.main.edit.selectAll,
-                        role: 'selectAll'
-                    },
-                    { type: 'separator' },
-                    {
-                        label: lang.main.edit.find,
-                        accelerator: 'CmdOrCtrl+F'
-                    }
-                ]
-            },
-            {
-                label: lang.main.view.label,
-                submenu: [
-                    {
-                        label: lang.main.view.fullScreen,
-                        accelerator: 'F11',
-                        click: () => {
-                            windowManager.getCurrentWindow().setFullScreen(!windowManager.getCurrentWindow().isFullScreen());
-                            windowManager.getCurrentWindow().fixBounds();
-                        }
-                    },
-                    { type: 'separator' },
-                    {
-                        label: lang.main.view.viewSource,
-                        accelerator: 'CmdOrCtrl+U',
-                        click: () => {
-                            if (windowManager.getCurrentWindow().getBrowserViews()[0] == undefined) return;
-                            const view = windowManager.getCurrentWindow().getBrowserViews()[0];
-
-                            windowManager.getCurrentWindow().addView(`view-source:${view.webContents.getURL()}`, true);
-                        }
-                    },
-                    { type: 'separator' },
-                    {
-                        label: lang.main.view.devTool,
-                        accelerator: 'CmdOrCtrl+Shift+I',
-                        click: () => {
-                            if (windowManager.getCurrentWindow().getBrowserViews()[0] == undefined) return;
-                            const view = windowManager.getCurrentWindow().getBrowserViews()[0];
-
-                            if (view.webContents.isDevToolsOpened())
-                                view.webContents.closeDevTools();
-                            else
-                                view.webContents.openDevTools();
-                        }
-                    },
-                    {
-                        label: lang.main.view.devTool,
-                        accelerator: 'F12',
-                        visible: false,
-                        click: () => {
-                            if (windowManager.getCurrentWindow().getBrowserViews()[0] == undefined) return;
-                            const view = windowManager.getCurrentWindow().getBrowserViews()[0];
-
-                            if (view.webContents.isDevToolsOpened())
-                                view.webContents.closeDevTools();
-                            else
-                                view.webContents.openDevTools();
-                        }
-                    },
-                    {
-                        label: lang.main.view.devToolWindow,
-                        accelerator: 'CmdOrCtrl+Shift+F12',
-                        click: () => {
-                            windowManager.getCurrentWindow().webContents.openDevTools({ mode: 'detach' });
-                        }
-                    }
-                ]
-            },
-            {
-                label: lang.main.navigate.label,
-                submenu: [
-                    {
-                        label: lang.main.navigate.back,
-                        accelerator: 'Alt+Left',
-                        click: () => {
-                            if (windowManager.getCurrentWindow().getBrowserViews()[0] == undefined) return;
-                            const view = windowManager.getCurrentWindow().getBrowserViews()[0];
-
-                            const url = view.webContents.getURL();
-
-                            if (view.webContents.canGoBack())
-                                view.webContents.goBack();
-                            if (url.startsWith(`${protocolStr}://error`)) {
-                                if (view.webContents.canGoBack())
-                                    view.webContents.goBack();
-                            }
-                        }
-                    },
-                    {
-                        label: lang.main.navigate.forward,
-                        accelerator: 'Alt+Right',
-                        click: () => {
-                            if (windowManager.getCurrentWindow().getBrowserViews()[0] == undefined) return;
-                            const view = windowManager.getCurrentWindow().getBrowserViews()[0];
-
-                            const url = view.webContents.getURL();
-
-                            if (view.webContents.canGoForward())
-                                view.webContents.goForward();
-                            if (url.startsWith(`${protocolStr}://error`)) {
-                                if (view.webContents.canGoForward())
-                                    view.webContents.goForward();
-                            }
-                        }
-                    },
-                    { type: 'separator' },
-                    {
-                        label: lang.main.navigate.reload,
-                        accelerator: 'CmdOrCtrl+R',
-                        click: () => {
-                            if (windowManager.getCurrentWindow().getBrowserViews()[0] == undefined) return;
-                            const view = windowManager.getCurrentWindow().getBrowserViews()[0];
-
-                            if (!view.webContents.isLoadingMainFrame())
-                                view.webContents.reload();
-                            else
-                                view.webContents.stop();
-                        }
-                    },
-                    {
-                        label: lang.main.navigate.reload,
-                        accelerator: 'F5',
-                        visible: false,
-                        click: () => {
-                            if (windowManager.getCurrentWindow().getBrowserViews()[0] == undefined) return;
-                            const view = windowManager.getCurrentWindow().getBrowserViews()[0];
-
-                            if (!view.webContents.isLoadingMainFrame())
-                                view.webContents.reload();
-                            else
-                                view.webContents.stop();
-                        }
-                    },
-                    {
-                        label: lang.main.navigate.reloadIgnoringCache,
-                        accelerator: 'CmdOrCtrl+Shift+R',
-                        click: () => {
-                            if (windowManager.getCurrentWindow().getBrowserViews()[0] == undefined) return;
-                            const view = windowManager.getCurrentWindow().getBrowserViews()[0];
-
-                            if (!view.webContents.isLoadingMainFrame())
-                                view.webContents.reloadIgnoringCache();
-                            else
-                                view.webContents.stop();
-                        }
-                    },
-                    { type: 'separator' },
-                    {
-                        label: lang.main.navigate.home,
-                        accelerator: 'Alt+Home',
-                        click: () => {
-                            if (windowManager.getCurrentWindow().getBrowserViews()[0] == undefined) return;
-                            const view = windowManager.getCurrentWindow().getBrowserViews()[0];
-
-                            view.webContents.loadURL(config.get('homePage.isDefaultHomePage') ? `${protocolStr}://home/` : config.get('homePage.defaultPage'));
-                        }
-                    },
-                    { type: 'separator' },
-                    {
-                        label: lang.main.navigate.history,
-                        accelerator: 'Ctrl+H',
-                        click: () => {
-                            if (windowManager.getCurrentWindow().getBrowserViews()[0] == undefined) return;
-                            const view = windowManager.getCurrentWindow().getBrowserViews()[0];
-
-                            view.webContents.loadURL(`${protocolStr}://history/`);
-                        }
-                    },
-                    {
-                        label: lang.main.navigate.downloads,
-                        accelerator: 'Ctrl+D',
-                        click: () => {
-                            if (windowManager.getCurrentWindow().getBrowserViews()[0] == undefined) return;
-                            const view = windowManager.getCurrentWindow().getBrowserViews()[0];
-
-                            view.webContents.loadURL(`${protocolStr}://downloads/`);
-                        }
-                    },
-                    {
-                        label: lang.main.navigate.bookmarks,
-                        accelerator: 'Ctrl+B',
-                        click: () => {
-                            if (windowManager.getCurrentWindow().getBrowserViews()[0] == undefined) return;
-                            const view = windowManager.getCurrentWindow().getBrowserViews()[0];
-
-                            view.webContents.loadURL(`${protocolStr}://bookmarks/`);
-                        }
-                    }
-                ]
-            },
-        ]);
     }
 
     loadExtension = (id) => {
@@ -636,6 +413,10 @@ module.exports = class Application {
         const version = versions.pop();
 
         extensions.loadExtension(`${extensionDir}/${id}/${version}`);
+    }
+
+    getDefaultConfig = () => {
+        return defaultConfig;
     }
 
     getRandString = (length) => {

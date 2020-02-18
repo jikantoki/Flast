@@ -87,7 +87,7 @@ import NavigationBar from './Components/NavigationBar.jsx';
 const protocolStr = 'flast';
 const fileProtocolStr = `${protocolStr}-file`;
 
-const styles = theme => ({
+const styles = (theme) => ({
     heading: {
         fontSize: theme.typography.pxToRem(15),
         flexBasis: '33.33%',
@@ -141,10 +141,41 @@ const styles = theme => ({
         borderRadius: 0,
         minHeight: '100%'
     },
+    paperHeadingRoot: {
+        paddingBottom: '0px !important'
+    },
     paperHeading: {
         paddingLeft: theme.spacing(0.5),
         paddingRight: theme.spacing(0.5),
-        paddingBottom: theme.spacing(0.5),
+        paddingBottom: theme.spacing(0.5)
+    },
+    itemDivider: {
+        paddingTop: '0px !important',
+        paddingBottom: '0px !important'
+    },
+    itemRoot: {
+        padding: '8px 16px !important',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        [theme.breakpoints.up('md')]: {
+            flexDirection: 'row',
+            height: 60,
+            padding: '2px 16px !important',
+        }
+    },
+    itemTitleRoot: {
+        display: 'flex',
+        alignItems: 'center',
+        [theme.breakpoints.down('sm')]: {
+            width: '100%',
+            padding: '8px 0px !important',
+        }
+    },
+    itemControlRoot: {
+        display: 'flex',
+        alignItems: 'center',
+        marginLeft: 'auto'
     },
     closeButton: {
         position: 'absolute',
@@ -194,7 +225,12 @@ class Settings extends Component {
 
         this.state = {
             isDialogOpened: false,
-            isExpanded: null
+            isExpanded: null,
+            registerDisplayName: '',
+            registerEmail: '',
+            registerPassword: '',
+            loginEmail: '',
+            loginPassword: '',
         };
     }
 
@@ -222,7 +258,7 @@ class Settings extends Component {
                 <Container fixed className={classes.containerRoot}>
                     <Paper className={classes.paperRoot}>
                         <Grid container spacing={2}>
-                            <Grid item xs={12}>
+                            <Grid item xs={12} className={classes.paperHeadingRoot}>
                                 <Typography variant="h6" className={classes.paperHeading}>{window.getLanguageFile().internalPages.settings.sections.user.title}</Typography>
                                 <Divider />
                             </Grid>
@@ -241,7 +277,7 @@ class Settings extends Component {
                                                 </Typography>
                                                 <div style={{ marginLeft: 'auto' }}>
                                                     <Button variant="text" color="default" style={{ marginRight: 5 }} component={RouterLink} to="/sync">Sync</Button>
-                                                    <Button variant="contained" color={!String(window.getCurrentUser().address).endsWith('@flast.com') ? 'default' : 'primary'} onClick={() => { this.setState({ isDialogOpened: 'login' }); }}>
+                                                    <Button variant="contained" color={!String(window.getCurrentUser().address).endsWith('@flast.com') ? 'default' : 'primary'} onClick={() => { this.setState({ isDialogOpened: !String(window.getCurrentUser().address).endsWith('@flast.com') ? 'logout' : 'login' }); }}>
                                                         {!String(window.getCurrentUser().address).endsWith('@flast.com') ? window.getLanguageFile().internalPages.settings.sections.user.controls.logout : window.getLanguageFile().internalPages.settings.sections.user.controls.login}
                                                     </Button>
                                                 </div>
@@ -268,32 +304,35 @@ class Settings extends Component {
                             autoFocus
                             margin="dense"
                             variant="outlined"
-                            id="name"
                             label="表示名"
                             type="text"
                             fullWidth
                             required
+                            value={this.state.registerDisplayName}
+                            onChange={(e) => this.setState({ registerDisplayName: e.target.value })}
                         />
                         <Divider />
                         <TextField
                             autoFocus
                             margin="dense"
                             variant="outlined"
-                            id="mail"
                             label="メールアドレス"
                             type="email"
                             fullWidth
                             required
+                            value={this.state.registerEmail}
+                            onChange={(e) => this.setState({ registerEmail: e.target.value })}
                         />
                         <TextField
                             autoFocus
                             margin="dense"
                             variant="outlined"
-                            id="pass"
                             label="パスワード"
                             type="password"
                             fullWidth
                             required
+                            value={this.state.registerPassword}
+                            onChange={(e) => this.setState({ registerPassword: e.target.value })}
                         />
                     </DialogContent>
                     <DialogActions>
@@ -303,7 +342,7 @@ class Settings extends Component {
                         <Button color="primary" variant="outlined" onClick={this.handleDialogClose}>
                             キャンセル
                         </Button>
-                        <Button color="primary" variant="contained">
+                        <Button color="primary" variant="contained" onClick={() => { window.updateAccount(this.state.registerEmail, this.state.registerPassword, this.state.registerDisplayName) }}>
                             登録
                         </Button>
                     </DialogActions>
@@ -316,25 +355,30 @@ class Settings extends Component {
                 >
                     <DialogTitle id="alert-dialog-title">ログイン</DialogTitle>
                     <DialogContent>
+                        <DialogContentText id="alert-dialog-description">
+                            ログインして{window.getAppName()}を、便利に使いましょう。
+                        </DialogContentText>
                         <TextField
                             autoFocus
                             margin="dense"
                             variant="outlined"
-                            id="mail"
                             label="メールアドレス"
                             type="email"
                             fullWidth
                             required
+                            value={this.state.loginEmail}
+                            onChange={(e) => this.setState({ loginEmail: e.target.value })}
                         />
                         <TextField
                             autoFocus
                             margin="dense"
                             variant="outlined"
-                            id="pass"
                             label="パスワード"
                             type="password"
                             fullWidth
                             required
+                            value={this.state.loginPassword}
+                            onChange={(e) => this.setState({ loginPassword: e.target.value })}
                         />
                     </DialogContent>
                     <DialogActions>
@@ -344,7 +388,7 @@ class Settings extends Component {
                         <Button color="primary" variant="outlined" onClick={this.handleDialogClose}>
                             キャンセル
                         </Button>
-                        <Button color="primary" variant="contained">
+                        <Button color="primary" variant="contained" onClick={() => { window.loginAccount(this.state.loginEmail, this.state.loginPassword) }}>
                             ログイン
                         </Button>
                     </DialogActions>
@@ -358,8 +402,8 @@ class Settings extends Component {
                     <DialogTitle id="alert-dialog-title">ログアウト</DialogTitle>
                     <DialogContent>
                         <DialogContentText id="alert-dialog-description">
-                            本当にログアウトしますか？
-                            クラウド上に保存されている履歴・ブックマークはこのデバイスでは利用できなくなります。
+                            本当にログアウトしますか？<br />
+                            クラウド上に保存されている履歴・ブックマークはこのデバイスでは利用できなくなります。<br />
                             なお、再度ログインをすることで、履歴・ブックマークが利用できるようになります。
                         </DialogContentText>
                     </DialogContent>
@@ -367,7 +411,7 @@ class Settings extends Component {
                         <Button color="primary" variant="outlined" onClick={this.handleDialogClose}>
                             キャンセル
                         </Button>
-                        <Button color="primary" variant="contained">
+                        <Button color="primary" variant="contained" onClick={() => { window.logoutAccount() }}>
                             ログアウト
                         </Button>
                     </DialogActions>
@@ -590,26 +634,28 @@ class SettingsDesignPage extends Component {
                 <Container fixed className={classes.containerRoot}>
                     <Paper className={classes.paperRoot}>
                         <Grid container spacing={2}>
-                            <Grid item xs={12}>
+                            <Grid item xs={12} className={classes.paperHeadingRoot}>
                                 <Typography variant="h6" className={classes.paperHeading}>{window.getLanguageFile().internalPages.settings.sections.design.title}</Typography>
                                 <Divider />
                             </Grid>
-                            <Grid item xs={10} sm={11} style={{ padding: '8px 14px' }}>
-                                <Typography variant="body2">{window.getLanguageFile().internalPages.settings.sections.design.controls.homeButton.name}</Typography>
-                            </Grid>
-                            <Grid item xs={2} sm={1} style={{ display: 'flex', padding: '0px 8px' }} direction="column" alignItems="flex-end">
-                                <Switch
-                                    checked={this.state.isHomeButton}
-                                    onChange={(e) => {
-                                        this.setState({ ...this.state, isHomeButton: e.target.checked });
-                                        window.setHomeButton(e.target.checked);
-                                    }}
-                                    color="primary"
-                                    value="isHomeButton"
-                                />
+                            <Grid item xs={12} className={classes.itemRoot} style={{ flexDirection: 'row' }}>
+                                <div className={classes.itemTitleRoot}>
+                                    <Typography variant="body2">{window.getLanguageFile().internalPages.settings.sections.design.controls.homeButton.name}</Typography>
+                                </div>
+                                <div className={classes.itemControlRoot}>
+                                    <Switch
+                                        checked={this.state.isHomeButton}
+                                        onChange={(e) => {
+                                            this.setState({ ...this.state, isHomeButton: e.target.checked });
+                                            window.setHomeButton(e.target.checked);
+                                        }}
+                                        color="primary"
+                                        value="isHomeButton"
+                                    />
+                                </div>
                             </Grid>
                             {this.state.isHomeButton ?
-                                <Grid item xs={12} style={{ padding: '8px 14px' }}>
+                                <Grid item xs={12} style={{ padding: '0px 14px 8px' }}>
                                     <div className={classes.formRoot}>
                                         <FormControl component="fieldset" className={classes.formControl}>
                                             <RadioGroup
@@ -656,113 +702,113 @@ class SettingsDesignPage extends Component {
                                 :
                                 null
                             }
-                            <Grid item xs={12}>
-                                <Divider />
-                            </Grid>
-                            <Grid item xs={10} sm={11} style={{ padding: '8px 14px' }}>
-                                <Typography variant="body2">{window.getLanguageFile().internalPages.settings.sections.design.controls.bookMarkBar}</Typography>
-                            </Grid>
-                            <Grid item xs={2} sm={1} style={{ display: 'flex', padding: '0px 8px' }} direction="column" alignItems="flex-end">
-                                <Switch
-                                    checked={this.state.isBookmarkBar}
-                                    onChange={(e) => {
-                                        this.setState({ ...this.state, isBookmarkBar: e.target.checked });
-                                        window.setBookmarkBar(e.target.checked);
-                                    }}
-                                    color="primary"
-                                    value="isBookmarkBar"
-                                />
-                            </Grid>
-                            <Grid item xs={12}>
-                                <Divider />
-                            </Grid>
-                            <Grid item xs={8} sm={8} style={{ padding: '8px 14px' }}>
-                                <Typography variant="body2">{window.getLanguageFile().internalPages.settings.sections.design.controls.theme.name}</Typography>
-                            </Grid>
-                            <Grid item xs={4} sm={4} style={{ display: 'flex', padding: '0px 8px' }} direction="column" alignItems="flex-end">
-                                <div className={classes.formRoot}>
-                                    <FormControl variant="outlined" margin="dense" className={classes.formControl} style={{ minWidth: 120 }}>
-                                        <Select
-                                            value={this.state.theme}
-                                            onChange={(e) => {
-                                                this.setState({ theme: e.target.value });
-                                                window.setTheme(e.target.value);
-                                            }}
-                                            inputProps={{
-                                                name: 'theme',
-                                                id: 'theme',
-                                            }}
-                                        >
-                                            <MenuItem value={-1}>{window.getLanguageFile().internalPages.settings.sections.design.controls.theme.controls.system}</MenuItem>
-                                            <MenuItem value={0}>{window.getLanguageFile().internalPages.settings.sections.design.controls.theme.controls.light}</MenuItem>
-                                            <MenuItem value={1}>{window.getLanguageFile().internalPages.settings.sections.design.controls.theme.controls.dark}</MenuItem>
-                                        </Select>
-                                    </FormControl>
+                            <Grid item xs={12} className={classes.itemDivider}><Divider /></Grid>
+                            <Grid item xs={12} className={classes.itemRoot} style={{ flexDirection: 'row' }}>
+                                <div className={classes.itemTitleRoot}>
+                                    <Typography variant="body2">{window.getLanguageFile().internalPages.settings.sections.design.controls.bookMarkBar}</Typography>
+                                </div>
+                                <div className={classes.itemControlRoot}>
+                                    <Switch
+                                        checked={this.state.isBookmarkBar}
+                                        onChange={(e) => {
+                                            this.setState({ ...this.state, isBookmarkBar: e.target.checked });
+                                            window.setBookmarkBar(e.target.checked);
+                                        }}
+                                        color="primary"
+                                        value="isBookmarkBar"
+                                    />
                                 </div>
                             </Grid>
-                            <Grid item xs={12}>
-                                <Divider />
+                            <Grid item xs={12} className={classes.itemDivider}><Divider /></Grid>
+                            <Grid item xs={12} className={classes.itemRoot} style={{ flexDirection: 'row' }}>
+                                <div className={classes.itemTitleRoot}>
+                                    <Typography variant="body2">{window.getLanguageFile().internalPages.settings.sections.design.controls.theme.name}</Typography>
+                                </div>
+                                <div className={classes.itemControlRoot}>
+                                    <div className={classes.formRoot}>
+                                        <FormControl variant="outlined" margin="dense" className={classes.formControl} style={{ minWidth: 120 }}>
+                                            <Select
+                                                value={this.state.theme}
+                                                onChange={(e) => {
+                                                    this.setState({ theme: e.target.value });
+                                                    window.setTheme(e.target.value);
+                                                }}
+                                                inputProps={{
+                                                    name: 'theme',
+                                                    id: 'theme',
+                                                }}
+                                            >
+                                                <MenuItem value={-1}>{window.getLanguageFile().internalPages.settings.sections.design.controls.theme.controls.system}</MenuItem>
+                                                <MenuItem value={0}>{window.getLanguageFile().internalPages.settings.sections.design.controls.theme.controls.light}</MenuItem>
+                                                <MenuItem value={1}>{window.getLanguageFile().internalPages.settings.sections.design.controls.theme.controls.dark}</MenuItem>
+                                            </Select>
+                                        </FormControl>
+                                    </div>
+                                </div>
                             </Grid>
-                            <Grid item xs={7} sm={9} style={{ padding: '8px 14px' }}>
-                                <Typography variant="body2">{window.getLanguageFile().internalPages.settings.sections.design.controls.accentColor.name}</Typography>
-                            </Grid>
-                            <Grid item xs={5} sm={3} style={{ display: 'flex', padding: '0px 8px' }} alignItems="center" justify="flex-end">
-                                <Tooltip title={window.getLanguageFile().internalPages.settings.sections.design.controls.accentColor.controls.reset}>
-                                    <IconButton size="small" style={{ marginRight: 5 }}
-                                        onClick={() => {
-                                            this.setState({ tabAccentColor: '#0a84ff' });
-                                            window.setTabAccentColor('#0a84ff');
+                            <Grid item xs={12} className={classes.itemDivider}><Divider /></Grid>
+                            <Grid item xs={12} className={classes.itemRoot}>
+                                <div className={classes.itemTitleRoot}>
+                                    <Typography variant="body2">{window.getLanguageFile().internalPages.settings.sections.design.controls.accentColor.name}</Typography>
+                                </div>
+                                <div className={classes.itemControlRoot}>
+                                    <Tooltip title={window.getLanguageFile().internalPages.settings.sections.design.controls.accentColor.controls.reset}>
+                                        <IconButton size="small" style={{ marginRight: 5 }}
+                                            onClick={() => {
+                                                this.setState({ tabAccentColor: '#0a84ff' });
+                                                window.setTabAccentColor('#0a84ff');
+                                            }}
+                                        >
+                                            <RestoreIcon />
+                                        </IconButton>
+                                    </Tooltip>
+                                    <Button variant="contained" color="primary" startIcon={<PaletteIcon />} onClick={this.handleColorPicker}>{window.getLanguageFile().internalPages.settings.sections.design.controls.accentColor.controls.select}</Button>
+                                    <Popover
+                                        id={Boolean(this.state.colorPickerAnchorEl) ? 'colorPickerPopOver' : undefined}
+                                        open={Boolean(this.state.colorPickerAnchorEl)}
+                                        anchorEl={this.state.colorPickerAnchorEl}
+                                        onClose={this.handleColorPickerClose}
+                                        anchorOrigin={{
+                                            vertical: 'bottom',
+                                            horizontal: 'right',
+                                        }}
+                                        transformOrigin={{
+                                            vertical: 'top',
+                                            horizontal: 'right',
                                         }}
                                     >
-                                        <RestoreIcon />
-                                    </IconButton>
-                                </Tooltip>
-                                <Button variant="contained" size="small" color="primary" startIcon={<PaletteIcon />} onClick={this.handleColorPicker}>{window.getLanguageFile().internalPages.settings.sections.design.controls.accentColor.controls.select}</Button>
-                                <Popover
-                                    id={Boolean(this.state.colorPickerAnchorEl) ? 'colorPickerPopOver' : undefined}
-                                    open={Boolean(this.state.colorPickerAnchorEl)}
-                                    anchorEl={this.state.colorPickerAnchorEl}
-                                    onClose={this.handleColorPickerClose}
-                                    anchorOrigin={{
-                                        vertical: 'bottom',
-                                        horizontal: 'right',
-                                    }}
-                                    transformOrigin={{
-                                        vertical: 'top',
-                                        horizontal: 'right',
-                                    }}
-                                >
-                                    <ChromePicker
-                                        color={this.state.tabAccentColor}
-                                        onChangeComplete={this.handleColorPickerChangeComplete} />
-                                </Popover>
+                                        <ChromePicker
+                                            color={this.state.tabAccentColor}
+                                            onChangeComplete={this.handleColorPickerChangeComplete} />
+                                    </Popover>
+                                </div>
                             </Grid>
-                            <Grid item xs={12}>
-                                <Divider />
+                            <Grid item xs={12} className={classes.itemDivider}><Divider /></Grid>
+                            <Grid item xs={12} className={classes.itemRoot} style={{ flexDirection: 'row' }}>
+                                <div className={classes.itemTitleRoot}>
+                                    <Typography variant="body2">{window.getLanguageFile().internalPages.settings.sections.design.controls.titleBar.name}</Typography>
+                                </div>
+                                <div className={classes.itemControlRoot}>
+                                    {this.state.isCustomTitlebar2 !== window.getCustomTitlebar() && <Button variant="outlined" size="small" className={classes.button} onClick={() => { window.restart(); }}>{window.getLanguageFile().internalPages.settings.sections.design.controls.titleBar.controls.restart}</Button>}
+                                    <Switch
+                                        checked={this.state.isCustomTitlebar}
+                                        onChange={(e) => {
+                                            this.setState({ ...this.state, isCustomTitlebar: e.target.checked });
+                                            window.setCustomTitlebar(e.target.checked);
+                                        }}
+                                        color="primary"
+                                        value="isCustomTitlebar"
+                                    />
+                                </div>
                             </Grid>
-                            <Grid item xs={7} sm={9} style={{ padding: '8px 14px' }}>
-                                <Typography variant="body2">{window.getLanguageFile().internalPages.settings.sections.design.controls.titleBar.name}</Typography>
-                            </Grid>
-                            <Grid item xs={5} sm={3} style={{ display: 'flex', padding: '0px 8px' }} alignItems="center" justify="flex-end">
-                                {this.state.isCustomTitlebar2 !== window.getCustomTitlebar() && <Button variant="outlined" size="small" className={classes.button} onClick={() => { window.restart(); }}>{window.getLanguageFile().internalPages.settings.sections.design.controls.titleBar.controls.restart}</Button>}
-                                <Switch
-                                    checked={this.state.isCustomTitlebar}
-                                    onChange={(e) => {
-                                        this.setState({ ...this.state, isCustomTitlebar: e.target.checked });
-                                        window.setCustomTitlebar(e.target.checked);
-                                    }}
-                                    color="primary"
-                                    value="isCustomTitlebar"
-                                />
-                            </Grid>
-                            <Grid item xs={12}>
-                                <Divider />
-                            </Grid>
-                            <Grid item xs={8} sm={8} style={{ padding: '8px 14px' }}>
-                                <Typography variant="body2">{window.getLanguageFile().internalPages.settings.sections.design.controls.moreSettings}</Typography>
-                            </Grid>
-                            <Grid item xs={4} sm={4} style={{ display: 'flex', padding: '0px 8px' }} direction="column" alignItems="flex-end">
-                                <Button variant="outlined" size="small">変更</Button>
+                            <Grid item xs={12} className={classes.itemDivider}><Divider /></Grid>
+                            <Grid item xs={12} className={classes.itemRoot} style={{ flexDirection: 'row' }}>
+                                <div className={classes.itemTitleRoot}>
+                                    <Typography variant="body2">{window.getLanguageFile().internalPages.settings.sections.design.controls.moreSettings}</Typography>
+                                </div>
+                                <div className={classes.itemControlRoot}>
+                                    <Button variant="outlined" size="small">変更</Button>
+                                </div>
                             </Grid>
                         </Grid>
                     </Paper>
@@ -796,6 +842,7 @@ SettingsDesignPage.propTypes = {
 };
 
 class SettingsAdBlockPage extends Component {
+
     constructor(props) {
         super(props);
 
@@ -804,6 +851,7 @@ class SettingsAdBlockPage extends Component {
 
             // AdBlock
             isAdBlock: false,
+            filters: [],
 
             // Snackbar
             isShowingSnackbar: false,
@@ -816,7 +864,14 @@ class SettingsAdBlockPage extends Component {
         this.setState({
             // AdBlock
             isAdBlock: window.getAdBlock(),
+            filters: window.getFilters()
         });
+
+        /*
+        window.getFilters().forEach((item, i) => {
+            this.setState(state => { return { filters: [...state.filters, item] }; });
+        });
+        */
 
         document.title = window.getLanguage() === 'ja' ? `広告ブロック - 設定` : `Ad Block - Settings`;
     }
@@ -840,38 +895,63 @@ class SettingsAdBlockPage extends Component {
                 <Container fixed className={classes.containerRoot}>
                     <Paper className={classes.paperRoot}>
                         <Grid container spacing={2}>
-                            <Grid item xs={12}>
+                            <Grid item xs={12} className={classes.paperHeadingRoot}>
                                 <Typography variant="h6" className={classes.paperHeading}>広告ブロック</Typography>
                                 <Divider />
                             </Grid>
-                            <Grid item xs={8} sm={8} style={{ padding: '8px 14px' }}>
-                                <Typography variant="body2">広告ブロックを使用する</Typography>
+                            <Grid item xs={12} className={classes.itemRoot} style={{ flexDirection: 'row' }}>
+                                <div className={classes.itemTitleRoot}>
+                                    <Typography variant="body2">広告ブロックを使用する</Typography>
+                                </div>
+                                <div className={classes.itemControlRoot}>
+                                    <Switch
+                                        checked={this.state.isAdBlock}
+                                        onChange={(e) => {
+                                            this.setState({ ...this.state, isAdBlock: e.target.checked });
+                                            window.setAdBlock(e.target.checked);
+                                        }}
+                                        color="primary"
+                                        value="isAdBlock"
+                                    />
+                                </div>
                             </Grid>
-                            <Grid item xs={4} sm={4} style={{ display: 'flex', padding: '0px 8px' }} direction="column" alignItems="flex-end">
-                                <Switch
-                                    checked={this.state.isAdBlock}
-                                    onChange={(e) => {
-                                        this.setState({ ...this.state, isAdBlock: e.target.checked });
-                                        window.setAdBlock(e.target.checked);
-                                    }}
-                                    color="primary"
-                                    value="isAdBlock"
-                                />
-                            </Grid>
-                            <Grid item xs={12}>
-                                <Divider />
-                            </Grid>
-                            <Grid item xs={12} style={{ display: 'flex', padding: '0px 14px' }} direction="column" alignItems="flex-end">
-                                <Button variant="outlined" size="small"
-                                    onClick={() => {
-                                        window.updateFilters();
+                            {this.state.isAdBlock && (
+                                <Grid item xs={12} style={{ paddingTop: 0, paddingBottom: 2 }}>
+                                    <Grid item xs={12} className={classes.itemDivider}><Divider /></Grid>
+                                    {this.state.filters.map((item, i) => {
+                                        return (
+                                            <Grid item xs={12} style={{ padding: '4px 8px', display: 'flex', alignItems: 'center' }} key={i}>
+                                                <div className={classes.itemTitleRoot}>
+                                                    <Typography variant="body2" title={item.url}>{item.name}</Typography>
+                                                </div>
+                                                <div className={classes.itemControlRoot}>
+                                                    <Switch
+                                                        checked={item.isEnabled}
+                                                        onChange={(e) => {
+                                                        }}
+                                                        color="primary"
+                                                        value={i}
+                                                    />
+                                                </div>
+                                            </Grid>
+                                        );
+                                    })}
+                                </Grid>
+                            )}
+                            <Grid item xs={12} className={classes.itemDivider}><Divider /></Grid>
+                            <Grid item xs={12} className={classes.itemRoot}>
+                                <div className={classes.itemControlRoot}>
+                                    <Button variant="outlined" size="small"
+                                        onClick={() => {
+                                            window.updateFilters();
 
-                                        this.props.enqueueSnackbar('定義ファイルのアップデートと再読み込みをしています…', {
-                                            variant: 'info',
-                                        });
-                                    }}>
-                                    定義ファイルのアップデート・再読み込み
+                                            this.props.enqueueSnackbar('定義ファイルのアップデートと再読み込みをしています…', {
+                                                variant: 'info',
+                                            });
+                                        }}>
+                                        定義ファイルのアップデート・再読み込み
                                 </Button>
+                                </div>
                             </Grid>
                         </Grid>
                     </Paper>
@@ -966,16 +1046,16 @@ class SettingsHomePage extends Component {
                 <Container fixed className={classes.containerRoot}>
                     <Paper className={classes.paperRoot}>
                         <Grid container spacing={2}>
-                            <Grid item xs={12}>
+                            <Grid item xs={12} className={classes.paperHeadingRoot}>
                                 <Typography variant="h6" className={classes.paperHeading}>ホームページ</Typography>
                                 <Divider />
                             </Grid>
-                            <Grid item xs={12} style={{ padding: '8px 14px 0px' }}>
-                                <Typography variant="body2">
-                                    新しいタブ を開いたときに表示されるページ
-                                </Typography>
+                            <Grid item xs={12} className={classes.itemRoot}>
+                                <div className={classes.itemTitleRoot}>
+                                    <Typography variant="body2">新しいタブ を開いたときに表示されるページ</Typography>
+                                </div>
                             </Grid>
-                            <Grid item xs={12} style={{ padding: '8px 14px' }}>
+                            <Grid item xs={12} style={{ padding: '0px 14px 8px' }}>
                                 <div className={classes.formRoot}>
                                     <FormControl component="fieldset" className={classes.formControl}>
                                         <RadioGroup
@@ -1020,50 +1100,50 @@ class SettingsHomePage extends Component {
                                     }}
                                 />
                             </Grid>
-                            <Grid item xs={12}>
-                                <Divider />
-                            </Grid>
-                            <Grid item xs={8} sm={8} style={{ padding: '8px 14px' }}>
-                                <Typography variant="body2"><Link href="flast://home/">ホーム</Link> ページの背景設定</Typography>
-                            </Grid>
-                            <Grid item xs={4} sm={4} style={{ display: 'flex', padding: '0px 8px' }} direction="column" alignItems="flex-end">
-                                <div className={classes.formRoot}>
-                                    <FormControl variant="outlined" margin="dense" className={classes.formControl}>
-                                        <Select
-                                            value={this.state.homePageBackgroundType}
-                                            onChange={(e) => {
-                                                this.setState({ homePageBackgroundType: e.target.value });
-                                                window.setHomePageBackgroundType(e.target.value);
-                                            }}
-                                            inputProps={{
-                                                name: 'homePageBackgroundType',
-                                                id: 'homePageBackgroundType',
-                                            }}
-                                        >
-                                            <MenuItem value={-1}>無効</MenuItem>
-                                            <MenuItem value={0}>有効 (日替わり)</MenuItem>
-                                            <MenuItem value={1}>有効 (指定した画像)</MenuItem>
-                                        </Select>
-                                    </FormControl>
+                            <Grid item xs={12} className={classes.itemDivider}><Divider /></Grid>
+                            <Grid item xs={12} className={classes.itemRoot}>
+                                <div className={classes.itemTitleRoot}>
+                                    <Typography variant="body2"><Link href="flast://home/">ホーム</Link> ページの背景設定</Typography>
+                                </div>
+                                <div className={classes.itemControlRoot}>
+                                    <div className={classes.formRoot}>
+                                        <FormControl variant="outlined" margin="dense" className={classes.formControl}>
+                                            <Select
+                                                value={this.state.homePageBackgroundType}
+                                                onChange={(e) => {
+                                                    this.setState({ homePageBackgroundType: e.target.value });
+                                                    window.setHomePageBackgroundType(e.target.value);
+                                                }}
+                                                inputProps={{
+                                                    name: 'homePageBackgroundType',
+                                                    id: 'homePageBackgroundType',
+                                                }}
+                                            >
+                                                <MenuItem value={-1}>無効</MenuItem>
+                                                <MenuItem value={0}>有効 (日替わり)</MenuItem>
+                                                <MenuItem value={1}>有効 (指定した画像)</MenuItem>
+                                            </Select>
+                                        </FormControl>
+                                    </div>
                                 </div>
                             </Grid>
-                            <Grid item xs={12}>
-                                <Divider />
-                            </Grid>
-                            <Grid item xs={7} sm={9} style={{ padding: '8px 14px' }}>
-                                <Typography variant="body2"><Link href="flast://home/">ホーム</Link> ページの背景を変更</Typography>
-                            </Grid>
-                            <Grid item xs={5} sm={3} style={{ display: 'flex', padding: '0px 8px' }} alignItems="center" justify="flex-end">
-                                <input
-                                    accept="image/*"
-                                    type="file"
-                                    id="imageUpload"
-                                    style={{ display: 'none' }}
-                                    onChange={this.handleChangeFile.bind(this)}
-                                />
-                                <label htmlFor="imageUpload">
-                                    <Button variant="contained" size="small" color="primary" startIcon={<CloudUploadIcon />} component="span">アップロード</Button>
-                                </label>
+                            <Grid item xs={12} className={classes.itemDivider}><Divider /></Grid>
+                            <Grid item xs={12} className={classes.itemRoot}>
+                                <div className={classes.itemTitleRoot}>
+                                    <Typography variant="body2"><Link href="flast://home/">ホーム</Link> ページの背景を変更</Typography>
+                                </div>
+                                <div className={classes.itemControlRoot}>
+                                    <input
+                                        accept="image/*"
+                                        type="file"
+                                        id="imageUpload"
+                                        style={{ display: 'none' }}
+                                        onChange={this.handleChangeFile.bind(this)}
+                                    />
+                                    <label htmlFor="imageUpload">
+                                        <Button variant="contained" color="primary" startIcon={<CloudUploadIcon />} component="span">アップロード</Button>
+                                    </label>
+                                </div>
                             </Grid>
                         </Grid>
                     </Paper>
@@ -1158,7 +1238,7 @@ class SettingsStartUpPage extends Component {
                 <Container fixed className={classes.containerRoot}>
                     <Paper className={classes.paperRoot}>
                         <Grid container spacing={2}>
-                            <Grid item xs={12}>
+                            <Grid item xs={12} className={classes.paperHeadingRoot}>
                                 <Typography variant="h6" className={classes.paperHeading}>起動時</Typography>
                                 <Divider />
                             </Grid>
@@ -1294,36 +1374,36 @@ class SettingsSearchEnginePage extends Component {
                 <Container fixed className={classes.containerRoot}>
                     <Paper className={classes.paperRoot}>
                         <Grid container spacing={2}>
-                            <Grid item xs={12}>
+                            <Grid item xs={12} className={classes.paperHeadingRoot}>
                                 <Typography variant="h6" className={classes.paperHeading}>検索エンジン</Typography>
                                 <Divider />
                             </Grid>
-                            <Grid item xs={8} sm={8} style={{ padding: '8px 14px' }}>
-                                <Typography variant="body2">
-                                    アドレスバーと<Link href="flast://home/">ホーム</Link> ページで使用される検索エンジン
-                                </Typography>
-                            </Grid>
-                            <Grid item xs={4} sm={4} style={{ display: 'flex', padding: '0px 8px' }} direction="column" alignItems="flex-end">
-                                <div className={classes.formRoot}>
-                                    <FormControl variant="outlined" margin="dense" className={classes.formControl}>
-                                        <Select
-                                            value={this.state.searchEngine}
-                                            onChange={(e) => {
-                                                this.setState({ searchEngine: e.target.value });
-                                                window.setSearchEngine(e.target.value);
-                                            }}
-                                            inputProps={{
-                                                name: 'searchEngine',
-                                                id: 'searchEngine',
-                                            }}
-                                        >
-                                            {this.state.searchEngines.map((item, i) => {
-                                                return (
-                                                    <MenuItem key={i} value={item.name}>{item.name}</MenuItem>
-                                                );
-                                            })}
-                                        </Select>
-                                    </FormControl>
+                            <Grid item xs={12} className={classes.itemRoot}>
+                                <div className={classes.itemTitleRoot}>
+                                    <Typography variant="body2">アドレスバーと<Link href="flast://home/">ホーム</Link> ページで使用される検索エンジン</Typography>
+                                </div>
+                                <div className={classes.itemControlRoot}>
+                                    <div className={classes.formRoot}>
+                                        <FormControl variant="outlined" margin="dense" className={classes.formControl}>
+                                            <Select
+                                                value={this.state.searchEngine}
+                                                onChange={(e) => {
+                                                    this.setState({ searchEngine: e.target.value });
+                                                    window.setSearchEngine(e.target.value);
+                                                }}
+                                                inputProps={{
+                                                    name: 'searchEngine',
+                                                    id: 'searchEngine',
+                                                }}
+                                            >
+                                                {this.state.searchEngines.map((item, i) => {
+                                                    return (
+                                                        <MenuItem key={i} value={item.name}>{item.name}</MenuItem>
+                                                    );
+                                                })}
+                                            </Select>
+                                        </FormControl>
+                                    </div>
                                 </div>
                             </Grid>
                         </Grid>
@@ -1398,245 +1478,231 @@ class SettingsPageSettingsPage extends Component {
                 <Container fixed className={classes.containerRoot}>
                     <Paper className={classes.paperRoot}>
                         <Grid container spacing={2}>
-                            <Grid item xs={12}>
+                            <Grid item xs={12} className={classes.paperHeadingRoot}>
                                 <Typography variant="h6" className={classes.paperHeading}>ページ設定</Typography>
                                 <Divider />
                             </Grid>
-                            <Grid item sm={1} md={1} style={{ padding: '8px 14px' }}>
-                                <VideoCameraIcon />
-                            </Grid>
-                            <Grid item sm={11} md={7} style={{ padding: '8px 14px' }}>
-                                <Typography variant="body2" style={{ lineHeight: 1.8 }}>ビデオ</Typography>
-                            </Grid>
-                            <Grid item sm={12} md={4} style={{ display: 'flex', padding: '0px 8px' }} direction="column" alignItems="flex-end">
-                                <div className={classes.formRoot}>
-                                    <FormControl variant="outlined" margin="dense" className={classes.formControl} style={{ minWidth: 240 }}>
-                                        <Select
-                                            value={this.state.isVideoCamera}
-                                            onChange={(e) => {
-                                                this.setState({ isVideoCamera: e.target.value });
-                                                window.setVideoCamera(e.target.value);
-                                            }}
-                                            inputProps={{
-                                                name: 'videoCamera',
-                                                id: 'videoCamera',
-                                            }}
-                                        >
-                                            <MenuItem value={-1}>デフォルト (毎回確認する)</MenuItem>
-                                            <MenuItem value={0}>ブロック</MenuItem>
-                                            <MenuItem value={1}>許可</MenuItem>
-                                        </Select>
-                                    </FormControl>
+                            <Grid item xs={12} className={classes.itemRoot}>
+                                <div className={classes.itemTitleRoot}>
+                                    <VideoCameraIcon />
+                                    <Typography variant="body2" style={{ marginLeft: 10 }}>ビデオ</Typography>
+                                </div>
+                                <div className={classes.itemControlRoot}>
+                                    <div className={classes.formRoot}>
+                                        <FormControl variant="outlined" margin="dense" className={classes.formControl} style={{ minWidth: 240 }}>
+                                            <Select
+                                                value={this.state.isVideoCamera}
+                                                onChange={(e) => {
+                                                    this.setState({ isVideoCamera: e.target.value });
+                                                    window.setVideoCamera(e.target.value);
+                                                }}
+                                                inputProps={{
+                                                    name: 'videoCamera',
+                                                    id: 'videoCamera',
+                                                }}
+                                            >
+                                                <MenuItem value={-1}>デフォルト (毎回確認する)</MenuItem>
+                                                <MenuItem value={0}>ブロック</MenuItem>
+                                                <MenuItem value={1}>許可</MenuItem>
+                                            </Select>
+                                        </FormControl>
+                                    </div>
                                 </div>
                             </Grid>
-                            <Grid item xs={12}>
-                                <Divider />
-                            </Grid>
-                            <Grid item sm={1} md={1} style={{ padding: '8px 14px' }}>
-                                <MicroPhoneIcon />
-                            </Grid>
-                            <Grid item sm={11} md={7} style={{ padding: '8px 14px' }}>
-                                <Typography variant="body2" style={{ lineHeight: 1.8 }}>マイク</Typography>
-                            </Grid>
-                            <Grid item sm={12} md={4} style={{ display: 'flex', padding: '0px 8px' }} direction="column" alignItems="flex-end">
-                                <div className={classes.formRoot}>
-                                    <FormControl variant="outlined" margin="dense" className={classes.formControl} style={{ minWidth: 240 }}>
-                                        <Select
-                                            value={this.state.isMicroPhone}
-                                            onChange={(e) => {
-                                                this.setState({ isMicroPhone: e.target.value });
-                                                window.setMicroPhone(e.target.value);
-                                            }}
-                                            inputProps={{
-                                                name: 'microPhone',
-                                                id: 'microPhone',
-                                            }}
-                                        >
-                                            <MenuItem value={-1}>デフォルト (毎回確認する)</MenuItem>
-                                            <MenuItem value={0}>ブロック</MenuItem>
-                                            <MenuItem value={1}>許可</MenuItem>
-                                        </Select>
-                                    </FormControl>
+                            <Grid item xs={12} className={classes.itemDivider}><Divider /></Grid>
+                            <Grid item xs={12} className={classes.itemRoot}>
+                                <div className={classes.itemTitleRoot}>
+                                    <MicroPhoneIcon />
+                                    <Typography variant="body2" style={{ marginLeft: 10 }}>マイク</Typography>
+                                </div>
+                                <div className={classes.itemControlRoot}>
+                                    <div className={classes.formRoot}>
+                                        <FormControl variant="outlined" margin="dense" className={classes.formControl} style={{ minWidth: 240 }}>
+                                            <Select
+                                                value={this.state.isMicroPhone}
+                                                onChange={(e) => {
+                                                    this.setState({ isMicroPhone: e.target.value });
+                                                    window.setMicroPhone(e.target.value);
+                                                }}
+                                                inputProps={{
+                                                    name: 'microPhone',
+                                                    id: 'microPhone',
+                                                }}
+                                            >
+                                                <MenuItem value={-1}>デフォルト (毎回確認する)</MenuItem>
+                                                <MenuItem value={0}>ブロック</MenuItem>
+                                                <MenuItem value={1}>許可</MenuItem>
+                                            </Select>
+                                        </FormControl>
+                                    </div>
                                 </div>
                             </Grid>
-                            <Grid item xs={12}>
-                                <Divider />
-                            </Grid>
-                            <Grid item sm={1} md={1} style={{ padding: '8px 14px' }}>
-                                <GeolocationIcon />
-                            </Grid>
-                            <Grid item sm={11} md={7} style={{ padding: '8px 14px' }}>
-                                <Typography variant="body2" style={{ lineHeight: 1.8 }}>位置情報の使用</Typography>
-                            </Grid>
-                            <Grid item sm={12} md={4} style={{ display: 'flex', padding: '0px 8px' }} direction="column" alignItems="flex-end">
-                                <div className={classes.formRoot}>
-                                    <FormControl variant="outlined" margin="dense" className={classes.formControl} style={{ minWidth: 240 }}>
-                                        <Select
-                                            value={this.state.isGeolocation}
-                                            onChange={(e) => {
-                                                this.setState({ isGeolocation: e.target.value });
-                                                window.setGeolocation(e.target.value);
-                                            }}
-                                            inputProps={{
-                                                name: 'geolccation',
-                                                id: 'geolocation',
-                                            }}
-                                        >
-                                            <MenuItem value={-1}>デフォルト (毎回確認する)</MenuItem>
-                                            <MenuItem value={0}>ブロック</MenuItem>
-                                            <MenuItem value={1}>許可</MenuItem>
-                                        </Select>
-                                    </FormControl>
+                            <Grid item xs={12} className={classes.itemDivider}><Divider /></Grid>
+                            <Grid item xs={12} className={classes.itemRoot}>
+                                <div className={classes.itemTitleRoot}>
+                                    <GeolocationIcon />
+                                    <Typography variant="body2" style={{ marginLeft: 10 }}>位置情報の使用</Typography>
+                                </div>
+                                <div className={classes.itemControlRoot}>
+                                    <div className={classes.formRoot}>
+                                        <FormControl variant="outlined" margin="dense" className={classes.formControl} style={{ minWidth: 240 }}>
+                                            <Select
+                                                value={this.state.isGeolocation}
+                                                onChange={(e) => {
+                                                    this.setState({ isGeolocation: e.target.value });
+                                                    window.setGeolocation(e.target.value);
+                                                }}
+                                                inputProps={{
+                                                    name: 'geolccation',
+                                                    id: 'geolocation',
+                                                }}
+                                            >
+                                                <MenuItem value={-1}>デフォルト (毎回確認する)</MenuItem>
+                                                <MenuItem value={0}>ブロック</MenuItem>
+                                                <MenuItem value={1}>許可</MenuItem>
+                                            </Select>
+                                        </FormControl>
+                                    </div>
                                 </div>
                             </Grid>
-                            <Grid item xs={12}>
-                                <Divider />
-                            </Grid>
-                            <Grid item sm={1} md={1} style={{ padding: '8px 14px' }}>
-                                <NotificationsIcon />
-                            </Grid>
-                            <Grid item sm={11} md={7} style={{ padding: '8px 14px' }}>
-                                <Typography variant="body2" style={{ lineHeight: 1.8 }}>通知の送信</Typography>
-                            </Grid>
-                            <Grid item sm={12} md={4} style={{ display: 'flex', padding: '0px 8px' }} direction="column" alignItems="flex-end">
-                                <div className={classes.formRoot}>
-                                    <FormControl variant="outlined" margin="dense" className={classes.formControl} style={{ minWidth: 240 }}>
-                                        <Select
-                                            value={this.state.isNotifications}
-                                            onChange={(e) => {
-                                                this.setState({ isNotifications: e.target.value });
-                                                window.setNotifications(e.target.value);
-                                            }}
-                                            inputProps={{
-                                                name: 'notifications',
-                                                id: 'notifications',
-                                            }}
-                                        >
-                                            <MenuItem value={-1}>デフォルト (毎回確認する)</MenuItem>
-                                            <MenuItem value={0}>ブロック</MenuItem>
-                                            <MenuItem value={1}>許可</MenuItem>
-                                        </Select>
-                                    </FormControl>
+                            <Grid item xs={12} className={classes.itemDivider}><Divider /></Grid>
+                            <Grid item xs={12} className={classes.itemRoot}>
+                                <div className={classes.itemTitleRoot}>
+                                    <NotificationsIcon />
+                                    <Typography variant="body2" style={{ marginLeft: 10 }}>通知の送信</Typography>
+                                </div>
+                                <div className={classes.itemControlRoot}>
+                                    <div className={classes.formRoot}>
+                                        <FormControl variant="outlined" margin="dense" className={classes.formControl} style={{ minWidth: 240 }}>
+                                            <Select
+                                                value={this.state.isNotifications}
+                                                onChange={(e) => {
+                                                    this.setState({ isNotifications: e.target.value });
+                                                    window.setNotifications(e.target.value);
+                                                }}
+                                                inputProps={{
+                                                    name: 'notifications',
+                                                    id: 'notifications',
+                                                }}
+                                            >
+                                                <MenuItem value={-1}>デフォルト (毎回確認する)</MenuItem>
+                                                <MenuItem value={0}>ブロック</MenuItem>
+                                                <MenuItem value={1}>許可</MenuItem>
+                                            </Select>
+                                        </FormControl>
+                                    </div>
                                 </div>
                             </Grid>
-                            <Grid item xs={12}>
-                                <Divider />
-                            </Grid>
-                            <Grid item sm={1} md={1} style={{ padding: '8px 14px' }}>
-                                <RadioIcon />
-                            </Grid>
-                            <Grid item sm={11} md={7} style={{ padding: '8px 14px' }}>
-                                <Typography variant="body2" style={{ lineHeight: 1.8 }}>MIDI デバイスへのアクセス</Typography>
-                            </Grid>
-                            <Grid item sm={12} md={4} style={{ display: 'flex', padding: '0px 8px' }} direction="column" alignItems="flex-end">
-                                <div className={classes.formRoot}>
-                                    <FormControl variant="outlined" margin="dense" className={classes.formControl} style={{ minWidth: 240 }}>
-                                        <Select
-                                            value={this.state.isMidiSysex}
-                                            onChange={(e) => {
-                                                this.setState({ isMidiSysex: e.target.value });
-                                                window.setMidiSysex(e.target.value);
-                                            }}
-                                            inputProps={{
-                                                name: 'midiSysex',
-                                                id: 'midiSysex',
-                                            }}
-                                        >
-                                            <MenuItem value={-1}>デフォルト (毎回確認する)</MenuItem>
-                                            <MenuItem value={0}>ブロック</MenuItem>
-                                            <MenuItem value={1}>許可</MenuItem>
-                                        </Select>
-                                    </FormControl>
+                            <Grid item xs={12} className={classes.itemDivider}><Divider /></Grid>
+                            <Grid item xs={12} className={classes.itemRoot}>
+                                <div className={classes.itemTitleRoot}>
+                                    <RadioIcon />
+                                    <Typography variant="body2" style={{ marginLeft: 10 }}>MIDI デバイスへのアクセス</Typography>
+                                </div>
+                                <div className={classes.itemControlRoot}>
+                                    <div className={classes.formRoot}>
+                                        <FormControl variant="outlined" margin="dense" className={classes.formControl} style={{ minWidth: 240 }}>
+                                            <Select
+                                                value={this.state.isMidiSysex}
+                                                onChange={(e) => {
+                                                    this.setState({ isMidiSysex: e.target.value });
+                                                    window.setMidiSysex(e.target.value);
+                                                }}
+                                                inputProps={{
+                                                    name: 'midiSysex',
+                                                    id: 'midiSysex',
+                                                }}
+                                            >
+                                                <MenuItem value={-1}>デフォルト (毎回確認する)</MenuItem>
+                                                <MenuItem value={0}>ブロック</MenuItem>
+                                                <MenuItem value={1}>許可</MenuItem>
+                                            </Select>
+                                        </FormControl>
+                                    </div>
                                 </div>
                             </Grid>
-                            <Grid item xs={12}>
-                                <Divider />
-                            </Grid>
-                            <Grid item sm={1} md={1} style={{ padding: '8px 14px' }}>
-                                <LockIcon />
-                            </Grid>
-                            <Grid item sm={11} md={7} style={{ padding: '8px 14px' }}>
-                                <Typography variant="body2" style={{ lineHeight: 1.8 }}>マウス カーソルの固定</Typography>
-                            </Grid>
-                            <Grid item sm={12} md={4} style={{ display: 'flex', padding: '0px 8px' }} direction="column" alignItems="flex-end">
-                                <div className={classes.formRoot}>
-                                    <FormControl variant="outlined" margin="dense" className={classes.formControl} style={{ minWidth: 240 }}>
-                                        <Select
-                                            value={this.state.isPointerLock}
-                                            onChange={(e) => {
-                                                this.setState({ isPointerLock: e.target.value });
-                                                window.setPointerLock(e.target.value);
-                                            }}
-                                            inputProps={{
-                                                name: 'pointerLock',
-                                                id: 'pointerLock',
-                                            }}
-                                        >
-                                            <MenuItem value={-1}>デフォルト (毎回確認する)</MenuItem>
-                                            <MenuItem value={0}>ブロック</MenuItem>
-                                            <MenuItem value={1}>許可</MenuItem>
-                                        </Select>
-                                    </FormControl>
+                            <Grid item xs={12} className={classes.itemDivider}><Divider /></Grid>
+                            <Grid item xs={12} className={classes.itemRoot}>
+                                <div className={classes.itemTitleRoot}>
+                                    <LockIcon />
+                                    <Typography variant="body2" style={{ marginLeft: 10 }}>マウス カーソルの固定</Typography>
+                                </div>
+                                <div className={classes.itemControlRoot}>
+                                    <div className={classes.formRoot}>
+                                        <FormControl variant="outlined" margin="dense" className={classes.formControl} style={{ minWidth: 240 }}>
+                                            <Select
+                                                value={this.state.isPointerLock}
+                                                onChange={(e) => {
+                                                    this.setState({ isPointerLock: e.target.value });
+                                                    window.setPointerLock(e.target.value);
+                                                }}
+                                                inputProps={{
+                                                    name: 'pointerLock',
+                                                    id: 'pointerLock',
+                                                }}
+                                            >
+                                                <MenuItem value={-1}>デフォルト (毎回確認する)</MenuItem>
+                                                <MenuItem value={0}>ブロック</MenuItem>
+                                                <MenuItem value={1}>許可</MenuItem>
+                                            </Select>
+                                        </FormControl>
+                                    </div>
                                 </div>
                             </Grid>
-                            <Grid item xs={12}>
-                                <Divider />
-                            </Grid>
-                            <Grid item sm={1} md={1} style={{ padding: '8px 14px' }}>
-                                <FullscreenIcon />
-                            </Grid>
-                            <Grid item sm={11} md={7} style={{ padding: '8px 14px' }}>
-                                <Typography variant="body2" style={{ lineHeight: 1.8 }}>全画面表示</Typography>
-                            </Grid>
-                            <Grid item sm={12} md={4} style={{ display: 'flex', padding: '0px 8px' }} direction="column" alignItems="flex-end">
-                                <div className={classes.formRoot}>
-                                    <FormControl variant="outlined" margin="dense" className={classes.formControl} style={{ minWidth: 240 }}>
-                                        <Select
-                                            value={this.state.isFullScreen}
-                                            onChange={(e) => {
-                                                this.setState({ isFullScreen: e.target.value });
-                                                window.setFullScreen(e.target.value);
-                                            }}
-                                            inputProps={{
-                                                name: 'fullScreen',
-                                                id: 'fullScreen'
-                                            }}
-                                        >
-                                            <MenuItem value={-1}>デフォルト</MenuItem>
-                                            <MenuItem value={0}>ブロック</MenuItem>
-                                            <MenuItem value={1}>許可</MenuItem>
-                                        </Select>
-                                    </FormControl>
+                            <Grid item xs={12} className={classes.itemDivider}><Divider /></Grid>
+                            <Grid item xs={12} className={classes.itemRoot}>
+                                <div className={classes.itemTitleRoot}>
+                                    <FullscreenIcon />
+                                    <Typography variant="body2" style={{ marginLeft: 10 }}>全画面表示</Typography>
+                                </div>
+                                <div className={classes.itemControlRoot}>
+                                    <div className={classes.formRoot}>
+                                        <FormControl variant="outlined" margin="dense" className={classes.formControl} style={{ minWidth: 240 }}>
+                                            <Select
+                                                value={this.state.isFullScreen}
+                                                onChange={(e) => {
+                                                    this.setState({ isFullScreen: e.target.value });
+                                                    window.setFullScreen(e.target.value);
+                                                }}
+                                                inputProps={{
+                                                    name: 'fullScreen',
+                                                    id: 'fullScreen'
+                                                }}
+                                            >
+                                                <MenuItem value={-1}>デフォルト</MenuItem>
+                                                <MenuItem value={0}>ブロック</MenuItem>
+                                                <MenuItem value={1}>許可</MenuItem>
+                                            </Select>
+                                        </FormControl>
+                                    </div>
                                 </div>
                             </Grid>
-                            <Grid item xs={12}>
-                                <Divider />
-                            </Grid>
-                            <Grid item sm={1} md={1} style={{ padding: '8px 14px' }}>
-                                <LaunchIcon />
-                            </Grid>
-                            <Grid item sm={11} md={7} style={{ padding: '8px 14px' }}>
-                                <Typography variant="body2" style={{ lineHeight: 1.8 }}>外部リンクを開く</Typography>
-                            </Grid>
-                            <Grid item sm={12} md={4} style={{ display: 'flex', padding: '0px 8px' }} direction="column" alignItems="flex-end">
-                                <div className={classes.formRoot}>
-                                    <FormControl variant="outlined" margin="dense" className={classes.formControl} style={{ minWidth: 240 }}>
-                                        <Select
-                                            value={this.state.isOpenExternal}
-                                            onChange={(e) => {
-                                                this.setState({ isOpenExternal: e.target.value });
-                                                window.setOpenExternal(e.target.value);
-                                            }}
-                                            inputProps={{
-                                                name: 'openExternal',
-                                                id: 'openExternal'
-                                            }}
-                                        >
-                                            <MenuItem value={-1}>デフォルト (毎回確認する)</MenuItem>
-                                            <MenuItem value={0}>ブロック</MenuItem>
-                                            <MenuItem value={1}>許可</MenuItem>
-                                        </Select>
-                                    </FormControl>
+                            <Grid item xs={12} className={classes.itemDivider}><Divider /></Grid>
+                            <Grid item xs={12} className={classes.itemRoot}>
+                                <div className={classes.itemTitleRoot}>
+                                    <LaunchIcon />
+                                    <Typography variant="body2" style={{ marginLeft: 10 }}>外部リンクを開く</Typography>
+                                </div>
+                                <div className={classes.itemControlRoot}>
+                                    <div className={classes.formRoot}>
+                                        <FormControl variant="outlined" margin="dense" className={classes.formControl} style={{ minWidth: 240 }}>
+                                            <Select
+                                                value={this.state.isOpenExternal}
+                                                onChange={(e) => {
+                                                    this.setState({ isOpenExternal: e.target.value });
+                                                    window.setOpenExternal(e.target.value);
+                                                }}
+                                                inputProps={{
+                                                    name: 'openExternal',
+                                                    id: 'openExternal'
+                                                }}
+                                            >
+                                                <MenuItem value={-1}>デフォルト (毎回確認する)</MenuItem>
+                                                <MenuItem value={0}>ブロック</MenuItem>
+                                                <MenuItem value={1}>許可</MenuItem>
+                                            </Select>
+                                        </FormControl>
+                                    </div>
                                 </div>
                             </Grid>
                         </Grid>
@@ -1725,7 +1791,7 @@ class SettingsAboutPage extends Component {
                                 <Divider />
                             </Grid>
                             <Grid item style={{ width: 190, padding: '0px 16px' }}>
-                                <img src={`${protocolStr}://resources/logo_${window.getThemeType() ? 'dark' : 'light'}.png`} width="173" />
+                                <img src={`${protocolStr}://resources/icons/logo_${window.getThemeType() ? 'dark' : 'light'}.png`} width="173" />
                             </Grid>
                             <Grid item style={{ padding: '0px 16px' }} alignItems="center">
                                 <Typography variant="subtitle1" gutterBottom>{window.getAppName()}</Typography>

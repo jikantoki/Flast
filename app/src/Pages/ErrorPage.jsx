@@ -7,7 +7,10 @@ import PropTypes from 'prop-types';
 import { createMuiTheme, withStyles } from '@material-ui/core/styles';
 import { ThemeProvider } from '@material-ui/styles';
 
-import { Grid, Paper, Typography, Divider, Button } from '@material-ui/core';
+import Grid from '@material-ui/core/Grid';
+import Typography from '@material-ui/core/Typography';
+import Divider from '@material-ui/core/Divider';
+import Button from '@material-ui/core/Button';
 
 const lightTheme = createMuiTheme({
     palette: {

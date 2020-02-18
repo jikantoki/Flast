@@ -23,14 +23,16 @@ import { isURL, prefixHttp } from '../Utils/URL';
 const { remote, ipcRenderer, shell } = window.require('electron');
 const { app, systemPreferences, Menu, MenuItem, dialog, nativeTheme } = remote;
 
-const platform = require('electron-platform');
+const platform = window.require('electron-platform');
+const path = window.require('path');
 
 const Config = window.require('electron-store');
 const config = new Config();
+const userConfig = new Config({
+    cwd: path.join(app.getPath('userData'), 'Users', config.get('currentUser'))
+});
 
-const request = window.require('request');
-
-const lang = window.require(`${app.getAppPath()}/langs/${config.get('language') != undefined ? config.get('language') : 'ja'}.js`);
+const lang = window.require(`${app.getAppPath()}/langs/${userConfig.get('language') != undefined ? userConfig.get('language') : 'ja'}.js`);
 
 const SuggestListContainer = styled.ul`
   margin: 5px;

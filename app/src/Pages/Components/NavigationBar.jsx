@@ -48,16 +48,7 @@ import WebOutlinedIcon from '@material-ui/icons/WebOutlined';
 import GetAppOutlinedIcon from '@material-ui/icons/GetAppOutlined';
 import TranslateOutlinedIcon from '@material-ui/icons/TranslateOutlined';
 
-const lightTheme = createMuiTheme({
-    palette: {
-        type: 'light'
-    },
-});
-const darkTheme = createMuiTheme({
-    palette: {
-        type: 'dark'
-    },
-});
+import { isDarkTheme, getTheme, darkTheme, lightTheme } from '../Theme.jsx';
 
 const drawerWidth = 240;
 
@@ -104,38 +95,32 @@ const styles = theme => ({
         flexGrow: 1,
         padding: theme.spacing(3),
     },
-    contentSettings: {
+    contentCustom: {
         width: `calc(100% - ${drawerWidth}px)`,
         height: '100vh',
         flexGrow: 1,
         paddingTop: theme.spacing(3),
-        paddingLeft: theme.spacing(3),
-        paddingRight: theme.spacing(3),
-    },
+        [theme.breakpoints.up('md')]: {
+            paddingLeft: theme.spacing(3),
+            paddingRight: theme.spacing(3)
+        }
+    }
 });
 
 function ElevationScroll(props) {
     const { children, window } = props;
-    // Note that you normally won't need to set the window ref as useScrollTrigger
-    // will default to window.
-    // This is only being set here because the demo is in an iframe.
+
     const trigger = useScrollTrigger({
         disableHysteresis: true,
         threshold: 0,
-        target: window ? window() : undefined,
+        target: window ? window() : undefined
     });
 
-    return React.cloneElement(children, {
-        elevation: trigger ? 4 : 0,
-    });
+    return React.cloneElement(children, { elevation: trigger ? 4 : 0 });
 }
 
 ElevationScroll.propTypes = {
     children: PropTypes.element.isRequired,
-    /**
-     * Injected by the documentation to work in an iframe.
-     * You won't need it on your project.
-     */
     window: PropTypes.func,
 };
 
@@ -150,24 +135,23 @@ class NavigationBar extends Component {
     }
 
     componentDidMount = () => {
-        if ('settings' === window.location.host) {
-            this.setState(state => ({ open: true }));
-        }
+        if ('settings' === window.location.host)
+            this.setState({ open: true });
     }
 
     handleNestedListClick = () => {
-        this.setState(state => ({ open: !state.open }));
+        this.setState({ open: !this.state.open });
     }
 
     handleDrawerToggle = () => {
-        this.setState(state => ({ mobileOpen: !state.mobileOpen }));
+        this.setState({ mobileOpen: !this.state.mobileOpen });
     }
 
     render() {
-        const { classes, theme } = this.props;
+        const { classes } = this.props;
 
         const drawer = (
-            <ThemeProvider theme={window.getThemeType() ? darkTheme : lightTheme}>
+            <ThemeProvider theme={getTheme()}>
                 <Hidden mdUp implementation="css">
                     <List>
                         <ListItem>
@@ -331,7 +315,7 @@ class NavigationBar extends Component {
 
         return (
             <React.Fragment>
-                <ThemeProvider theme={window.getThemeType() ? darkTheme : lightTheme}>
+                <ThemeProvider theme={getTheme()}>
                     <div className={classes.root}>
                         <CSSBaseline />
                         <ElevationScroll {...this.props}>
@@ -374,9 +358,9 @@ class NavigationBar extends Component {
                                 </Drawer>
                             </Hidden>
                         </nav>
-                        <main className={!window.location.href.startsWith('flast://settings/') ? classes.content : classes.contentSettings}>
-                            {!window.location.href.startsWith('flast://settings/') ? <div className={classes.toolbar} /> : null}
-                            <ThemeProvider theme={window.getThemeType() ? darkTheme : lightTheme}>
+                        <main className={!window.location.href.startsWith('flast://settings/') && !window.location.href.startsWith('flast://bookmarks/') && !window.location.href.startsWith('flast://history/') ? classes.content : classes.contentCustom}>
+                            {!window.location.href.startsWith('flast://settings/') && !window.location.href.startsWith('flast://bookmarks/') && !window.location.href.startsWith('flast://history/') ? <div className={classes.toolbar} /> : null}
+                            <ThemeProvider theme={getTheme()}>
                                 {this.props.children}
                             </ThemeProvider>
                         </main>

@@ -15,6 +15,11 @@ const localShortcut = require('electron-localshortcut');
 
 const Config = require('electron-store');
 const config = new Config();
+const userConfig = new Config({
+    cwd: path.join(app.getPath('userData'), 'Users', config.get('currentUser'))
+});
+
+const lang = require(`${app.getAppPath()}/langs/${userConfig.get('language') != undefined ? userConfig.get('language') : 'ja'}.js`);
 
 const width = 320;
 const height = 160;
@@ -82,7 +87,7 @@ module.exports = class InfomationView extends BrowserView {
     fixBounds = () => {
         const bounds = this.appWindow.getContentBounds();
         this.setBounds({
-            x: (config.get('design.isHomeButton') ? (platform.isWin32 || platform.isDarwin ? (this.appWindow.isMaximized() ? 147 : 148) : 151) : (platform.isWin32 || platform.isDarwin ? (this.appWindow.isMaximized() ? 112 : 113) : 116)),
+            x: (userConfig.get('design.isHomeButton') ? (platform.isWin32 || platform.isDarwin ? (this.appWindow.isMaximized() ? 147 : 148) : 151) : (platform.isWin32 || platform.isDarwin ? (this.appWindow.isMaximized() ? 112 : 113) : 116)),
             y: this.appWindow.isFullScreen() ? bounds.y : 71,
             width: width,
             height: height

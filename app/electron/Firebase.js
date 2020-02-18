@@ -31,9 +31,14 @@ const KEY = Buffer.from([
 
 module.exports = class Firebase {
 
-    constructor() {
-        if (firebase.apps.length < 1)
+    constructor(defaultConfig) {
+        this.defaultConfig = defaultConfig;
+        if (!firebase.apps.length)
             firebase.initializeApp(cfg.firebaseConfig);
+    }
+
+    getDefaultConfig = () => {
+        return this.defaultConfig;
     }
 
     getInstance = () => {
@@ -41,47 +46,170 @@ module.exports = class Firebase {
     }
 
     createAccount = (email, password) => {
-        firebase.auth().createUserWithEmailAndPassword(email, password)
-            .then(() => this.initDatabase())
-            .catch((error) => {
-                console.log(`[Error] ${error.code}: ${error.message}`);
+        new Promise(async (resolve, reject) => {
+            firebase.auth().createUserWithEmailAndPassword(email, password)
+                .then((credential) => {
+                    const user = credential.user;
+                    if (!user) return;
+
+                    const userConfig = new Config({
+                        cwd: path.join(app.getPath('userData'), 'Users', user.uid),
+                        defaults: this.defaultConfig
+                    });
+                    config.set('currentUser', user.uid);
+                    userConfig.set('profile', { id: user.uid, name: user.displayName, address: user.email, token: this.encodeBase64(password) });
+
+                    console.log(user.uid);
+                    this.initDatabase(user.uid);
+                    resolve({ result: true });
+                })
+                .catch((err) => {
+                    console.log(`Error (createAccount): ${err.code} -> ${err.message}`);
+                    reject({ result: false, error: err });
+                });
+        }).then((result) => {
+            firebase.auth().onAuthStateChanged((user) => {
+                if (!user) return;
+                const userConfig = new Config({
+                    cwd: path.join(app.getPath('userData'), 'Users', user.uid),
+                    defaults: this.defaultConfig
+                });
+                config.set('currentUser', user.uid);
+                userConfig.set('profile', { id: user.uid, name: user.displayName, address: user.email, token: this.encodeBase64(password) });
             });
-        firebase.auth().onAuthStateChanged((user) => {
-            if (!user) return;
-            config.set('profile', { id: user.uid, name: user.displayName, address: user.email, token: this.encodeBase64(password) });
+            return result;
         });
     }
 
     loginAccount = (email, password) => {
-        firebase.auth().signInWithEmailAndPassword(email, password)
-            .then(() => this.initDatabase())
-            .catch((error) => {
-                console.log(`[Error] ${error.code}: ${error.message}`);
+        new Promise((resolve, reject) => {
+            console.log('Login...2');
+            firebase.auth().signInWithEmailAndPassword(email, password)
+                .then(() => {
+                    console.log('3-1');
+                    this.initDatabase();
+                    console.log('3-2');
+                    resolve({ result: true });
+                    console.log('3-3');
+                })
+                .catch((err) => {
+                    console.log(`Error (loginAccount): ${err.code} -> ${err.message}`);
+                    reject({ result: false, error: err });
+                });
+        }).then((result) => {
+            firebase.auth().onAuthStateChanged(async (user) => {
+                if (!user) return;
+                console.log('5-1');
+                user.getIdToken(true);
+                const userConfig = new Config({
+                    cwd: path.join(app.getPath('userData'), 'Users', user.uid),
+                    defaults: this.defaultConfig
+                });
+                config.set('currentUser', user.uid);
+                userConfig.set('profile', { id: user.uid, name: user.displayName, address: user.email, token: this.encodeBase64(password) });
+                console.log('5-2');
             });
-        firebase.auth().onAuthStateChanged((user) => {
-            if (!user) return;
-            config.set('profile', { id: user.uid, name: user.displayName, address: user.email, token: this.encodeBase64(password) });
+            console.log('6');
+            return result;
         });
     }
 
     login = () => {
-        if (this.getToken() !== undefined && this.getToken() !== '') {
-            const email = config.get('profile.address');
-            const password = this.decodeBase64(this.getToken());
-
-            firebase.auth().signInWithEmailAndPassword(email, password)
-                .then(() => this.initDatabase())
-                .catch((error) => {
-                    console.log(`[Error] ${error.code}: ${error.message}`);
+        return new Promise((resolve, reject) => {
+            if (this.getToken() !== undefined && this.getToken() !== '') {
+                console.log('Login...');
+                const userConfig = new Config({
+                    cwd: path.join(app.getPath('userData'), 'Users', config.get('currentUser')),
+                    defaults: this.defaultConfig
                 });
-            firebase.auth().onAuthStateChanged((user) => {
-                if (!user) return;
-                config.set('profile', { id: user.uid, name: user.displayName, address: user.email, token: this.encodeBase64(password) });
-            });
-        } else {
-            this.createAccount(`${this.getRandString(12)}@flast.com`, this.getRandString(16));
-        }
+
+                const email = userConfig.get('profile.address');
+                const password = this.decodeBase64(this.getToken());
+
+                resolve(this.loginAccount(email, password));
+            } else {
+                console.log('Register...');
+                resolve(this.createAccount(`${this.getRandString(12)}@flast.com`, this.getRandString(16)));
+            }
+        });
     }
+
+    logout = () => {
+        return new Promise((resolve, reject) => {
+            if (firebase.auth().currentUser) {
+                const id = firebase.auth().currentUser.uid;
+                firebase.auth().signOut()
+                    .then(() => {
+                        const userConfig = new Config({
+                            cwd: path.join(app.getPath('userData'), 'Users', id),
+                            defaults: this.defaultConfig
+                        });
+                        userConfig.set('profile', { id: '', name: '', address: '', token: '' });
+                        resolve({ result: true });
+                    })
+                    .catch((err) => {
+                        console.log(err);
+                        reject({ result: false, error: err });
+                    });
+            } else {
+                resolve({ result: true });
+            }
+        });
+    }
+
+    updateAccount = (email, password, displayName = undefined) => {
+        return new Promise((resolve, reject) => {
+            if (firebase.auth().currentUser) {
+                const userConfig = new Config({
+                    cwd: path.join(app.getPath('userData'), 'Users', config.get('currentUser')),
+                    defaults: this.defaultConfig
+                });
+
+                firebase.auth().currentUser.reauthenticateWithCredential(firebase.auth.EmailAuthProvider.credential(userConfig.get('profile.address'), this.decodeBase64(this.getToken())))
+                    .then((credential) => {
+                        const user = credential.user;
+
+                        user.updateEmail(email)
+                            .catch((err) => {
+                                console.log(err);
+                                reject({ result: false, error: err });
+                            });
+                        user.updatePassword(password)
+                            .catch((err) => {
+                                console.log(err);
+                                reject({ result: false, error: err });
+                            });
+
+                        user.getIdToken(true);
+
+                        if (displayName) {
+                            user.updateProfile({ displayName })
+                                .catch((err) => {
+                                    console.log(err);
+                                    reject({ result: false, error: err });
+                                });
+                        }
+
+                        user.sendEmailVerification();
+
+                        user.reload();
+                        const userConfig = new Config({
+                            cwd: path.join(app.getPath('userData'), 'Users', user.uid),
+                            defaults: this.defaultConfig
+                        });
+                        userConfig.set('profile', { id: user.uid, name: displayName, address: email, token: this.encodeBase64(password) });
+                        resolve({ result: true });
+                    })
+                    .catch((err) => {
+                        console.log(err);
+                        reject({ result: false, error: err });
+                    });
+            } else {
+                this.createAccount(`${this.getRandString(12)}@flast.com`, this.getRandString(16));
+                resolve({ result: true });
+            }
+        });
+    };
 
     syncAccount = (id = undefined) => {
         const firestore = firebase.firestore();
@@ -90,9 +218,14 @@ module.exports = class Firebase {
             firestore.collection('sync').doc(id).get().then((doc) => {
                 if (doc.exists) {
                     const user = doc.data();
-                    config.set('profile', { id: user.id, name: user.displayName, address: user.email, token: user.token });
 
-                    firestore.collection('sync').doc(id).delete().then(function() {
+                    const userConfig = new Config({
+                        cwd: path.join(app.getPath('userData'), 'Users', id),
+                        defaults: this.defaultConfig
+                    });
+                    userConfig.set('profile', { id: user.id, name: user.displayName, address: user.email, token: user.token });
+
+                    firestore.collection('sync').doc(id).delete().then(function () {
                         console.log('Document successfully deleted!');
                     }).catch((err) => {
                         console.log(`Error removing document: ${err}`);
@@ -106,10 +239,19 @@ module.exports = class Firebase {
                 return null;
             });
         } else {
+            const id = this.getId();
+            const userConfig = new Config({
+                cwd: path.join(app.getPath('userData'), 'Users', id),
+                defaults: this.defaultConfig
+            });
             const str = this.getRandString(8);
-            firestore.collection('sync').doc(str).set({ id: this.getId(), displayName: config.get('profile.name'), email: config.get('profile.address'), token: this.getToken(), date: firebase.firestore.Timestamp.now() });
+            firestore.collection('sync').doc(str).set({ id, displayName: userConfig.get('profile.name'), email: userConfig.get('profile.address'), token: this.getToken(), date: firebase.firestore.Timestamp.now() });
             return str;
         }
+    }
+
+    getCurrentUser = () => {
+        return firebase.auth().currentUser;
     }
 
     getUser = () => {
@@ -119,17 +261,25 @@ module.exports = class Firebase {
     }
 
     getId = () => {
-        return config.get('profile.id');
+        const userConfig = new Config({
+            cwd: path.join(app.getPath('userData'), 'Users', config.get('currentUser')),
+            defaults: this.defaultConfig
+        });
+        return userConfig.get('profile.id');
     }
 
     getToken = () => {
-        return config.get('profile.token');
+        const userConfig = new Config({
+            cwd: path.join(app.getPath('userData'), 'Users', config.get('currentUser')),
+            defaults: this.defaultConfig
+        });
+        return userConfig.get('profile.token');
     }
 
-    initDatabase = () => {
-        const id = this.getId();
+    initDatabase = (id = this.getId()) => {
         const firestore = firebase.firestore();
 
+        console.log('4-1');
         firestore.collection('users').doc(id).collection('bookmarks').get()
             .then(async (querySnapshot) => {
                 if (querySnapshot.docs.length < 1)
@@ -145,18 +295,24 @@ module.exports = class Firebase {
                 if (querySnapshot.docs.length < 1)
                     await firestore.collection('users').doc(id).collection('downloads').doc().set({ title: 'Demo Data', url: 'flast://welcome', date: firebase.firestore.Timestamp.now() });
             });
+        console.log('4-2');
     }
 
     getBookmarks = (isPrivate = false) => {
         return new Promise((resolve, reject) => {
             const id = this.getId();
-            firebase.firestore().collection('users').doc(id).collection('bookmarks').where('isPrivate', '==', isPrivate).orderBy('date', 'desc').get().then((querySnapshot) => resolve(querySnapshot)).catch((error) => console.log(`Error: ${error} (getBookmarks)`));
+            firebase.firestore().collection('users').doc(id).collection('bookmarks').where('isPrivate', '==', isPrivate).orderBy('date', 'desc').get()
+                .then((querySnapshot) => resolve(querySnapshot))
+                .catch((err) => {
+                    reject(err);
+                    console.log(`Error: ${err} (getBookmarks)`)
+                });
         });
     }
 
-    addBookmark = (title, url, isPrivate = false) => {
+    addBookmark = (title, url, favicon, isFolder = false, isPrivate = false) => {
         const id = this.getId();
-        firebase.firestore().collection('users').doc(id).collection('bookmarks').doc().set({ title, url, isPrivate, date: firebase.firestore.Timestamp.now() }).catch((error) => console.log(`Error: ${error} (addBookmark)`))
+        firebase.firestore().collection('users').doc(id).collection('bookmarks').doc().set({ title, url, favicon, isFolder, isPrivate, date: firebase.firestore.Timestamp.now() }).catch((error) => console.log(`Error: ${error} (addBookmark)`))
     }
 
     removeBookmark = (url, isPrivate = false) => {
@@ -178,28 +334,36 @@ module.exports = class Firebase {
             const id = this.getId();
             firebase.firestore().collection('users').doc(id).collection('bookmarks').where('url', '==', url).where('isPrivate', '==', isPrivate).get()
                 .then((items) => resolve(items.size > 0))
-                .catch((error) => console.log(`Error: ${error} (isBookmarked)`));
+                .catch((error) => {
+                    reject(err); 
+                    console.log(`Error: ${error} (isBookmarked)`)
+                });
         });
     }
 
     getHistorys = () => {
         return new Promise((resolve, reject) => {
             const id = this.getId();
-            firebase.firestore().collection('users').doc(id).collection('historys').orderBy('date', 'desc').get().then((querySnapshot) => resolve(querySnapshot)).catch((error) => console.log(`Error: ${error} (getHistorys)`))
+            firebase.firestore().collection('users').doc(id).collection('historys').orderBy('date', 'desc').get()
+                .then((querySnapshot) => resolve(querySnapshot))
+                .catch((err) => {
+                    reject(err);
+                    console.log(`Error: ${err} (getHistorys)`)
+                });
         });
     }
 
-    addHistory = (title, url) => {
+    addHistory = (title, url, favicon) => {
         const id = this.getId();
         firebase.firestore().collection('users').doc(id).collection('historys').where('url', '==', url).get()
             .then((items) => {
                 if (items.size > 0) {
                     items.forEach((item) => {
                         if (url === item.data().url)
-                            firebase.firestore().collection('users').doc(id).collection('historys').doc(item.id).update({ title, url, date: firebase.firestore.Timestamp.now() }).catch((error) => console.log(`Error: ${error} (addHistory)`))
+                            firebase.firestore().collection('users').doc(id).collection('historys').doc(item.id).update({ title, url, favicon, date: firebase.firestore.Timestamp.now() }).catch((error) => console.log(`Error: ${error} (addHistory)`))
                     });
                 } else {
-                    firebase.firestore().collection('users').doc(id).collection('historys').doc().set({ title, url, date: firebase.firestore.Timestamp.now() }).catch((error) => console.log(`Error: ${error} (addHistory)`));
+                    firebase.firestore().collection('users').doc(id).collection('historys').doc().set({ title, url, favicon, date: firebase.firestore.Timestamp.now() }).catch((error) => console.log(`Error: ${error} (addHistory)`));
                     return;
                 }
             })

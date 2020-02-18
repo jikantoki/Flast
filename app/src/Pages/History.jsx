@@ -8,33 +8,85 @@ import { withStyles } from '@material-ui/core/styles';
 import Link from '@material-ui/core/Link';
 import Table from '@material-ui/core/Table';
 import TableBody from '@material-ui/core/TableBody';
+import MuiTableRow from '@material-ui/core/TableRow';
 import TableCell from '@material-ui/core/TableCell';
-import TableHead from '@material-ui/core/TableHead';
-import TableRow from '@material-ui/core/TableRow';
+import Grid from '@material-ui/core/Grid';
+import Container from '@material-ui/core/Container';
 import Paper from '@material-ui/core/Paper';
+import Divider from '@material-ui/core/Divider';
 import Dialog from '@material-ui/core/Dialog';
 import DialogActions from '@material-ui/core/DialogActions';
 import DialogContent from '@material-ui/core/DialogContent';
 import DialogContentText from '@material-ui/core/DialogContentText';
 import DialogTitle from '@material-ui/core/DialogTitle';
 import Typography from '@material-ui/core/Typography';
-
 import Button from '@material-ui/core/Button';
+import Checkbox from '@material-ui/core/Checkbox';
+import Collapse from '@material-ui/core/Collapse';
+import ExpansionPanel from '@material-ui/core/ExpansionPanel';
+import ExpansionPanelSummary from '@material-ui/core/ExpansionPanelSummary';
+import ExpansionPanelDetails from '@material-ui/core/ExpansionPanelDetails';
 
+import Alert from '@material-ui/lab/Alert';
+import AlertTitle from '@material-ui/lab/AlertTitle';
+
+import CloudIcon from '@material-ui/icons/CloudOutlined';
 import CloudOffIcon from '@material-ui/icons/CloudOffOutlined';
 import ExpandLessIcon from '@material-ui/icons/ExpandLess';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 
 import NavigationBar from './Components/NavigationBar.jsx';
 
-const styles = theme => ({
+import { isDarkTheme, getTheme, darkTheme, lightTheme } from './Theme.jsx';
+
+const protocolStr = 'flast';
+const fileProtocolStr = `${protocolStr}-file`;
+
+const styles = (theme) => ({
     root: {
         width: '100%',
         overflowX: 'auto',
     },
+    containerRoot: {
+        position: 'relative',
+        top: 32,
+        height: 'calc(100% - 32px)',
+        [theme.breakpoints.up('md')]: {
+            top: 40,
+            height: 'calc(100% - 40px)'
+        }
+    },
+    paperRoot: {
+        padding: theme.spacing(3, 2),
+        borderRadius: 0,
+        minHeight: '100%'
+    },
+    panelRoot: {
+        padding: '8px 0px !important'
+    },
+    panelHeading: {
+        fontSize: theme.typography.pxToRem(15),
+        flexBasis: '55%',
+        flexShrink: 0,
+        [theme.breakpoints.up('md')]: {
+            flexBasis: '15%'
+        }
+    },
+    panelSecondaryHeading: {
+        fontSize: theme.typography.pxToRem(15)
+    },
     table: {
         tableLayout: 'fixed',
         whiteSpace: 'nowrap'
+    },
+    tableDate: {
+        width: 80,
+        overflow: 'hidden',
+        whiteSpace: 'nowrap',
+        textOverflow: 'ellipsis',
+        userSelect: 'none',
+        pointerEvents: 'none',
+        color: getTheme().palette.text.secondary
     },
     tableIcon: {
         width: 20,
@@ -44,65 +96,37 @@ const styles = theme => ({
         pointerEvents: 'none'
     },
     tableTitle: {
-        width: '55%',
         overflow: 'hidden',
         whiteSpace: 'nowrap',
         textOverflow: 'ellipsis'
     },
     tableUrl: {
-        width: '45%',
-        overflow: 'hidden',
-        whiteSpace: 'nowrap',
-        textOverflow: 'ellipsis'
-    },
-    tableDate: {
-        width: 150,
         overflow: 'hidden',
         whiteSpace: 'nowrap',
         textOverflow: 'ellipsis',
-        userSelect: 'none',
-        pointerEvents: 'none'
-    },
-    tableIcon2: {
-        width: 20,
-        whiteSpace: 'nowrap',
-        padding: '14px 16px',
-        userSelect: 'none',
-        pointerEvents: 'none'
-    },
-    tableTitle2: {
-        width: '55%',
-        overflow: 'hidden',
-        whiteSpace: 'nowrap',
-        textOverflow: 'ellipsis',
-        userSelect: 'none',
-        pointerEvents: 'none'
-    },
-    tableUrl2: {
-        width: '45%',
-        overflow: 'hidden',
-        whiteSpace: 'nowrap',
-        textOverflow: 'ellipsis',
-        userSelect: 'none',
-        pointerEvents: 'none'
-    },
-    tableDate2: {
-        width: 150,
-        overflow: 'hidden',
-        whiteSpace: 'nowrap',
-        textOverflow: 'ellipsis',
-        userSelect: 'none',
-        pointerEvents: 'none'
+        color: getTheme().palette.text.secondary
     }
 });
 
+const TableRow = withStyles({
+    root: {
+        '&:last-child': {
+            '& > td, th': {
+                borderBottom: 'none'
+            }
+        }
+    }
+})(MuiTableRow);
+
 class History extends Component {
+
     constructor(props) {
         super(props);
 
         this.state = {
-            historys: [],
+            historys: {},
             isOnline: true,
+            isOnlineOld: true,
             isDialogOpened: false
         };
     }
@@ -111,34 +135,68 @@ class History extends Component {
         document.title = window.getLanguageFile().internalPages.navigationBar.history;
 
         window.getHistorys().then((data) => {
-            this.setState({ historys: data });
+            let datas = {};
+            data.map((value, i) => {
+                const date = new Date(value.createdAt);
+                const cat = JSON.stringify({ year: date.getFullYear(), month: date.getMonth(), day: date.getDate() });
+
+                if (datas[cat] === undefined)
+                    datas[cat] = [];
+                datas[cat].push(value);
+            });
+
+            this.setState({ historys: datas });
         });
 
-        window.isOnline().then((result) => {
-            this.setState({ isOnline: result });
-        })
+        window.isOnline().then((isOnline) => {
+            const isOnlineOld = this.state.isOnline;
+            this.setState({ isOnline, isOnlineOld });
+        });
         setInterval(() => {
-            window.isOnline().then((result) => {
-                if (!this.state.isOnline && result) {
+            window.isOnline().then((isOnline) => {
+                if (!this.state.isOnline && isOnline
+                    || this.state.isOnline && !isOnline) {
                     window.getHistorys().then((data) => {
-                        this.setState({ historys: data });
+                        let datas = {};
+                        data.map((value, i) => {
+                            const date = new Date(value.createdAt);
+                            const cat = JSON.stringify({ year: date.getFullYear(), month: date.getMonth(), day: date.getDate() });
+
+                            if (datas[cat] === undefined)
+                                datas[cat] = [];
+                            datas[cat].push(value);
+                        });
+
+                        this.setState({ historys: datas });
                     });
                 }
-                
-                this.setState({ isOnline: result });
-            })
+
+                const isOnlineOld = this.state.isOnline;
+                this.setState({ isOnline, isOnlineOld });
+            });
         }, 1000 * 5);
     }
 
     componentWillReceiveProps = () => {
         document.title = window.getLanguageFile().internalPages.navigationBar.history;
-        
+
         window.getHistorys().then((data) => {
-            this.setState({ historys: data });
+            let datas = {};
+            data.map((value, i) => {
+                const date = new Date(value.createdAt);
+                const cat = JSON.stringify({ year: date.getFullYear(), month: date.getMonth(), day: date.getDate() });
+
+                if (datas[cat] === undefined)
+                    datas[cat] = [];
+                datas[cat].push(value);
+            });
+
+            this.setState({ historys: datas });
         });
 
-        window.isOnline().then((result) => {
-            this.setState({ isOnline: result });
+        window.isOnline().then((isOnline) => {
+            const isOnlineOld = this.state.isOnline;
+            this.setState({ isOnline, isOnlineOld });
         });
     }
 
@@ -151,43 +209,60 @@ class History extends Component {
 
         return (
             <NavigationBar title={window.getLanguageFile().internalPages.history.title} buttons={[<Button color="inherit" onClick={() => { this.setState({ isDialogOpened: true }); }}>{window.getLanguageFile().internalPages.history.clear}</Button>]}>
-                {this.state.isOnline ?
-                    <Paper className={classes.root}>
-                        <Table className={classes.table}>
-                            <TableHead>
-                                <TableRow>
-                                    <TableCell className={classes.tableIcon2}></TableCell>
-                                    <TableCell className={classes.tableTitle2}>{window.getLanguageFile().internalPages.history.table.title}</TableCell>
-                                    <TableCell className={classes.tableUrl2}>{window.getLanguageFile().internalPages.history.table.url}</TableCell>
-                                    <TableCell className={classes.tableDate2}>{window.getLanguageFile().internalPages.history.table.date}</TableCell>
-                                </TableRow>
-                            </TableHead>
-                            <TableBody>
-                                {this.state.historys.map((item, i) => (
-                                    <TableRow key={i}>
-                                        <TableCell className={classes.tableIcon}><img src={new URL(item.url).protocol === 'flast:' ? 'flast-file:///public.svg' : `http://www.google.com/s2/favicons?domain=${new URL(item.url).origin}`} style={{ width: 16, height: 16, verticalAlign: 'sub' }} /></TableCell>
-                                        <TableCell component="th" scope="row" className={classes.tableTitle}><Link href={item.url} title={item.title} color="inherit">{item.title}</Link></TableCell>
-                                        <TableCell title={item.url} className={classes.tableUrl}>{item.url}</TableCell>
-                                        <TableCell className={classes.tableDate}><Moment format="YYYY/MM/DD HH:mm">{item.createdAt}</Moment></TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </Paper>
-                    :
-                    <div className={classes.topImage} style={{ display: 'flex', flexFlow: 'column nowrap', justifyContent: 'center', height: 'calc(100vh - 75%)' }}>
-                        <div style={{
-                            display: 'flex',
-                            flexFlow: 'column nowrap',
-                            justifyContent: 'center',
-                            alignItems: 'center'
-                        }}>
-                            <CloudOffIcon color="action" style={{ fontSize: 140, marginBottom: 10 }} />
-                            <Typography variant="h6">オフライン</Typography>
-                            <Typography variant="subtitle1">現在オフラインです。履歴を表示することはできません。</Typography>
-                        </div>
+                <Container fixed className={classes.containerRoot}>
+                    <div className={classes.paperRoot}>
+                        <Grid container spacing={2}>
+                            <Collapse in={!this.state.isOnline || this.state.isOnline && !this.state.isOnlineOld} style={{ width: '100%' }}>
+                                {!this.state.isOnline &&
+                                    <Alert variant="outlined" severity="warning" icon={<CloudOffIcon fontSize="inherit" />} style={{ marginBottom: 10 }}>
+                                        <AlertTitle>オフライン</AlertTitle>
+                                        現在オフラインです。履歴の表示のみ利用可能です。
+                                    </Alert>
+                                }
+                                {this.state.isOnline && !this.state.isOnlineOld &&
+                                    <Alert variant="outlined" severity="success" icon={<CloudIcon fontSize="inherit" />} style={{ marginBottom: 10 }}>
+                                        <AlertTitle>オンライン</AlertTitle>
+                                        オンラインに復帰しました。
+                                    </Alert>
+                                }
+                            </Collapse>
+                            <Grid item xs={12} className={classes.panelRoot}>
+                                {Object.keys(this.state.historys).map((history, i) => {
+                                    const json = JSON.parse(history);
+                                    const date = new Date(json.year, json.month, json.day);
+
+                                    return (
+                                        <ExpansionPanel defaultExpanded key={i}>
+                                            <ExpansionPanelSummary expandIcon={<ExpandMoreIcon />}>
+                                                <Typography className={classes.panelHeading}><Moment format="YYYY年MM月DD日">{date}</Moment></Typography>
+                                                <Typography className={classes.panelSecondaryHeading} color="textSecondary">{this.state.historys[history].length}</Typography>
+                                            </ExpansionPanelSummary>
+                                            <ExpansionPanelDetails style={{ padding: 0 }}>
+                                                <Table className={classes.table}>
+                                                    <TableBody>
+                                                        {this.state.historys[history].map((item, v) => {
+                                                            return (
+                                                                <TableRow key={v}>
+                                                                    <TableCell padding="checkbox">
+                                                                        <Checkbox color={isDarkTheme() ? 'secondary' : 'primary'} />
+                                                                    </TableCell>
+                                                                    <TableCell className={classes.tableDate}><Moment format="HH:mm">{item.createdAt}</Moment></TableCell>
+                                                                    <TableCell className={classes.tableIcon}><img src={String(item.url).startsWith(`${protocolStr}://`) || String(item.url).startsWith(`${fileProtocolStr}://`) ? `${protocolStr}://resources/icons/public.svg` : item.favicon ? item.favicon : `http://www.google.com/s2/favicons?domain=${new URL(item.url).origin}`} style={{ width: 16, height: 16, verticalAlign: 'sub' }} /></TableCell>
+                                                                    <TableCell component="th" scope="row" className={classes.tableTitle}><Link href={item.url} title={item.title} color="inherit">{item.title}</Link></TableCell>
+                                                                    <TableCell title={item.url} className={classes.tableUrl}>{new URL(item.url).hostname}</TableCell>
+                                                                </TableRow>
+                                                            );
+                                                        })}
+                                                    </TableBody>
+                                                </Table>
+                                            </ExpansionPanelDetails>
+                                        </ExpansionPanel>
+                                    );
+                                })}
+                            </Grid>
+                        </Grid>
                     </div>
-                }
+                </Container>
                 <Dialog
                     open={this.state.isDialogOpened}
                     onClose={this.handleDialogClose}

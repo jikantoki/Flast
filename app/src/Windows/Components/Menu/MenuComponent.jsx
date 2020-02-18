@@ -8,18 +8,22 @@ import DarkBackIcon from '../../Resources/dark/arrow_back.svg';
 import LightBackIcon from '../../Resources/light/arrow_back.svg';
 
 const { remote, ipcRenderer, shell } = window.require('electron');
-const { app, systemPreferences, Menu, MenuItem, dialog } = remote;
+const { app, systemPreferences, Menu, MenuItem, dialog, nativeTheme } = remote;
+
+const platform = window.require('electron-platform');
+const path = window.require('path');
 
 const pkg = window.require(`${app.getAppPath()}/package.json`);
 const protocolStr = 'flast';
 const fileProtocolStr = `${protocolStr}-file`;
 
-const platform = require('electron-platform');
-
 const Config = window.require('electron-store');
 const config = new Config();
+const userConfig = new Config({
+    cwd: path.join(app.getPath('userData'), 'Users', config.get('currentUser'))
+});
 
-const lang = window.require(`${app.getAppPath()}/langs/${config.get('language') != undefined ? config.get('language') : 'ja'}.js`);
+const lang = window.require(`${app.getAppPath()}/langs/${userConfig.get('language') != undefined ? userConfig.get('language') : 'ja'}.js`);
 
 class MoreIcon extends Component {
     render() {
@@ -64,7 +68,7 @@ class MenuWindow extends Component {
         return ((((r * 299) + (g * 587) + (b * 114)) / 1000) < 128) ? '#ffffff' : '#000000';
     }
 
-    addTab = (url = (config.get('homePage.isDefaultHomePage') ? `${protocolStr}://home/` : config.get('homePage.defaultPage')), isInternal = false) => {
+    addTab = (url = (userConfig.get('homePage.isDefaultHomePage') ? `${protocolStr}://home/` : userCuserConfig.get('homePage.defaultPage')), isInternal = false) => {
         if (isInternal) {
             const u = parse(this.state.url);
             console.log(u.protocol);
@@ -84,7 +88,7 @@ class MenuWindow extends Component {
     }
 
     getIconDirectory = () => {
-        return `${app.getAppPath()}/static/${config.get('design.isDarkTheme') || String(this.props.windowId).startsWith('private') ? 'dark' : 'light'}`;
+        return `${app.getAppPath()}/static/${userConfig.get('design.isDarkTheme') || String(this.props.windowId).startsWith('private') ? 'dark' : 'light'}`;
     }
 
     render() {
@@ -92,14 +96,14 @@ class MenuWindow extends Component {
 		
         return (
             <div style={{ display: this.props.isShowing ? 'block' : 'none', width: 340, height: platform.isWin32 || platform.isDarwin ? 'auto' : '100%', position: 'relative', top: -2, left: 'calc(100% - 350px)', boxSizing: 'border-box' }}>
-                <Window isDarkModeOrPrivateMode={config.get('design.isDarkTheme') || String(this.props.windowId).startsWith('private')}>
+                <Window isDarkModeOrPrivateMode={userConfig.get('design.isDarkTheme') || String(this.props.windowId).startsWith('private')}>
                     <Button onClick={() => { this.setState({ isOpen: 'userInfo' }); }}>
                         <img src={`${this.getIconDirectory()}/account.png`} style={{ verticalAlign: 'middle' }} />
                         <ButtonTitle hasIcon={true}>{lang.window.toolBar.menu.menus.userInfo}</ButtonTitle>
                         <ButtonAccelerator></ButtonAccelerator>
-                        <MoreIcon isDarkModeOrPrivateMode={config.get('design.isDarkTheme') || String(this.props.windowId).startsWith('private')} />
+                        <MoreIcon isDarkModeOrPrivateMode={userConfig.get('design.isDarkTheme') || String(this.props.windowId).startsWith('private')} />
                     </Button>
-                    <Divider isVertical={false} isDarkModeOrPrivateMode={config.get('design.isDarkTheme') || String(this.props.windowId).startsWith('private')} />
+                    <Divider isVertical={false} isDarkModeOrPrivateMode={userConfig.get('design.isDarkTheme') || String(this.props.windowId).startsWith('private')} />
                     <Button onClick={() => { this.closeMenu(); this.addTab(); }}>
                         <ButtonTitle hasIcon={false}>{lang.window.toolBar.menu.menus.newTab}</ButtonTitle>
                         <ButtonAccelerator>{platform.isDarwin ? 'Cmd+T' : 'Ctrl+T'}</ButtonAccelerator>
@@ -112,43 +116,43 @@ class MenuWindow extends Component {
                         <ButtonTitle hasIcon={false}>{lang.window.toolBar.menu.menus.openPrivateWindow}</ButtonTitle>
                         <ButtonAccelerator>{platform.isDarwin ? 'Cmd+Shift+N' : 'Ctrl+Shift+N'}</ButtonAccelerator>
                     </Button>
-                    <Divider style={{ marginBottom: 0 }} isVertical={false} isDarkModeOrPrivateMode={config.get('design.isDarkTheme') || String(this.props.windowId).startsWith('private')} />
+                    <Divider style={{ marginBottom: 0 }} isVertical={false} isDarkModeOrPrivateMode={userConfig.get('design.isDarkTheme') || String(this.props.windowId).startsWith('private')} />
                     <div style={{ display: 'flex', paddingLeft: 7 }}>
                         <span style={{ width: 'auto', marginLeft: 25, display: 'flex', WebkitBoxAlign: 'center', alignItems: 'center' }}>{lang.window.toolBar.menu.menus.zoom.name}</span>
                         <div style={{ display: 'flex', marginLeft: 'auto' }}>
                             <Button title={lang.window.toolBar.menu.menus.zoom.zoomIn} onClick={() => { ipcRenderer.send(`browserView-zoomIn-${this.props.windowId}`, { id: this.props.match.params.tabId }); this.forceUpdate(); }}
-                                style={{ width: 50, height: 30, padding: '4px 16px', display: 'inline-table', borderLeft: `solid 1px ${config.get('design.isDarkTheme') || String(this.props.windowId).startsWith('private') ? '#8b8b8b' : '#e1e1e1'}` }}>
+                                style={{ width: 50, height: 30, padding: '4px 16px', display: 'inline-table', borderLeft: `solid 1px ${userConfig.get('design.isDarkTheme') || String(this.props.windowId).startsWith('private') ? '#8b8b8b' : '#e1e1e1'}` }}>
                                 <img src={`${this.getIconDirectory()}/zoom_in.png`} style={{ verticalAlign: 'middle' }} />
                             </Button>
-                            <div style={{ width: 50, height: 30, padding: '4px 16px', display: 'inline-table', borderLeft: `solid 1px ${config.get('design.isDarkTheme') || String(this.props.windowId).startsWith('private') ? '#8b8b8b' : '#e1e1e1'}` }}>
+                            <div style={{ width: 50, height: 30, padding: '4px 16px', display: 'inline-table', borderLeft: `solid 1px ${userConfig.get('design.isDarkTheme') || String(this.props.windowId).startsWith('private') ? '#8b8b8b' : '#e1e1e1'}` }}>
                                 {(this.state.zoomSize * 100).toFixed(0)}%
 							</div>
                             <Button title={lang.window.toolBar.menu.menus.zoom.zoomOut} onClick={() => { ipcRenderer.send(`browserView-zoomOut-${this.props.windowId}`, { id: this.props.match.params.tabId }); this.forceUpdate(); }}
-                                style={{ width: 50, height: 30, padding: '4px 16px', display: 'inline-table', borderLeft: `solid 1px ${config.get('design.isDarkTheme') || String(this.props.windowId).startsWith('private') ? '#8b8b8b' : '#e1e1e1'}` }}>
+                                style={{ width: 50, height: 30, padding: '4px 16px', display: 'inline-table', borderLeft: `solid 1px ${userConfig.get('design.isDarkTheme') || String(this.props.windowId).startsWith('private') ? '#8b8b8b' : '#e1e1e1'}` }}>
                                 <img src={`${this.getIconDirectory()}/zoom_out.png`} style={{ verticalAlign: 'middle' }} />
                             </Button>
                             <Button title={lang.window.toolBar.menu.menus.zoom.fullScreen} onClick={() => { this.closeMenu(); ipcRenderer.send(`window-fullScreen-${this.props.windowId}`, {}); }}
-                                style={{ width: 50, height: 30, padding: '4px 16px', display: 'inline-table', borderLeft: `solid 1px ${config.get('design.isDarkTheme') || String(this.props.windowId).startsWith('private') ? '#8b8b8b' : '#e1e1e1'}` }}>
+                                style={{ width: 50, height: 30, padding: '4px 16px', display: 'inline-table', borderLeft: `solid 1px ${userConfig.get('design.isDarkTheme') || String(this.props.windowId).startsWith('private') ? '#8b8b8b' : '#e1e1e1'}` }}>
                                 <img src={`${this.getIconDirectory()}/fullscreen.png`} style={{ verticalAlign: 'middle' }} />
                             </Button>
                         </div>
                     </div>
-                    <Divider style={{ marginTop: 0, marginBottom: 0 }} isVertical={false} isDarkModeOrPrivateMode={config.get('design.isDarkTheme') || String(this.props.windowId).startsWith('private')} />
+                    <Divider style={{ marginTop: 0, marginBottom: 0 }} isVertical={false} isDarkModeOrPrivateMode={userConfig.get('design.isDarkTheme') || String(this.props.windowId).startsWith('private')} />
                     <div style={{ display: 'flex', paddingLeft: 7 }}>
                         <span style={{ width: 'auto', marginLeft: 25, display: 'flex', WebkitBoxAlign: 'center', alignItems: 'center' }}>{lang.window.toolBar.menu.menus.edit.name}</span>
                         <div style={{ display: 'flex', marginLeft: 'auto' }}>
-                            <Button style={{ width: 70, height: 30, borderLeft: `solid 1px ${config.get('design.isDarkTheme') || String(this.props.windowId).startsWith('private') ? '#8b8b8b' : '#e1e1e1'}` }}>
+                            <Button style={{ width: 70, height: 30, borderLeft: `solid 1px ${userConfig.get('design.isDarkTheme') || String(this.props.windowId).startsWith('private') ? '#8b8b8b' : '#e1e1e1'}` }}>
                                 {lang.window.toolBar.menu.menus.edit.cut}
                             </Button>
-                            <Button style={{ width: 70, height: 30, borderLeft: `solid 1px ${config.get('design.isDarkTheme') || String(this.props.windowId).startsWith('private') ? '#8b8b8b' : '#e1e1e1'}` }}>
+                            <Button style={{ width: 70, height: 30, borderLeft: `solid 1px ${userConfig.get('design.isDarkTheme') || String(this.props.windowId).startsWith('private') ? '#8b8b8b' : '#e1e1e1'}` }}>
                                 {lang.window.toolBar.menu.menus.edit.copy}
                             </Button>
-                            <Button style={{ width: 70, height: 30, borderLeft: `solid 1px ${config.get('design.isDarkTheme') || String(this.props.windowId).startsWith('private') ? '#8b8b8b' : '#e1e1e1'}` }}>
+                            <Button style={{ width: 70, height: 30, borderLeft: `solid 1px ${userConfig.get('design.isDarkTheme') || String(this.props.windowId).startsWith('private') ? '#8b8b8b' : '#e1e1e1'}` }}>
                                 {lang.window.toolBar.menu.menus.edit.paste}
                             </Button>
                         </div>
                     </div>
-                    <Divider style={{ marginTop: 0 }} isVertical={false} isDarkModeOrPrivateMode={config.get('design.isDarkTheme') || String(this.props.windowId).startsWith('private')} />
+                    <Divider style={{ marginTop: 0 }} isVertical={false} isDarkModeOrPrivateMode={userConfig.get('design.isDarkTheme') || String(this.props.windowId).startsWith('private')} />
                     <Button onClick={() => { this.closeMenu(); this.addTab(`${protocolStr}://bookmarks`, true); }}>
                         <img src={`${this.getIconDirectory()}/bookmarks.png`} style={{ verticalAlign: 'middle' }} />
                         <ButtonTitle hasIcon={true}>{lang.window.toolBar.menu.menus.bookmarks}</ButtonTitle>
@@ -167,9 +171,9 @@ class MenuWindow extends Component {
                     <Button onClick={() => { this.setState({ isOpen: 'app' }); }}>
                         <ButtonTitle hasIcon={false}>{lang.window.toolBar.menu.menus.app.name}</ButtonTitle>
                         <ButtonAccelerator></ButtonAccelerator>
-                        <MoreIcon isDarkModeOrPrivateMode={config.get('design.isDarkTheme') || String(this.props.windowId).startsWith('private')} />
+                        <MoreIcon isDarkModeOrPrivateMode={userConfig.get('design.isDarkTheme') || String(this.props.windowId).startsWith('private')} />
                     </Button>
-                    <Divider isVertical={false} isDarkModeOrPrivateMode={config.get('design.isDarkTheme') || String(this.props.windowId).startsWith('private')} />
+                    <Divider isVertical={false} isDarkModeOrPrivateMode={userConfig.get('design.isDarkTheme') || String(this.props.windowId).startsWith('private')} />
                     <Button onClick={() => { this.closeMenu(); ipcRenderer.send(`browserView-print-${this.props.windowId}`, { id: this.props.match.params.tabId }); }}>
                         <img src={`${this.getIconDirectory()}/print.png`} style={{ verticalAlign: 'middle' }} />
                         <ButtonTitle hasIcon={true}>{lang.window.toolBar.menu.menus.print}</ButtonTitle>
@@ -183,9 +187,9 @@ class MenuWindow extends Component {
                     <Button onClick={() => { this.setState({ isOpen: 'otherTools' }); }}>
                         <ButtonTitle hasIcon={false}>{lang.window.toolBar.menu.menus.otherTools.name}</ButtonTitle>
                         <ButtonAccelerator></ButtonAccelerator>
-                        <MoreIcon isDarkModeOrPrivateMode={config.get('design.isDarkTheme') || String(this.props.windowId).startsWith('private')} />
+                        <MoreIcon isDarkModeOrPrivateMode={userConfig.get('design.isDarkTheme') || String(this.props.windowId).startsWith('private')} />
                     </Button>
-                    <Divider isVertical={false} isDarkModeOrPrivateMode={config.get('design.isDarkTheme') || String(this.props.windowId).startsWith('private')} />
+                    <Divider isVertical={false} isDarkModeOrPrivateMode={userConfig.get('design.isDarkTheme') || String(this.props.windowId).startsWith('private')} />
                     <Button onClick={() => { this.closeMenu(); this.addTab(`${protocolStr}://settings`, true); }}>
                         <img src={`${this.getIconDirectory()}/settings.png`} style={{ verticalAlign: 'middle' }} />
                         <ButtonTitle hasIcon={true}>{lang.window.toolBar.menu.menus.settings}</ButtonTitle>
@@ -196,50 +200,50 @@ class MenuWindow extends Component {
                         <ButtonTitle hasIcon={true}>{lang.window.toolBar.menu.menus.help}</ButtonTitle>
                         <ButtonAccelerator></ButtonAccelerator>
                     </Button>
-                    <Divider isVertical={false} isDarkModeOrPrivateMode={config.get('design.isDarkTheme') || String(this.props.windowId).startsWith('private')} />
+                    <Divider isVertical={false} isDarkModeOrPrivateMode={userConfig.get('design.isDarkTheme') || String(this.props.windowId).startsWith('private')} />
                     <Button>
                         <ButtonTitle hasIcon={false}>{lang.window.toolBar.menu.menus.close}</ButtonTitle>
                         <ButtonAccelerator>{platform.isDarwin ? 'Cmd+Q' : 'Alt+F4'}</ButtonAccelerator>
                     </Button>
                 </Window>
-                <Dialog isOpen={this.state.isOpen === 'userInfo'} isDarkModeOrPrivateMode={config.get('design.isDarkTheme') || String(this.props.windowId).startsWith('private')}>
+                <Dialog isOpen={this.state.isOpen === 'userInfo'} isDarkModeOrPrivateMode={userConfig.get('design.isDarkTheme') || String(this.props.windowId).startsWith('private')}>
                     <DialogHeader>
-                        <DialogHeaderButton src={config.get('design.isDarkTheme') || String(this.props.windowId).startsWith('private') ? DarkBackIcon : LightBackIcon} size={18} onClick={() => { this.setState({ isOpen: null }); }} />
+                        <DialogHeaderButton src={userConfig.get('design.isDarkTheme') || String(this.props.windowId).startsWith('private') ? DarkBackIcon : LightBackIcon} size={18} onClick={() => { this.setState({ isOpen: null }); }} />
                         <DialogHeaderTitle>{lang.window.toolBar.menu.menus.userInfo}</DialogHeaderTitle>
                     </DialogHeader>
-                    <DialogContainer isDarkModeOrPrivateMode={config.get('design.isDarkTheme') || String(this.props.windowId).startsWith('private')}>
+                    <DialogContainer isDarkModeOrPrivateMode={userConfig.get('design.isDarkTheme') || String(this.props.windowId).startsWith('private')}>
                     </DialogContainer>
                 </Dialog>
-                <Dialog isOpen={this.state.isOpen === 'app'} isDarkModeOrPrivateMode={config.get('design.isDarkTheme') || String(this.props.windowId).startsWith('private')}>
+                <Dialog isOpen={this.state.isOpen === 'app'} isDarkModeOrPrivateMode={userConfig.get('design.isDarkTheme') || String(this.props.windowId).startsWith('private')}>
                     <DialogHeader>
-                        <DialogHeaderButton src={config.get('design.isDarkTheme') || String(this.props.windowId).startsWith('private') ? DarkBackIcon : LightBackIcon} size={18} onClick={() => { this.setState({ isOpen: null }); }} />
+                        <DialogHeaderButton src={userConfig.get('design.isDarkTheme') || String(this.props.windowId).startsWith('private') ? DarkBackIcon : LightBackIcon} size={18} onClick={() => { this.setState({ isOpen: null }); }} />
                         <DialogHeaderTitle>{lang.window.toolBar.menu.menus.app.name}</DialogHeaderTitle>
                     </DialogHeader>
-                    <DialogContainer isDarkModeOrPrivateMode={config.get('design.isDarkTheme') || String(this.props.windowId).startsWith('private')}>
+                    <DialogContainer isDarkModeOrPrivateMode={userConfig.get('design.isDarkTheme') || String(this.props.windowId).startsWith('private')}>
                         <Button onClick={() => { this.closeMenu(); this.addTab(`${protocolStr}://apps/`); }}>
                             <img src={`${this.getIconDirectory()}/apps.png`} style={{ verticalAlign: 'middle' }} />
                             <ButtonTitle hasIcon={true}>{lang.window.toolBar.menu.menus.app.list}</ButtonTitle>
                             <ButtonAccelerator></ButtonAccelerator>
                         </Button>
-                        <Divider isVertical={false} isDarkModeOrPrivateMode={config.get('design.isDarkTheme') || String(this.props.windowId).startsWith('private')} />
+                        <Divider isVertical={false} isDarkModeOrPrivateMode={userConfig.get('design.isDarkTheme') || String(this.props.windowId).startsWith('private')} />
                         <Button onClick={() => { this.closeMenu(); ipcRenderer.send(`appWindow-add`, { url: this.state.url }); }}>
                             <ButtonTitle hasIcon={false}>{String(lang.window.toolBar.menu.menus.app.run).replace(/{title}/, lang.window.toolBar.menu.menus.app.name)}</ButtonTitle>
                             <ButtonAccelerator></ButtonAccelerator>
                         </Button>
                     </DialogContainer>
                 </Dialog>
-                <Dialog isOpen={this.state.isOpen === 'otherTools'} isDarkModeOrPrivateMode={config.get('design.isDarkTheme') || String(this.props.windowId).startsWith('private')}>
+                <Dialog isOpen={this.state.isOpen === 'otherTools'} isDarkModeOrPrivateMode={userConfig.get('design.isDarkTheme') || String(this.props.windowId).startsWith('private')}>
                     <DialogHeader>
-                        <DialogHeaderButton src={config.get('design.isDarkTheme') || String(this.props.windowId).startsWith('private') ? DarkBackIcon : LightBackIcon} size={18} onClick={() => { this.setState({ isOpen: null }); }} />
+                        <DialogHeaderButton src={userConfig.get('design.isDarkTheme') || String(this.props.windowId).startsWith('private') ? DarkBackIcon : LightBackIcon} size={18} onClick={() => { this.setState({ isOpen: null }); }} />
                         <DialogHeaderTitle>{lang.window.toolBar.menu.menus.otherTools.name}</DialogHeaderTitle>
                     </DialogHeader>
-                    <DialogContainer isDarkModeOrPrivateMode={config.get('design.isDarkTheme') || String(this.props.windowId).startsWith('private')}>
+                    <DialogContainer isDarkModeOrPrivateMode={userConfig.get('design.isDarkTheme') || String(this.props.windowId).startsWith('private')}>
                         <Button onClick={() => { this.closeMenu(); ipcRenderer.send(`browserView-savePage-${this.props.windowId}`, { id: this.props.match.params.tabId }); }}>
                             <img src={`${this.getIconDirectory()}/save.png`} style={{ verticalAlign: 'middle' }} />
                             <ButtonTitle hasIcon={true}>{lang.window.toolBar.menu.menus.otherTools.savePage}</ButtonTitle>
                             <ButtonAccelerator>{platform.isDarwin ? 'Cmd+S' : 'Ctrl+S'}</ButtonAccelerator>
                         </Button>
-                        <Divider isVertical={false} isDarkModeOrPrivateMode={config.get('design.isDarkTheme') || String(this.props.windowId).startsWith('private')} />
+                        <Divider isVertical={false} isDarkModeOrPrivateMode={userConfig.get('design.isDarkTheme') || String(this.props.windowId).startsWith('private')} />
                         <Button onClick={() => { this.closeMenu(); ipcRenderer.send(`browserView-viewSource-${this.props.windowId}`, { id: this.props.match.params.tabId }); }}>
                             <ButtonTitle hasIcon={false}>{lang.window.toolBar.menu.menus.otherTools.viewSource}</ButtonTitle>
                             <ButtonAccelerator>{platform.isDarwin ? 'Cmd+U' : 'Ctrl+U'}</ButtonAccelerator>

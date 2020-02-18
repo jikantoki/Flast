@@ -1,8 +1,18 @@
 import styled from 'styled-components';
 import TabButton from '../TabButton';
 
+const { remote, ipcRenderer, shell } = window.require('electron');
+const { app, systemPreferences, Menu, MenuItem, dialog, nativeTheme } = remote;
+
+const path = window.require('path');
+
 const Config = window.require('electron-store');
 const config = new Config();
+const userConfig = new Config({
+    cwd: path.join(app.getPath('userData'), 'Users', config.get('currentUser'))
+});
+
+const lang = window.require(`${app.getAppPath()}/langs/${userConfig.get('language') != undefined ? userConfig.get('language') : 'ja'}.js`);
 
 export const Suggest = styled.div`
   width: ${props => props.width}px;
