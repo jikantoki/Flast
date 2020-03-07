@@ -22,7 +22,7 @@ const userConfig = new Config({
 const lang = require(`${app.getAppPath()}/langs/${userConfig.get('language') != undefined ? userConfig.get('language') : 'ja'}.js`);
 
 module.exports = class InfomationWindow extends BrowserWindow {
-    
+
     constructor(appWindow, windowId) {
         super({
             width: 320,
@@ -35,6 +35,7 @@ module.exports = class InfomationWindow extends BrowserWindow {
             webPreferences: {
                 nodeIntegration: true,
                 contextIsolation: false,
+                enableRemoteModule: true
             }
         });
 
@@ -62,13 +63,15 @@ module.exports = class InfomationWindow extends BrowserWindow {
         this.fixBounds();
     }
 
-    showWindow = (title, description, url = '', isButton = false) => {
+    showWindow = (title, description, url = '', certificate = undefined, isButton = false) => {
         this.appWindow.isModuleWindowFocused = true;
 
         this.hide();
-        this.webContents.send(`infoWindow-${this.windowId}`, { title, description, url, isButton });
+        this.webContents.send(`infoWindow-${this.windowId}`, { title, description, url, certificate, isButton });
         this.fixBounds();
         this.show();
+
+        // this.webContents.openDevTools({ mode: 'detach' });
 
         ipcMain.once(`infoWindow-close-${this.windowId}`, (e, result) => {
             this.hide();

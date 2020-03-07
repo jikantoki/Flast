@@ -243,9 +243,7 @@ class Settings extends Component {
     }
 
     handleSnackbarClose = (event, reason) => {
-        if (reason === 'clickaway') {
-            return;
-        }
+        if (reason === 'clickaway') return;
 
         this.setState({ isShowingSnackbar: false });
     }
@@ -433,6 +431,7 @@ class SettingsSyncPage extends Component {
             isDialogOpened: false,
             code: '',
             codeInput: '',
+            emailInput: '',
 
             // Snackbar
             isShowingSnackbar: false,
@@ -491,8 +490,8 @@ class SettingsSyncPage extends Component {
                             <Grid item xs={12}>
                                 <Divider />
                             </Grid>
-                            <Grid item xs={12}>
-                                <FormControl variant="outlined">
+                            <Grid item xs={12} style={{ display: 'flex', flexDirection: 'column' }}>
+                                <FormControl variant="outlined" style={{ margin: 5 }}>
                                     <InputLabel htmlFor="sync-code">同期用コード</InputLabel>
                                     <OutlinedInput
                                         value={this.state.codeInput}
@@ -503,10 +502,23 @@ class SettingsSyncPage extends Component {
                                         required
                                         variant="outlined"
                                         labelWidth={95}
+                                    />
+                                </FormControl>
+                                <FormControl variant="outlined" style={{ margin: 5 }}>
+                                    <InputLabel htmlFor="email">メールアドレス</InputLabel>
+                                    <OutlinedInput
+                                        value={this.state.emailInput}
+                                        onChange={(e) => { this.setState({ emailInput: e.target.value }); }}
+                                        autoFocus
+                                        id="email"
+                                        fullWidth
+                                        required
+                                        variant="outlined"
+                                        labelWidth={130}
                                         endAdornment={
                                             <InputAdornment position="end">
                                                 <IconButton edge="end" onClick={() => {
-                                                    window.syncAccount(this.state.codeInput);
+                                                    window.syncAccount(this.state.codeInput, this.state.emailInput);
                                                     this.setState({ isShowingSnackbar: true, snackBarText: '同期しました。適用するには再起動が必要です。' });
                                                 }}>
                                                     <SyncIcon />
@@ -549,6 +561,7 @@ SettingsSyncPage.propTypes = {
 };
 
 class SettingsDesignPage extends Component {
+
     constructor(props) {
         super(props);
 
@@ -558,7 +571,7 @@ class SettingsDesignPage extends Component {
 
             // Design
             isHomeButton: false,
-            isBookmarkBar: false,
+            isBookmarkBar: 0,
             theme: -1,
             tabAccentColor: '#0a84ff',
             isCustomTitlebar: false,
@@ -705,18 +718,25 @@ class SettingsDesignPage extends Component {
                             <Grid item xs={12} className={classes.itemDivider}><Divider /></Grid>
                             <Grid item xs={12} className={classes.itemRoot} style={{ flexDirection: 'row' }}>
                                 <div className={classes.itemTitleRoot}>
-                                    <Typography variant="body2">{window.getLanguageFile().internalPages.settings.sections.design.controls.bookMarkBar}</Typography>
+                                    <Typography variant="body2">{window.getLanguageFile().internalPages.settings.sections.design.controls.bookMarkBar.name}</Typography>
                                 </div>
                                 <div className={classes.itemControlRoot}>
-                                    <Switch
-                                        checked={this.state.isBookmarkBar}
-                                        onChange={(e) => {
-                                            this.setState({ ...this.state, isBookmarkBar: e.target.checked });
-                                            window.setBookmarkBar(e.target.checked);
-                                        }}
-                                        color="primary"
-                                        value="isBookmarkBar"
-                                    />
+                                    <div className={classes.formRoot}>
+                                        <FormControl variant="outlined" margin="dense" className={classes.formControl} style={{ minWidth: 120 }}>
+                                            <Select
+                                                inputProps={{ name: 'isBookmarkBar', id: 'isBookmarkBar' }}
+                                                value={this.state.isBookmarkBar}
+                                                onChange={(e) => {
+                                                    this.setState({ isBookmarkBar: e.target.value });
+                                                    window.setBookmarkBar(e.target.value);
+                                                }}
+                                            >
+                                                <MenuItem value={1}>{window.getLanguageFile().internalPages.settings.sections.design.controls.bookMarkBar.controls.enabled}</MenuItem>
+                                                <MenuItem value={0}>{window.getLanguageFile().internalPages.settings.sections.design.controls.bookMarkBar.controls.onlyHomePage}</MenuItem>
+                                                <MenuItem value={-1}>{window.getLanguageFile().internalPages.settings.sections.design.controls.bookMarkBar.controls.disabled}</MenuItem>
+                                            </Select>
+                                        </FormControl>
+                                    </div>
                                 </div>
                             </Grid>
                             <Grid item xs={12} className={classes.itemDivider}><Divider /></Grid>
@@ -728,14 +748,11 @@ class SettingsDesignPage extends Component {
                                     <div className={classes.formRoot}>
                                         <FormControl variant="outlined" margin="dense" className={classes.formControl} style={{ minWidth: 120 }}>
                                             <Select
+                                                inputProps={{ name: 'theme', id: 'theme' }}
                                                 value={this.state.theme}
                                                 onChange={(e) => {
                                                     this.setState({ theme: e.target.value });
                                                     window.setTheme(e.target.value);
-                                                }}
-                                                inputProps={{
-                                                    name: 'theme',
-                                                    id: 'theme',
                                                 }}
                                             >
                                                 <MenuItem value={-1}>{window.getLanguageFile().internalPages.settings.sections.design.controls.theme.controls.system}</MenuItem>
@@ -789,13 +806,10 @@ class SettingsDesignPage extends Component {
                                     <Typography variant="body2">{window.getLanguageFile().internalPages.settings.sections.design.controls.titleBar.name}</Typography>
                                 </div>
                                 <div className={classes.itemControlRoot}>
-                                    {this.state.isCustomTitlebar2 !== window.getCustomTitlebar() && <Button variant="outlined" size="small" className={classes.button} onClick={() => { window.restart(); }}>{window.getLanguageFile().internalPages.settings.sections.design.controls.titleBar.controls.restart}</Button>}
+                                    {this.state.isCustomTitlebar2 !== this.state.isCustomTitlebar && <Button variant="outlined" className={classes.button} onClick={() => { window.setCustomTitlebar(this.state.isCustomTitlebar); window.restart(); }}>{window.getLanguageFile().internalPages.settings.sections.design.controls.titleBar.controls.restart}</Button>}
                                     <Switch
                                         checked={this.state.isCustomTitlebar}
-                                        onChange={(e) => {
-                                            this.setState({ ...this.state, isCustomTitlebar: e.target.checked });
-                                            window.setCustomTitlebar(e.target.checked);
-                                        }}
+                                        onChange={(e) => this.setState({ ...this.state, isCustomTitlebar: e.target.checked })}
                                         color="primary"
                                         value="isCustomTitlebar"
                                     />
@@ -807,7 +821,7 @@ class SettingsDesignPage extends Component {
                                     <Typography variant="body2">{window.getLanguageFile().internalPages.settings.sections.design.controls.moreSettings}</Typography>
                                 </div>
                                 <div className={classes.itemControlRoot}>
-                                    <Button variant="outlined" size="small">変更</Button>
+                                    <Button variant="outlined">変更</Button>
                                 </div>
                             </Grid>
                         </Grid>
@@ -907,7 +921,7 @@ class SettingsAdBlockPage extends Component {
                                     <Switch
                                         checked={this.state.isAdBlock}
                                         onChange={(e) => {
-                                            this.setState({ ...this.state, isAdBlock: e.target.checked });
+                                            this.setState({ isAdBlock: e.target.checked });
                                             window.setAdBlock(e.target.checked);
                                         }}
                                         color="primary"
@@ -928,6 +942,10 @@ class SettingsAdBlockPage extends Component {
                                                     <Switch
                                                         checked={item.isEnabled}
                                                         onChange={(e) => {
+                                                            const filters = this.state.filters.slice();
+                                                            filters[i].isEnabled = e.target.checked;
+                                                            this.setState({ filters });
+                                                            window.setFilters(filters);
                                                         }}
                                                         color="primary"
                                                         value={i}

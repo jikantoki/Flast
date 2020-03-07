@@ -60,10 +60,10 @@ export const TabTitle = styled.div`
   width: ${props => `calc(100% - (${paddingSize}px * ${props.isShowing ? 3 : 2} + (${buttonSize}px * ${props.isShowing ? 3 : 2} + 3px * ${props.isShowing ? 3 : 2})))`};
   left: 32px;
   display: ${props => props.isFixed ? 'none' : 'block'};
-  top: 7px;
+  top: 5px;
   position: absolute;
-  font-size: 11px;
-  /* font-family: 'Noto Sans', sans-serif; */
+  font-size: 12px;
+  font-family: 'Noto Sans', 'Noto Sans JP';
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;

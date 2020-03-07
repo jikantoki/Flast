@@ -25,7 +25,7 @@ const defaultConfig = {
     },
     design: {
         isHomeButton: false,
-        isBookmarkBar: false,
+        isBookmarkBar: 0,
         theme: -1,
         tabAccentColor: '#0a84ff',
         isCustomTitlebar: true
@@ -231,7 +231,7 @@ const config = new Config({
         meta: {
             version: '1.0.0'
         }
-    },
+    }
 });
 const userConfig = config.get('currentUser') !== '' ? new Config({
     cwd: join(app.getPath('userData'), 'Users', config.get('currentUser')),
@@ -342,7 +342,7 @@ module.exports = class Application {
         });
 
         ipcMain.on('sync-account', (e, args) => {
-            const id = firebase.syncAccount(args.id);
+            const id = firebase.syncAccount(args.id, args.email);
             e.sender.send('sync-account', { id });
         });
 

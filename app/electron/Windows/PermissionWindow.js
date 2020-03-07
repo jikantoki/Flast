@@ -35,6 +35,7 @@ module.exports = class PermissionWindow extends BrowserWindow {
             webPreferences: {
                 nodeIntegration: true,
                 contextIsolation: false,
+                enableRemoteModule: true
             }
         });
 
@@ -70,6 +71,8 @@ module.exports = class PermissionWindow extends BrowserWindow {
         this.fixBounds();
         this.show();
 
+        // this.webContents.openDevTools({ mode: 'detach' });
+
         ipcMain.once(`permissionWindow-close-${this.windowId}`, (e, result) => {
             this.hide();
             this.appWindow.focus();
@@ -77,7 +80,7 @@ module.exports = class PermissionWindow extends BrowserWindow {
 
         return new Promise((resolve, reject) => {
             ipcMain.once(`permissionWindow-result-${this.windowId}`, (e, args) => {
-                resolve([args.result, args.isChecked]);
+                resolve({ result: args.result, isChecked: args.isChecked });
                 this.hide();
                 this.appWindow.focus();
             });

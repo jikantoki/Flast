@@ -34,6 +34,7 @@ module.exports = class OverlayWindow extends BrowserWindow {
             webPreferences: {
                 nodeIntegration: true,
                 contextIsolation: false,
+                enableRemoteModule: true
             }
         });
 

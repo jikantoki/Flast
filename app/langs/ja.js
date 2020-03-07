@@ -371,7 +371,14 @@ module.exports = {
                                 openWithCustomPage: '特定のページを開く'
                             }
                         },
-                        bookMarkBar: 'ブックマーク バーを表示する',
+                        bookMarkBar: {
+                            name: 'ブックマーク バーを表示する',
+                            controls: {
+                                disabled: 'すべてのページで非表示',
+                                onlyHomePage: 'ホーム ページのみ表示',
+                                enabled: 'すべてのページで表示'
+                            }
+                        },
                         theme: {
                             name: 'テーマ',
                             controls: {

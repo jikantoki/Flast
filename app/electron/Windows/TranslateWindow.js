@@ -38,7 +38,8 @@ module.exports = class TranslateWindow extends BrowserWindow {
             webPreferences: {
                 nodeIntegration: true,
                 contextIsolation: false,
-                webviewTag: true
+                webviewTag: true,
+                enableRemoteModule: true
             }
         });
 

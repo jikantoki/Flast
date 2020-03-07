@@ -36,6 +36,7 @@ module.exports = class SuggestWindow extends BrowserWindow {
             webPreferences: {
                 nodeIntegration: true,
                 contextIsolation: false,
+                enableRemoteModule: true
             }
         });
 
@@ -68,6 +69,7 @@ module.exports = class SuggestWindow extends BrowserWindow {
 
         this.showInactive();
         this.fixBounds();
+        
         // this.webContents.openDevTools({ mode: 'detach' });
 
         ipcMain.once(`suggestWindow-close-${this.windowId}`, (e, result) => {

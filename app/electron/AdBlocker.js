@@ -24,16 +24,9 @@ if (!existsSync(join(app.getPath('userData'), 'Files')))
 	mkdirSync(join(app.getPath('userData'), 'Files'));
 */
 
-const loadFilters = async (forceDownload = false) => {
+const loadFilters = async () => {
 	const filters = [];
-	/*
-	for await (const item of userConfig.get('adBlock.filters').filter((value) => value.isEnabled))
-		filters.push(item.url);
-	*/
-	await userConfig.get('adBlock.filters').filter((value) => value.isEnabled).forEach((item) => { //　→ await a.forEach(... と書いても結果は同じです。
-		filters.push(item.url);
-	});
-
+	await userConfig.get('adBlock.filters').filter((value) => value.isEnabled).forEach((item) => filters.push(item.url));
 	blocker = await ElectronBlocker.fromLists(fetch, filters);
 };
 
@@ -41,7 +34,7 @@ let adblockRunning = false;
 
 const runAdblockService = async (ses) => {
 	if (!blocker)
-		await loadFilters(false);
+		await loadFilters();
 	blocker.enableBlockingInSession(ses);
 };
 
@@ -56,6 +49,4 @@ const isDisabled = (url) => {
 	return false;
 }
 
-module.exports = {
-	loadFilters, runAdblockService, stopAdblockService
-};
+module.exports = { loadFilters, runAdblockService, stopAdblockService };

@@ -1,5 +1,5 @@
 const { app, shell, ipcMain, protocol, session, BrowserWindow, BrowserView, Menu, nativeImage, clipboard, dialog, Notification, nativeTheme } = require('electron');
-const path = require('path');
+const { join } = require('path');
 const { parse, format } = require('url');
 const os = require('os');
 const https = require('https');
@@ -23,12 +23,13 @@ const { download } = require('electron-dl');
 const fetch = require('node-fetch');
 const platform = require('electron-platform');
 const localShortcut = require('electron-localshortcut');
+const isOnline = require('is-online');
 const imageDataURI = require('image-data-uri');
 
 const Config = require('electron-store');
 const config = new Config();
 const userConfig = new Config({
-    cwd: path.join(app.getPath('userData'), 'Users', config.get('currentUser'))
+    cwd: join(app.getPath('userData'), 'Users', config.get('currentUser'))
 });
 
 const { isURL, prefixHttp } = require('../URL');
@@ -48,7 +49,7 @@ module.exports = class MainWindow extends BrowserWindow {
             titleBarStyle: 'hiddenInset',
             frame: !userConfig.get('design.isCustomTitlebar'),
             fullscreenable: true,
-            icon: `${__dirname}/static/app/icon.${platform.isWin32 ? 'ico' : 'png'}`,
+            icon: nativeImage.createFromPath(`${__dirname}/static/app/icon.${platform.isWin32 ? 'ico' : 'png'}`),
             show: false,
             webPreferences: {
                 nodeIntegration: true,
@@ -56,6 +57,7 @@ module.exports = class MainWindow extends BrowserWindow {
                 plugins: true,
                 experimentalFeatures: true,
                 contextIsolation: false,
+                enableRemoteModule: true
             }
         });
 
@@ -86,15 +88,19 @@ module.exports = class MainWindow extends BrowserWindow {
 
         this.translateWindow = new TranslateWindow(this, this.windowId);
 
-        this.setMenu(this.getMainMenu(application, this));
+        const mainMenu = this.getMainMenu(application, this);
+        this.setMenu(mainMenu);
         this.setMenuBarVisibility(false);
         this.autoHideMenuBar = true;
+
+        mainMenu.on('menu-will-show', (e) => console.log(e));
+        mainMenu.on('menu-will-close', (e) => console.log(e));
 
         let urlStrings = '';
         urls.map((url, i) => urlStrings += `${encodeURIComponent(url)}($|$)`);
 
         const startUrl = process.env.ELECTRON_START_URL || format({
-            pathname: path.join(__dirname, '/../../build/index.html'),
+            pathname: join(__dirname, '/../../build/index.html'),
             protocol: 'file:',
             slashes: true,
             hash: `/window/${this.windowId}/${urlStrings.substring(0, urlStrings.length - 5)}`,
@@ -165,26 +171,23 @@ module.exports = class MainWindow extends BrowserWindow {
 
         ses.setPermissionRequestHandler((webContents, permission, callback, details) => {
             const url = parse(webContents.getURL());
-            const permName = permission === 'media' ? `${permission}_${details.mediaTypes}` : permission;
-            const userConfigPath = `pageSettings.${permission}${permission === 'media' ? `.${details.mediaTypes}` : ''}`;
+            const origin = `${url.protocol}//${url.hostname}`;
 
-            db.pageSettings.findOne({ origin: `${url.protocol}//${url.hostname}`, type: permName }, async (err, doc) => {
+            const type = permission === 'media' ? `${permission}_${details.mediaTypes}` : permission;
+            const userConfigPath = `pageSettings.${type.replace('_', '.')}`;
+
+            db.pageSettings.findOne({ origin, type }, async (err, doc) => {
                 if (doc != undefined) {
                     console.log(doc);
                     return callback(doc.result);
                 } else {
                     if (userConfig.get(userConfigPath) === null || userConfig.get(userConfigPath) === -1) {
-                        const results = await this.permissionWindow.showWindow(permission, webContents.getURL());
-                        const result = results[0];
-                        const isChecked = true;
+                        const results = await this.permissionWindow.showWindow(type, webContents.getURL());
+                        const { result, isChecked } = results;
 
-                        if (isChecked) {
-                            db.pageSettings.update(
-                                { origin: `${url.protocol}//${url.hostname}`, type: permName, result },
-                                { origin: `${url.protocol}//${url.hostname}`, type: permName, result },
-                                { upsert: true }
-                            );
-                        }
+                        if (isChecked)
+                            db.pageSettings.update({ origin, type }, { origin, type, result }, { upsert: true });
+
                         callback(result);
                     } else if (userConfig.get(userConfigPath) === 0) {
                         return callback(false);
@@ -273,7 +276,7 @@ module.exports = class MainWindow extends BrowserWindow {
             this.infoWindow.hide();
             this.menuWindow.hide();
             this.suggestWindow.hide();
-            this.infoWindow.showWindow(args.title, args.description, args.url, args.isButton);
+            this.infoWindow.showWindow(args.title, args.description, args.url, args.certificate, args.isButton);
         });
 
         ipcMain.on(`window-translateWindow-${id}`, (e, args) => {
@@ -644,18 +647,19 @@ module.exports = class MainWindow extends BrowserWindow {
         });
     }
 
-    updateViewState = (view) => {
+    updateViewState = (view, url = undefined) => {
         if (this.isDestroyed() || view.isDestroyed()) return;
 
-        const url = view.webContents.getURL();
+        if (url === undefined)
+            url = view.webContents.getURL();
 
         if (url.startsWith(`${protocolStr}://error`)) return;
-        this.firebase.isBookmarked(view.webContents.getURL(), String(this.windowId).startsWith('private')).then((result) => {
-            this.getFavicon(url).then((favicon) => this.webContents.send(`browserView-load-${this.windowId}`, { id: view.webContents.id, title: view.webContents.getTitle(), url: url, icon: favicon, color: userConfig.get('design.tabAccentColor'), isAudioPlaying: !view.webContents.isCurrentlyAudible(), isBookmarked: result }));
+        this.firebase.isBookmarked(url, String(this.windowId).startsWith('private')).then((result) => {
+            this.getFavicon(url).then((favicon) => this.webContents.send(`browserView-load-${this.windowId}`, { id: view.webContents.id, title: view.webContents.getTitle(), url, icon: favicon, color: userConfig.get('design.tabAccentColor'), isAudioPlaying: !view.webContents.isCurrentlyAudible(), isBookmarked: result }));
         });
         /*
-        this.db.bookmarks.find({ url: view.webContents.getURL(), isPrivate: (String(this.windowId).startsWith('private')) }, (err, docs) => {
-            this.getFavicon(url).then((favicon) => this.webContents.send(`browserView-load-${this.windowId}`, { id: view.webContents.id, title: view.webContents.getTitle(), url: url, icon: favicon, color: userConfig.get('design.tabAccentColor'), isAudioPlaying: !view.webContents.isCurrentlyAudible(), isBookmarked: (docs.length > 0 ? true : false) }));
+        this.db.bookmarks.find({ url, isPrivate: (String(this.windowId).startsWith('private')) }, (err, docs) => {
+            this.getFavicon(url).then((favicon) => this.webContents.send(`browserView-load-${this.windowId}`, { id: view.webContents.id, title: view.webContents.getTitle(), url, icon: favicon, color: userConfig.get('design.tabAccentColor'), isAudioPlaying: !view.webContents.isCurrentlyAudible(), isBookmarked: (docs.length > 0 ? true : false) }));
         });
         */
     }
@@ -723,9 +727,9 @@ module.exports = class MainWindow extends BrowserWindow {
                 });
             } else {
                 view.setBounds({
-                    x: this.isMaximized() ? 1 : userConfig.get('design.isCustomTitlebar') ? 1 : 0,
+                    x: userConfig.get('design.isCustomTitlebar') ? 1 : 0,
                     y: this.isMaximized() ? this.getHeight(true, height) : userConfig.get('design.isCustomTitlebar') ? this.getHeight(true, height) + 1 : this.getHeight(true, height),
-                    width: this.isMaximized() ? width - 2 : userConfig.get('design.isCustomTitlebar') ? width - 2 : width,
+                    width: userConfig.get('design.isCustomTitlebar') ? width - 2 : width,
                     height: this.isMaximized() ? this.getHeight(false, height) : (userConfig.get('design.isCustomTitlebar') ? (this.getHeight(false, height)) - 2 : this.getHeight(false, height)),
                 });
             }
@@ -734,13 +738,18 @@ module.exports = class MainWindow extends BrowserWindow {
     }
 
     getHeight = (b, height) => {
+        if (this.getBrowserViews()[0] == undefined) return;
+        const view = this.getBrowserViews()[0];
+
         const titleBarHeight = 33;
         const toolBarHeight = 40;
 
         const baseBarHeight = titleBarHeight + toolBarHeight;
-        const bookMarkBarHeight = 28;
+        const bookMarkBarHeight = 32;
 
-        return b ? (userConfig.get('design.isBookmarkBar') ? (baseBarHeight + bookMarkBarHeight) : baseBarHeight) : (height - (userConfig.get('design.isBookmarkBar') ? (baseBarHeight + bookMarkBarHeight) : baseBarHeight));
+        const isBookmarkBar = userConfig.get('design.isBookmarkBar') === 1 || userConfig.get('design.isBookmarkBar') === 0 && view.webContents.getURL().startsWith(`${protocolStr}://home/`);
+
+        return b ? (isBookmarkBar ? (baseBarHeight + bookMarkBarHeight) : baseBarHeight) : (height - (isBookmarkBar ? (baseBarHeight + bookMarkBarHeight) : baseBarHeight));
     }
 
     getDomain = (url) => {
@@ -748,14 +757,10 @@ module.exports = class MainWindow extends BrowserWindow {
 
         if (hostname.indexOf('http://') !== -1 || hostname.indexOf('https://') !== -1)
             hostname = hostname.split('://')[1];
-
         if (hostname.indexOf('?') !== -1)
             hostname = hostname.split('?')[0];
 
-        if (hostname.indexOf('://') !== -1)
-            hostname = `${hostname.split('://')[0]}://${hostname.split('/')[2]}`;
-        else
-            hostname = hostname.split('/')[0];
+        hostname = hostname.indexOf('://') !== -1 ? `${hostname.split('://')[0]}://${hostname.split('/')[2]}` : hostname.split('/')[0];
 
         return hostname;
     }
@@ -783,12 +788,7 @@ module.exports = class MainWindow extends BrowserWindow {
 
                     console.log(certificate);
 
-                    const data = {
-                        type: 'Secure',
-                        title: certificate.subject.O,
-                        country: certificate.subject.C
-                    };
-                    resolve(data);
+                    resolve({ type: 'Secure', certificate });
                 });
 
                 req.end();
@@ -933,20 +933,41 @@ module.exports = class MainWindow extends BrowserWindow {
         const executeJs = this.getRandString(12);
         let viewId = '';
 
-        if (userConfig.get('adBlock.isAdBlock'))
-            runAdblockService(view.webContents.session);
-        else
-            stopAdblockService(view.webContents.session);
+        userConfig.get('adBlock.isAdBlock') ? runAdblockService(view.webContents.session) : stopAdblockService(view.webContents.session);
 
         view.webContents.on('did-start-loading', () => {
             if (view.isDestroyed()) return;
 
-            this.webContents.send(`browserView-start-loading-${this.windowId}`, { id: id });
+            this.webContents.send(`browserView-start-loading-${this.windowId}`, { id });
+
+            const isBookmarkBar = userConfig.get('design.isBookmarkBar') === 1 || userConfig.get('design.isBookmarkBar') === 0 && url.startsWith(`${protocolStr}://home/`);
+            isBookmarkBar && this.fixBounds();
+
+            isOnline().then((result) => {
+                if (result) {
+                    this.firebase.getBookmarks(String(this.windowId).startsWith('private'))
+                        .then((items) => {
+                            let datas = [];
+                            items.forEach((item, i) => datas.push({ id: item.id, title: item.data().title, url: item.data().url, favicon: item.data().favicon, isFolder: item.data().isFolder, createdAt: item.data().date.toDate() }));
+                            this.webContents.send('window-bookmarks-get', { bookmarks: datas });
+                        })
+                        .catch((err) => {
+                            console.log(`Test: ${err}`);
+                            this.db.bookmarks.find({ isPrivate: args.isPrivate }).sort({ createdAt: -1 }).exec((err, docs) => this.webContents.send('window-bookmarks-get', { bookmarks: docs }));
+                        });
+                } else {
+                    console.log(`Offline Mode`);
+                    this.db.bookmarks.find({ isPrivate: args.isPrivate }).sort({ createdAt: -1 }).exec((err, docs) => this.webContents.send('window-bookmarks-get', { bookmarks: docs }));
+                }
+            });
         });
         view.webContents.on('did-stop-loading', () => {
             if (view.isDestroyed()) return;
 
-            this.webContents.send(`browserView-stop-loading-${this.windowId}`, { id: id });
+            this.webContents.send(`browserView-stop-loading-${this.windowId}`, { id });
+
+            const isBookmarkBar = userConfig.get('design.isBookmarkBar') === 1 || userConfig.get('design.isBookmarkBar') === 0 && url.startsWith(`${protocolStr}://home/`);
+            isBookmarkBar && this.fixBounds();
         });
 
         view.webContents.on('did-start-navigation', async (e, url, isInPlace, isMainFrame, processId, routingId) => {
@@ -960,9 +981,11 @@ module.exports = class MainWindow extends BrowserWindow {
                 this.permissionWindow.hide();
                 this.suggestWindow.hide();
 
+                this.updateViewState(view, url);
+
                 if (url.startsWith('https://twitter.com') && !userConfig.get('pageSettings.pages.twitter.oldDesignIgnore')) {
                     const b = userConfig.get('pageSettings.pages.twitter.oldDesign');
-                    const result = await this.infoWindow.showWindow('Twitter', 'Twitter の旧デザインが利用できます。\n今すぐ変更しますか？', 'https://twitter.com/', true);
+                    const result = await this.infoWindow.showWindow('Twitter', 'Twitter の旧デザインが利用できます。\n今すぐ変更しますか？', 'https://twitter.com/', undefined, true);
                     userConfig.set('pageSettings.pages.twitter.oldDesign', result);
                     userConfig.set('pageSettings.pages.twitter.oldDesignIgnore', true);
 
@@ -1124,7 +1147,7 @@ module.exports = class MainWindow extends BrowserWindow {
             e.preventDefault();
             if (Notification.isSupported()) {
                 const notify = new Notification({
-                    icon: path.join(app.getAppPath(), 'static', 'app', 'icon.png'),
+                    icon: join(app.getAppPath(), 'static', 'app', 'icon.png'),
                     title: `プライバシー エラー`,
                     body: '詳細はここをクリックしてください。',
                     silent: true
@@ -1422,7 +1445,7 @@ module.exports = class MainWindow extends BrowserWindow {
                         {
                             label: lang.window.view.contextMenu.selection.copy,
                             accelerator: 'CmdOrCtrl+C',
-                            click: () => { view.webContents.copy(); }
+                            role: 'copy'
                         },
                         {
                             label: String(lang.window.view.contextMenu.selection.textSearch).replace(/{name}/, this.getSearchEngine().name).replace(/{text}/, params.selectionText.replace(/([\n\t])+/g, ' ')),
@@ -1444,10 +1467,7 @@ module.exports = class MainWindow extends BrowserWindow {
                             accelerator: 'CmdOrCtrl+Shift+I',
                             enabled: !view.webContents.getURL().startsWith(`${protocolStr}://`),
                             click: () => {
-                                if (view.webContents.isDevToolsOpened())
-                                    view.webContents.devToolsWebContents.focus();
-                                else
-                                    view.webContents.openDevTools();
+                                view.webContents.isDevToolsOpened() ? view.webContents.devToolsWebContents.focus() : view.webContents.openDevTools();
                             }
                         }
                     ]
@@ -1628,7 +1648,7 @@ module.exports = class MainWindow extends BrowserWindow {
 
             const str = this.getRandString(12);
             if (item.getMimeType() == 'application/pdf') {
-                item.savePath = path.join(app.getPath('userData'), 'Users', config.get('currentUser'), `${item.getFilename()}.pdf`);
+                item.savePath = join(app.getPath('userData'), 'Users', config.get('currentUser'), `${item.getFilename()}.pdf`);
 
                 item.once('done', (e, state) => {
                     const filePath = item.savePath;
@@ -1638,7 +1658,7 @@ module.exports = class MainWindow extends BrowserWindow {
 
                         if (!Notification.isSupported()) return;
                         const notify = new Notification({
-                            icon: path.join(app.getAppPath(), 'static', 'app', 'icon.png'),
+                            icon: join(app.getAppPath(), 'static', 'app', 'icon.png'),
                             title: 'ダウンロード完了',
                             body: `${item.getFilename()} のダウンロードが完了しました。\n詳細はここをクリックしてください。`
                         });
@@ -1668,7 +1688,7 @@ module.exports = class MainWindow extends BrowserWindow {
 
                         if (!Notification.isSupported()) return;
                         const notify = new Notification({
-                            icon: path.join(app.getAppPath(), 'static', 'app', 'icon.png'),
+                            icon: join(app.getAppPath(), 'static', 'app', 'icon.png'),
                             title: 'ダウンロード完了',
                             body: `${item.getFilename()} のダウンロードが完了しました。\n詳細はここをクリックしてください。`
                         });
@@ -2020,16 +2040,7 @@ module.exports = class MainWindow extends BrowserWindow {
     }
 
     addTabOrLoadUrl = (view, url, isInternal = false) => {
-        if (isInternal) {
-            const u = parse(url);
-
-            if (u.protocol === `${protocolStr}:`)
-                view.webContents.loadURL(url);
-            else
-                this.addView(url, true);
-        } else {
-            this.addView(url, true);
-        }
+        isInternal ? (parse(url).protocol === `${protocolStr}:` ? view.webContents.loadURL(url) : this.addView(url, true)) : this.addView(url, true);
     }
 
     getThemeType = () => {
@@ -2061,7 +2072,7 @@ module.exports = class MainWindow extends BrowserWindow {
                 const parsed = parse(request.url);
 
                 return callback({
-                    path: path.join(app.getAppPath(), 'pages', parsed.pathname === '/' || !parsed.pathname.match(/(.*)\.([A-z0-9])\w+/g) ? `${parsed.hostname}.html` : `${parsed.hostname}${parsed.pathname}`),
+                    path: join(app.getAppPath(), 'pages', parsed.pathname === '/' || !parsed.pathname.match(/(.*)\.([A-z0-9])\w+/g) ? `${parsed.hostname}.html` : `${parsed.hostname}${parsed.pathname}`),
                 });
             }, (error) => {
                 if (error) console.error(`[Error] Failed to register protocol: ${error}`);
@@ -2072,9 +2083,7 @@ module.exports = class MainWindow extends BrowserWindow {
             ses.protocol.registerFileProtocol(fileProtocolStr, (request, callback) => {
                 const parsed = parse(request.url);
 
-                return callback({
-                    path: path.join(app.getPath('userData'), 'Files', 'Users', parsed.pathname),
-                });
+                return callback({ path: join(app.getPath('userData'), 'Users', config.get('currentUser'), parsed.pathname) });
             }, (error) => {
                 if (error) console.error(`[Error] Failed to register protocol: ${error}`);
             });

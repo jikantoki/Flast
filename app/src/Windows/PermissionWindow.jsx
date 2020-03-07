@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import { parse, format } from 'url';
 
 import Button from './Components/Button';
+import Checkbox from './Components/Checkbox';
 
 const { remote, ipcRenderer, shell } = window.require('electron');
 const { app, systemPreferences, Menu, MenuItem, dialog, nativeTheme } = remote;
@@ -16,7 +17,7 @@ const fileProtocolStr = `${protocolStr}-file`;
 const Config = window.require('electron-store');
 const config = new Config();
 const userConfig = new Config({
-    cwd: path.join(app.getPath('userData'), 'Users', config.get('currentUser'))
+	cwd: path.join(app.getPath('userData'), 'Users', config.get('currentUser'))
 });
 
 const lang = window.require(`${app.getAppPath()}/langs/${userConfig.get('language') != undefined ? userConfig.get('language') : 'ja'}.js`);
@@ -37,12 +38,14 @@ const Window = styled.div`
 `;
 
 class PermissionWindow extends Component {
+
 	constructor(props) {
 		super(props);
 		this.state = {
 			permission: null,
 			url: '',
-			isButton: false
+			isButton: false,
+			isChecked: false
 		};
 
 		ipcRenderer.on('window-change-settings', (e, args) => {
@@ -72,7 +75,7 @@ class PermissionWindow extends Component {
 	}
 
 	sendResult = (result) => {
-		ipcRenderer.send(`permissionWindow-result-${this.props.match.params.windowId}`, { result, isChecked: false });
+		ipcRenderer.send(`permissionWindow-result-${this.props.match.params.windowId}`, { result, isChecked: this.state.isChecked });
 	}
 
 	render() {
@@ -89,6 +92,7 @@ class PermissionWindow extends Component {
 				<p style={{ margin: 0, marginBottom: 7 }}>
 					{String(lang.window.toolBar.addressBar.permission.description).replace(/{replace}/, this.state.permission)}
 				</p>
+				<Checkbox text="Test" isChecked={this.state.isChecked} onChange={(e) => { this.setState({ isChecked: !this.state.isChecked }); }} />
 				<div style={{ display: 'flex', justifyContent: 'space-around' }}>
 					<Button onClick={() => this.sendResult(true)}>{lang.window.toolBar.addressBar.permission.buttons.yes}</Button>
 					<Button onClick={() => this.sendResult(false)}>{lang.window.toolBar.addressBar.permission.buttons.no}</Button>

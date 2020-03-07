@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { Component, Fragment } from 'react';
 import styled from 'styled-components';
 import { parse, format } from 'url';
 import QRCode from 'qrcode.react';
@@ -48,9 +48,11 @@ const StyledButton = styled.div`
   padding: 0px 7px;
   display: flex;
   align-items: center;
+  box-sizing: border-box;
   background: none;
   transition: 0.2s background-color;
-  box-sizing: border-box;
+  font-family: 'Noto Sans', 'Noto Sans JP';
+
   &:hover {
     background-color: rgba(196, 196, 196, 0.4);
   }
@@ -140,9 +142,10 @@ const DialogHeaderButton = styled.div`
 `;
 
 const DialogHeaderTitle = styled.span`
+  margin: 0 auto;
   display: flex;
   align-items: center;
-  margin: 0 auto;
+  font-family: 'Noto Sans', 'Noto Sans JP';
 `;
 
 const DialogContainer = styled.div`
@@ -199,7 +202,7 @@ class MenuWindow extends Component {
 
 	constructor(props) {
 		super(props);
-		
+
 		this.state = {
 			url: '',
 			zoomSize: 1,
@@ -272,13 +275,13 @@ class MenuWindow extends Component {
 					<Button title={lang.window.toolBar.menu.menus.openPrivateWindow} accelerator={`${platform.isDarwin ? 'Cmd' : 'Ctrl'}+Shift+N`} isMoreIcon={false} onClick={() => { this.closeMenu(); ipcRenderer.send(`window-add`, { isPrivate: true }); }} windowId={this.props.match.params.windowId} />
 					<Divider style={{ marginBottom: 0 }} isVertical={false} isDarkModeOrPrivateMode={this.getTheme() || String(this.props.match.params.windowId).startsWith('private')} windowId={this.props.match.params.windowId} />
 					<div style={{ display: 'flex', paddingLeft: 7 }}>
-						<span style={{ width: 'auto', marginLeft: 25, display: 'flex', WebkitBoxAlign: 'center', alignItems: 'center' }}>{lang.window.toolBar.menu.menus.zoom.name}</span>
+						<span style={{ width: 'auto', marginLeft: 25, display: 'flex', WebkitBoxAlign: 'center', alignItems: 'center', fontFamily: '"Noto Sans", "Noto Sans JP"' }}>{lang.window.toolBar.menu.menus.zoom.name}</span>
 						<div style={{ display: 'flex', marginLeft: 'auto' }}>
 							<StyledButton title={lang.window.toolBar.menu.menus.zoom.zoomIn} onClick={() => { ipcRenderer.send(`browserView-zoomIn-${this.props.match.params.windowId}`, { id: this.props.match.params.tabId }); this.forceUpdate(); }}
 								style={{ width: 50, height: 32, padding: '4px 16px', display: 'flex', WebkitBoxAlign: 'center', alignItems: 'center', WebkitBoxPack: 'center', justifyContent: 'center', borderLeft: `solid 1px ${this.getTheme() || String(this.props.match.params.windowId).startsWith('private') ? '#8b8b8b' : '#e1e1e1'}` }}>
 								<img src={`${this.getIconDirectory()}/zoom_in.png`} style={{ verticalAlign: 'middle' }} />
 							</StyledButton>
-							<div style={{ width: 60, height: 32, padding: '4px 16px', display: 'flex', WebkitBoxAlign: 'center', alignItems: 'center', WebkitBoxPack: 'center', justifyContent: 'center', background: 'none' }}>
+							<div style={{ width: 60, height: 32, padding: '4px 16px', display: 'flex', WebkitBoxAlign: 'center', alignItems: 'center', WebkitBoxPack: 'center', justifyContent: 'center', background: 'none', fontFamily: '"Noto Sans", "Noto Sans JP"', fontSize: 14 }}>
 								{(this.state.zoomSize * 100).toFixed(0)}%
 							</div>
 							<StyledButton title={lang.window.toolBar.menu.menus.zoom.zoomOut} onClick={() => { ipcRenderer.send(`browserView-zoomOut-${this.props.match.params.windowId}`, { id: this.props.match.params.tabId }); this.forceUpdate(); }}
@@ -293,7 +296,7 @@ class MenuWindow extends Component {
 					</div>
 					<Divider style={{ marginTop: 0, marginBottom: 0 }} isVertical={false} isDarkModeOrPrivateMode={this.getTheme() || String(this.props.match.params.windowId).startsWith('private')} />
 					<div style={{ display: 'flex', paddingLeft: 7 }}>
-						<span style={{ width: 'auto', marginLeft: 25, display: 'flex', WebkitBoxAlign: 'center', alignItems: 'center' }}>{lang.window.toolBar.menu.menus.edit.name}</span>
+						<span style={{ width: 'auto', marginLeft: 25, display: 'flex', WebkitBoxAlign: 'center', alignItems: 'center', fontFamily: '"Noto Sans", "Noto Sans JP"' }}>{lang.window.toolBar.menu.menus.edit.name}</span>
 						<div style={{ display: 'flex', marginLeft: 'auto' }}>
 							<StyledButton style={{ width: 70, height: 32, display: 'flex', WebkitBoxAlign: 'center', alignItems: 'center', WebkitBoxPack: 'center', justifyContent: 'center', borderLeft: `solid 1px ${this.getTheme() || String(this.props.match.params.windowId).startsWith('private') ? '#8b8b8b' : '#e1e1e1'}` }}>
 								{lang.window.toolBar.menu.menus.edit.cut}
@@ -337,13 +340,13 @@ class MenuWindow extends Component {
 					</DialogHeader>
 					<DialogContainer isDarkModeOrPrivateMode={this.getTheme() || String(this.props.match.params.windowId).startsWith('private')}>
 						<Button icon={`${this.getIconDirectory()}/apps.png`} title={lang.window.toolBar.menu.menus.app.list} isMoreIcon={false} onClick={() => { this.closeMenu(); this.addTab(`${protocolStr}://apps/`); }} windowId={this.props.match.params.windowId} />
-						{parse(this.state.url).protocol !== `${protocolStr}:` ?
-							<div>
+						<Divider isVertical={false} isDarkModeOrPrivateMode={this.getTheme() || String(this.props.match.params.windowId).startsWith('private')} />
+						<Button title={'Open with Column View'} isMoreIcon={false} onClick={() => { this.closeMenu(); ipcRenderer.send(`appWindow-add`, { url: `${protocolStr}://column` }); }} windowId={this.props.match.params.windowId} />
+						{parse(this.state.url).protocol !== `${protocolStr}:` &&
+							<Fragment>
 								<Divider isVertical={false} isDarkModeOrPrivateMode={this.getTheme() || String(this.props.match.params.windowId).startsWith('private')} />
 								<Button title={String(lang.window.toolBar.menu.menus.app.run).replace(/{title}/, lang.window.toolBar.menu.menus.app.name)} isMoreIcon={false} onClick={() => { this.closeMenu(); ipcRenderer.send(`appWindow-add`, { url: this.state.url }); }} windowId={this.props.match.params.windowId} />
-							</div>
-							:
-							<div></div>
+							</Fragment>
 						}
 					</DialogContainer>
 				</Dialog>
@@ -354,15 +357,13 @@ class MenuWindow extends Component {
 					</DialogHeader>
 					<DialogContainer isDarkModeOrPrivateMode={this.getTheme() || String(this.props.match.params.windowId).startsWith('private')}>
 						<Button icon={`${this.getIconDirectory()}/copy.png`} title={lang.window.toolBar.menu.menus.share.linkCopy} isMoreIcon={false} onClick={() => { this.closeMenu(); clipboard.writeText(this.state.url); }} windowId={this.props.match.params.windowId} />
-						{parse(this.state.url).protocol !== `${protocolStr}:` ?
-							<div>
+						{parse(this.state.url).protocol !== `${protocolStr}:` &&
+							<Fragment>
 								<Divider isVertical={false} isDarkModeOrPrivateMode={this.getTheme() || String(this.props.match.params.windowId).startsWith('private')} />
 								<div style={{ display: 'flex', WebkitBoxAlign: 'center', alignItems: 'center', WebkitBoxPack: 'center', justifyContent: 'center' }}>
 									<QRCode value={this.state.url} size={200} />
 								</div>
-							</div>
-							:
-							<div></div>
+							</Fragment>
 						}
 					</DialogContainer>
 				</Dialog>

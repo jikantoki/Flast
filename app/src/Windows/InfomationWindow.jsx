@@ -13,7 +13,7 @@ const path = window.require('path');
 const Config = window.require('electron-store');
 const config = new Config();
 const userConfig = new Config({
-    cwd: path.join(app.getPath('userData'), 'Users', config.get('currentUser'))
+	cwd: path.join(app.getPath('userData'), 'Users', config.get('currentUser'))
 });
 
 const lang = window.require(`${app.getAppPath()}/langs/${userConfig.get('language') != undefined ? userConfig.get('language') : 'ja'}.js`);
@@ -37,10 +37,12 @@ class InfomationWindow extends Component {
 
 	constructor(props) {
 		super(props);
+
 		this.state = {
 			title: '',
 			description: '',
 			url: '',
+			certificate: {},
 			isButton: false
 		};
 
@@ -53,11 +55,11 @@ class InfomationWindow extends Component {
 		});
 
 		ipcRenderer.on(`infoWindow-${this.props.match.params.windowId}`, (e, args) => {
-			this.setState({ title: args.title, description: args.description, url: args.url, isButton: args.isButton });
+			this.setState({ title: args.title, description: args.description, url: args.url, certificate: args.certificate, isButton: args.isButton });
 		});
 	}
 
-	getTheme = () => {
+	getThemeType = () => {
 		if (userConfig.get('design.theme') === -1)
 			return nativeTheme.shouldUseDarkColors;
 		else if (userConfig.get('design.theme') === 0)
@@ -93,18 +95,49 @@ class InfomationWindow extends Component {
 		ipcRenderer.send(`infoWindow-result-${this.props.match.params.windowId}`, result);
 	}
 
+	getTitle = () => {
+		if (this.state.certificate.type === 'Internal')
+			return lang.window.toolBar.addressBar.info.clicked.internal;
+		else if (this.state.certificate.type === 'Source')
+			return lang.window.toolBar.addressBar.info.clicked.viewSource;
+		else if (this.state.certificate.type === 'File')
+			return lang.window.toolBar.addressBar.info.clicked.file;
+		else if (this.state.certificate.type === 'Secure')
+			return (<span style={{ color: this.getThemeType() || String(this.props.match.params.windowId).startsWith('private') ? '#81c995' : '#188038' }}>{lang.window.toolBar.addressBar.info.clicked.secure.title}</span>);
+		else if (this.state.certificate.type === 'InSecure')
+			return (<span style={{ color: this.getThemeType() || String(this.props.match.params.windowId).startsWith('private') ? '#f28b82' : '#c5221f' }}>{lang.window.toolBar.addressBar.info.clicked.insecure.title}</span>);
+	}
+
+	getDescription = () => {
+		if (this.state.certificate.type === 'Secure')
+			return `${lang.window.toolBar.addressBar.info.clicked.secure.description}${this.state.certificate.title != undefined && this.state.certificate.title != null ? `<hr />${this.state.certificate.title} [${this.state.certificate.country}]` : ''}`;
+		else if (this.state.certificate.type === 'InSecure')
+			return lang.window.toolBar.addressBar.info.clicked.insecure.description;
+		else
+			return '';
+	}
+
 	render() {
 		return (
-			<Window isDarkModeOrPrivateMode={this.getTheme() || String(this.props.match.params.windowId).startsWith('private')} onMouseEnter={(e) => { remote.getCurrentWindow().setIgnoreMouseEvents(false); }} onMouseLeave={(e) => { remote.getCurrentWindow().setIgnoreMouseEvents(true, { forward: true }); }}>
+			<Window isDarkModeOrPrivateMode={this.getThemeType() || String(this.props.match.params.windowId).startsWith('private')} onMouseEnter={(e) => { remote.getCurrentWindow().setIgnoreMouseEvents(false); }} onMouseLeave={(e) => { remote.getCurrentWindow().setIgnoreMouseEvents(true, { forward: true }); }}>
 				<div style={{ display: 'flex', justifyContent: 'space-around' }}>
-					<h5 style={{ margin: 0 }} dangerouslySetInnerHTML={{ __html: this.state.title }} />
+					<h5 style={{ margin: 0, fontFamily: '"Noto Sans", "Noto Sans JP"' }}>
+						{this.state.certificate !== {} ? this.getTitle() : this.state.title}
+					</h5>
 					<Button style={{ margin: 0, width: 20, height: 20, marginLeft: 'auto', border: 'none' }} onClick={() => ipcRenderer.send(`infoWindow-close-${this.props.match.params.windowId}`, {})}>
-						<svg name="TitleBarClose" width="12" height="12" viewBox="0 0 12 12" fill={this.getTheme() || String(this.props.match.params.windowId).startsWith('private') ? '#f9f9fa' : '#353535'}>
+						<svg name="TitleBarClose" width="12" height="12" viewBox="0 0 12 12" fill={this.getThemeType() || String(this.props.match.params.windowId).startsWith('private') ? '#f9f9fa' : '#353535'}>
 							<polygon fill-rule="evenodd" points="11 1.576 6.583 6 11 10.424 10.424 11 6 6.583 1.576 11 1 10.424 5.417 6 1 1.576 1.576 1 6 5.417 10.424 1" />
 						</svg>
 					</Button>
 				</div>
-				<p style={{ margin: 0, marginTop: String(this.state.description).length > 0 ? 11 : 0, marginBottom: this.state.isButton ? 7 : 0 }} dangerouslySetInnerHTML={{ __html: this.state.description }} />
+				<p style={{
+					margin: 0,
+					marginTop: String(this.state.certificate !== {} ? this.getDescription() : this.state.description).length > 0 ? 11 : 0,
+					marginBottom: this.state.isButton ? 7 : 0,
+					fontFamily: '"Noto Sans", "Noto Sans JP"'
+				}}>
+					{this.state.certificate !== {} ? this.getDescription() : this.state.description}
+				</p>
 				<div style={{ display: this.state.isButton ? 'flex' : 'none', justifyContent: 'space-around' }}>
 					<Button onClick={() => this.sendResult(true)}>はい</Button>
 					<Button onClick={() => this.sendResult(false)}>いいえ</Button>

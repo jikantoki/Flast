@@ -66,14 +66,11 @@ const styles = (theme) => ({
     },
     panelHeading: {
         fontSize: theme.typography.pxToRem(15),
-        flexBasis: '55%',
-        flexShrink: 0,
-        [theme.breakpoints.up('md')]: {
-            flexBasis: '15%'
-        }
+        flexShrink: 0
     },
     panelSecondaryHeading: {
-        fontSize: theme.typography.pxToRem(15)
+        fontSize: theme.typography.pxToRem(15),
+        marginLeft: 15
     },
     table: {
         tableLayout: 'fixed',

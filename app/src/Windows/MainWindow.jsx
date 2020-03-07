@@ -3,6 +3,7 @@ import { findDOMNode } from 'react-dom';
 import { WindowsControl } from 'react-windows-controls';
 import Tippy from '@tippy.js/react';
 import Sortable from 'sortablejs';
+import { DragSource, DropTarget, DragDropContext } from 'react-dnd';
 import { parse, format } from 'url';
 
 import Window from './Components/Window';
@@ -18,7 +19,7 @@ import Toolbar from './Components/Toolbar';
 import { ToolbarButton, ToolbarButtonBadge } from './Components/ToolbarButton';
 import ToolbarDivider from './Components/ToolbarDivider';
 import { ToolbarTextBoxWrapper, ToolbarTextBox, ToolbarDummyTextBox } from './Components/ToolbarTextBox';
-import BookmarkBar from './Components/BookmarkBar';
+import { BookmarkBar, BookmarkBarButton } from './Components/BookmarkBar';
 import ContentWrapper from './Components/ContentWrapper';
 
 import ApplicationIcon from './Resources/icon.png';
@@ -117,6 +118,7 @@ const userConfig = new Config({
 const lang = window.require(`${app.getAppPath()}/langs/${userConfig.get('language') != undefined ? userConfig.get('language') : 'ja'}.js`);
 
 class BrowserView extends Component {
+
 	constructor(props) {
 		super(props);
 
@@ -136,6 +138,7 @@ class BrowserView extends Component {
 			canGoForward: false,
 			isBookmarked: false,
 			isShowing: false,
+			bookMarks: []
 		};
 
 		this.textBoxRef = createRef();
@@ -143,6 +146,10 @@ class BrowserView extends Component {
 
 	componentDidMount() {
 		this.setState({ zoomSize: userConfig.get('pageSettings.defaultZoomSize') });
+
+		ipcRenderer.on(`window-bookmarks-get`, (e, args) => {
+			this.setState({ bookMarks: args.bookmarks });
+		});
 
 		ipcRenderer.on(`browserView-start-loading-${this.props.windowId}`, (e, args) => {
 			if (args.id === this.props.index) {
@@ -370,13 +377,13 @@ class BrowserView extends Component {
 			title = lang.window.toolBar.addressBar.info.clicked.file;
 		} else if (this.state.certificate.type === 'Secure') {
 			title = `<span style="color: ${this.getThemeType() || String(this.props.windowId).startsWith('private') ? '#81c995' : '#188038'};">${lang.window.toolBar.addressBar.info.clicked.secure.title}</span>`;
-			description = `${lang.window.toolBar.addressBar.info.clicked.secure.description}${this.state.certificate.title != undefined && this.state.certificate.title != null ? `<br /><br />${this.state.certificate.title} [${this.state.certificate.country}]` : ''}`;
+			description = `${lang.window.toolBar.addressBar.info.clicked.secure.description}${this.state.certificate.title != undefined && this.state.certificate.title != null ? `<hr />${this.state.certificate.title} [${this.state.certificate.country}]` : ''}`;
 		} else if (this.state.certificate.type === 'InSecure') {
 			title = `<span style="color: ${this.getThemeType() || String(this.props.windowId).startsWith('private') ? '#f28b82' : '#c5221f'};">${lang.window.toolBar.addressBar.info.clicked.insecure.title}</span>`;
 			description = lang.window.toolBar.addressBar.info.clicked.insecure.description;
 		}
 
-		ipcRenderer.send(`window-infoWindow-${this.props.windowId}`, { title, description, url: this.state.viewUrl, isButton: false });
+		ipcRenderer.send(`window-infoWindow-${this.props.windowId}`, { title: '', description: '', url: this.state.viewUrl, certificate: this.state.certificate, isButton: false });
 	}
 
 	bookMark = () => {
@@ -575,9 +582,11 @@ class BrowserView extends Component {
 	}
 
 	render() {
+		const isBookmarkBar = userConfig.get('design.isBookmarkBar') === 1 || userConfig.get('design.isBookmarkBar') === 0 && this.state.viewUrl.startsWith(`${protocolStr}://home/`);
+
 		return (
 			<ContentWrapper isLoading={this.state.isLoading} isDarkModeOrPrivateMode={this.getThemeType() || String(this.props.windowId).startsWith('private')}>
-				<Toolbar isDarkModeOrPrivateMode={this.getThemeType() || String(this.props.windowId).startsWith('private')} isBookmarkBar={userConfig.get('design.isBookmarkBar')}>
+				<Toolbar isDarkModeOrPrivateMode={this.getThemeType() || String(this.props.windowId).startsWith('private')} isBookmarkBar={isBookmarkBar}>
 					<ToolbarButton isDarkModeOrPrivateMode={this.getThemeType() || String(this.props.windowId).startsWith('private')} src={this.state.canGoBack ? this.isDarkModeOrPrivateMode.bind(this, LightBackIcon, DarkBackIcon) : BackInActiveIcon} size={24}
 						isShowing={true} isRight={false} isMarginLeft={true} isEnabled={this.state.canGoBack} title={lang.window.toolBar.back} onClick={() => { this.goBack(); }} />
 					<ToolbarButton isDarkModeOrPrivateMode={this.getThemeType() || String(this.props.windowId).startsWith('private')} src={this.state.canGoForward ? this.isDarkModeOrPrivateMode.bind(this, LightForwardIcon, DarkForwardIcon) : ForwardInActiveIcon} size={24}
@@ -659,8 +668,13 @@ class BrowserView extends Component {
 					<ToolbarButton isDarkModeOrPrivateMode={this.getThemeType() || String(this.props.windowId).startsWith('private')} src={this.isDarkModeOrPrivateMode.bind(this, LightMoreIcon, DarkMoreIcon)} size={24}
 						isShowing={true} isRight={true} isMarginLeft={false} isEnabled={true} title={lang.window.toolBar.menu.name} onClick={() => { ipcRenderer.send(`window-menuWindow-${this.props.windowId}`, { id: this.props.index, url: this.state.viewUrl }); }} />
 				</Toolbar>
-				<BookmarkBar isDarkModeOrPrivateMode={this.getThemeType() || String(this.props.windowId).startsWith('private')} isBookmarkBar={userConfig.get('design.isBookmarkBar')} />
-			</ContentWrapper >
+				<BookmarkBar isDarkModeOrPrivateMode={this.getThemeType() || String(this.props.windowId).startsWith('private')} isShowing={isBookmarkBar}>
+					{this.state.bookMarks.sort((a, b) => a.isFolder < b.isFolder ? 1 : -1).map((item, v) => (
+						<BookmarkBarButton key={v} isDarkModeOrPrivateMode={this.getThemeType() || String(this.props.windowId).startsWith('private')} isEnabled={true} size={16} onClick={() => { }}
+							title={item.title} src={!item.isFolder ? (String(item.url).startsWith(`${protocolStr}://`) || String(item.url).startsWith(`${fileProtocolStr}://`) ? `${protocolStr}://resources/icons/public.svg` : (item.favicon ? item.favicon : `http://www.google.com/s2/favicons?domain=${new URL(item.url).origin}`)) : `${protocolStr}://resources/icons/folder_close.png`} />
+					))}
+				</BookmarkBar>
+			</ContentWrapper>
 		);
 	}
 }
@@ -737,6 +751,7 @@ class MainWindow extends Component {
 					var newTabs = this.state.tabs.concat();
 					newTabs[i].isAudioStatus = args.isAudioStatus;
 					this.setState({ tabs: newTabs });
+					this.forceUpdate();
 				}
 			});
 		});
@@ -751,7 +766,7 @@ class MainWindow extends Component {
 			animation: 100
 		});
 
-		this.props.match.params.urls.split('($|$)').map((url, i) => this.addTab(decodeURIComponent(url)));
+		!String(this.props.match.params.windowId).startsWith('private') ? this.props.match.params.urls.split('($|$)').map((url, i) => this.addTab(decodeURIComponent(url))) : this.addTab(`${protocolStr}://home/`);
 		this.getTabs();
 	}
 
@@ -771,39 +786,33 @@ class MainWindow extends Component {
 					{
 						label: '新しいタブ',
 						accelerator: 'CmdOrCtrl+T',
-						click: () => { this.addTab(); }
+						click: () => this.addTab()
 					},
 					{
 						label: 'タブを閉じる',
 						accelerator: 'CmdOrCtrl+W',
-						click: () => { this.removeTab(id); }
+						click: () => this.removeTab(id)
 					},
 					{ type: 'separator' },
 					{
 						label: item.isAudioStatus === -1 ? lang.window.view.contextMenu.media.audioMuteExit : lang.window.view.contextMenu.media.audioMute,
 						icon: `${app.getAppPath()}/static/${this.getThemeType() ? 'dark' : 'light'}/audio${item.isAudioStatus === -1 ? '' : '_mute'}.png`,
-						click: () => {
-							ipcRenderer.send(`browserView-audioMute-${this.props.match.params.windowId}`, { id });
-						}
+						click: () => ipcRenderer.send(`browserView-audioMute-${this.props.match.params.windowId}`, { id })
 					},
 					{
 						type: 'checkbox',
 						label: 'タブを固定',
 						checked: item.isFixed,
-						click: () => {
-							/*
-							var newTabs = this.state.tabs.concat();
-							item.isFixed = !item.isFixed;
-							this.setState({ tabs: newTabs });
-							*/
-
-							ipcRenderer.send(`tab-fixed-${this.props.match.params.windowId}`, { id, result: !item.isFixed });
-						}
+						click: () => ipcRenderer.send(`tab-fixed-${this.props.match.params.windowId}`, { id, result: !item.isFixed })
 					}
 				]);
 				menu.popup(remote.getCurrentWindow());
 			}
 		});
+	}
+
+	handleTabIconError = (e) => {
+		e.target.src = this.isDarkModeOrPrivateMode(LightPublicIcon, DarkPublicIcon);
 	}
 
 	addTab = (url = (userConfig.get('homePage.newTab.isDefaultHomePage') ? `${protocolStr}://home/` : userConfig.get('homePage.newTab.defaultPage'))) => {
@@ -912,7 +921,7 @@ class MainWindow extends Component {
 									<Tab key={i} isDarkModeOrPrivateMode={this.getThemeType() || String(this.props.match.params.windowId).startsWith('private')} isMaximized={remote.getCurrentWindow().isMaximized() || remote.getCurrentWindow().isFullScreen()} isActive={tab.id === this.state.current}
 										isFixed={tab.isFixed} inActiveColor={remote.getCurrentWindow().isFocused() ? this.getForegroundColor(this.getColor()) : '#000000'} accentColor={tab.color} className={tab.isFixed ? 'fixed-tab' : ''}
 										onClick={() => { if (tab.id !== this.state.current) { ipcRenderer.send(`tab-select-${this.props.match.params.windowId}`, { id: tab.id }); } this.forceUpdate(); }} onContextMenu={this.handleContextMenu.bind(this, tab.id)} title={tab.title}>
-										<TabIcon src={this.getTabIcon(tab.id, tab.url, tab.icon)} width={18} height={18} />
+										<TabIcon src={this.getTabIcon(tab.id, tab.url, tab.icon)} width={18} height={18} onError={this.handleTabIconError} />
 										<TabTitle isShowing={tab.isAudioStatus !== 0} isFixed={tab.isFixed}>{tab.title}</TabTitle>
 										<TabStatusIcon isActive={tab.id === this.state.current} isFixed={tab.isFixed} isRight={true} src={tab.isAudioStatus !== 0 ? (tab.id === this.state.current ? this.isDarkModeOrPrivateMode.bind(this, tab.isAudioStatus === 1 ? LightAudioIcon : LightAudioMuteIcon, tab.isAudioStatus === 1 ? DarkAudioIcon : DarkAudioMuteIcon) : (this.getForegroundColor(platform.isWin32 || platform.isDarwin ? `#${systemPreferences.getAccentColor()}` : '#353535') === '#000000' || this.isDarkModeOrPrivateMode() ? (tab.isAudioStatus === 1 ? LightAudioIcon : LightAudioMuteIcon) : (tab.isAudioStatus === 1 ? DarkAudioIcon : DarkAudioMuteIcon))) : undefined} isShowing={tab.isAudioStatus !== 0} size={14} title={tab.isAudioStatus !== 0 ? (tab.isAudioStatus === 1 ? lang.window.titleBar.tab.media.audioPlaying : lang.window.titleBar.tab.media.audioMuted) : ''} />
 										<TabCloseButton isActive={tab.id === this.state.current} isFixed={tab.isFixed} isRight={true} src={tab.id === this.state.current ? this.isDarkModeOrPrivateMode.bind(this, LightCloseIcon, DarkCloseIcon) : (this.getForegroundColor(platform.isWin32 || platform.isDarwin ? `#${systemPreferences.getAccentColor()}` : '#353535') === '#000000' || this.isDarkModeOrPrivateMode() ? LightCloseIcon : DarkCloseIcon)} size={14} title={lang.window.titleBar.tab.close} onClick={() => { this.removeTab(tab.id); this.forceUpdate(); }} />

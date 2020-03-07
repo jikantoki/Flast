@@ -45,11 +45,13 @@ const Window = styled.div`
 `;
 
 const Button = styled.li`
-  list-style: none;
   display: inline-block;
-  background: transparent;
-  transition: 0.2s background-color;
   box-sizing: border-box;
+  background: transparent;
+  list-style: none;
+  transition: 0.2s background-color;
+  font-family: 'Noto Sans', 'Noto Sans JP';
+
   &:hover {
     background-color: rgba(196, 196, 196, 0.4);
   }
@@ -63,10 +65,12 @@ const SuggestListContainer = styled.ul`
 
 const SuggestListItem = styled.li`
   padding: ${`4px ${40 * (userConfig.get('design.isHomeButton') ? 5 : 4) - 40}`}px;
-  list-style: none;
-  transition: 0.2s background-color;
   border-radius: 2px;
   box-sizing: border-box;
+  list-style: none;
+  transition: 0.2s background-color;
+  font-family: 'Noto Sans', 'Noto Sans JP';
+
   &:hover {
     background-color: rgba(196, 196, 196, 0.4);
   }
@@ -74,11 +78,12 @@ const SuggestListItem = styled.li`
 
 const SuggestListItemSecondaryText = styled.span`
   margin-left: 5px;
+  opacity: 0;
+  box-sizing: border-box;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  opacity: 0;
-  box-sizing: border-box;
+  font-family: 'Noto Sans', 'Noto Sans JP';
   
   ${SuggestListItem}:hover & {
 	opacity: 1;
@@ -120,6 +125,7 @@ const SearchEngineListContainer = styled.ul`
 const SearchEngineListButton = styled(Button)`
 	border-right: solid 1px #c1c1c1;
 	padding: 5px 15px;
+	height: 100%;
 `;
 
 class SuggestWindow extends Component {
@@ -168,23 +174,15 @@ class SuggestWindow extends Component {
 			if (options.protocol === 'https:')
 				request = https.request;
 
-			const req = request(options, res => {
+			const req = request(options, (res) => {
 				let data = '';
 				res.setEncoding('utf8');
 
-				res.on('data', chunk => {
-					data += chunk;
-				});
-
-				res.on('end', () => {
-					const d = { ...res, data };
-					resolve(d);
-				});
+				res.on('data', (chunk) => data += chunk);
+				res.on('end', () => resolve({ ...res, data }));
 			});
 
-			req.on('error', e => {
-				reject(e);
-			});
+			req.on('error', (e) => reject(e));
 
 			req.end();
 		});
@@ -290,7 +288,7 @@ class SuggestWindow extends Component {
 							if (this.getSearchEngine().url !== item.url) {
 								const parsed = parse(item.url);
 								return (
-									<SearchEngineListButton key={i} style={{ borderRight: 'solid 1px #c1c1c1', padding: '5px 15px' }} title={String(lang.window.toolBar.addressBar.textBox.suggest.search).replace(/{replace}/, item.name)} onClick={() => { ipcRenderer.send(`suggestWindow-loadURL-${this.props.match.params.windowId}`, { id: this.state.id, url: item.url.replace('%s', encodeURIComponent(this.state.text)) }); }}>
+									<SearchEngineListButton key={i} title={String(lang.window.toolBar.addressBar.textBox.suggest.search).replace(/{replace}/, item.name)} onClick={() => { ipcRenderer.send(`suggestWindow-loadURL-${this.props.match.params.windowId}`, { id: this.state.id, url: item.url.replace('%s', encodeURIComponent(this.state.text)) }); }}>
 										<img src={`https://www.google.com/s2/favicons?domain=${parsed.protocol}//${parsed.hostname}`} alt={item.name} style={{ verticalAlign: 'middle' }} />
 									</SearchEngineListButton>
 								);

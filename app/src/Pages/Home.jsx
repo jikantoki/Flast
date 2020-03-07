@@ -414,23 +414,28 @@ class Home extends Component {
                                         <ExpansionPanelDetails>
                                             <Paper className={classes.root}>
                                                 <Table className={classes.table}>
-                                                    <TableHead>
-                                                        <TableRow>
-                                                            <TableCell className={classes.tableIcon} style={{ userSelect: 'none', pointerEvents: 'none' }}></TableCell>
-                                                            <TableCell className={classes.tableTitle} style={{ userSelect: 'none', pointerEvents: 'none' }}>タイトル</TableCell>
-                                                            <TableCell className={classes.tableUrl} style={{ userSelect: 'none', pointerEvents: 'none' }}>URL</TableCell>
-                                                            <TableCell className={classes.tableDate} style={{ userSelect: 'none', pointerEvents: 'none' }}>追加日時</TableCell>
-                                                        </TableRow>
-                                                    </TableHead>
                                                     <TableBody>
-                                                        {this.state.privMarks.map((item, i) => (
-                                                            <TableRow key={i}>
-                                                                <TableCell className={classes.tableIcon}><img src={new URL(item.url).protocol === `${protocolStr}:` ? `${fileProtocolStr}:///public.svg` : `http://www.google.com/s2/favicons?domain=${new URL(item.url).origin}`} style={{ width: 16, height: 16, verticalAlign: 'sub' }} /></TableCell>
-                                                                <TableCell component="th" scope="row" className={classes.tableTitle}><Link href={item.url} title={item.title} color="inherit">{item.title}</Link></TableCell>
-                                                                <TableCell title={item.url} className={classes.tableUrl}>{item.url}</TableCell>
-                                                                <TableCell className={classes.tableDate}><Moment format="YYYY/MM/DD HH:mm">{item.createdAt}</Moment></TableCell>
+                                                        {this.state.privMarks.map((item, i) => {
+                                                            if (item.isFolder) return;
+                                                            if (i < 10) {
+                                                                return (
+                                                                    <TableRow key={i}>
+                                                                        <TableCell className={classes.tableDate}><Moment format="YYYY/MM/DD HH:mm">{item.createdAt}</Moment></TableCell>
+                                                                        <TableCell className={classes.tableIcon}><img src={String(item.url).startsWith(`${protocolStr}://`) || String(item.url).startsWith(`${fileProtocolStr}://`) ? `${protocolStr}://resources/icons/public.svg` : (item.favicon ? item.favicon : `http://www.google.com/s2/favicons?domain=${new URL(item.url).origin}`)} style={{ width: 16, height: 16, verticalAlign: 'sub' }} /></TableCell>
+                                                                        <TableCell component="th" scope="row" className={classes.tableTitle}><Link href={item.url} title={item.title} color="inherit">{item.title}</Link></TableCell>
+                                                                        <TableCell title={item.url} className={classes.tableUrl}>{item.url}</TableCell>
+                                                                    </TableRow>
+                                                                )
+                                                            }
+                                                        })}
+                                                        {this.state.privMarks.length > 10 &&
+                                                            <TableRow>
+                                                                <TableCell className={classes.tableDate} />
+                                                                <TableCell className={classes.tableIcon} />
+                                                                <TableCell component="th" scope="row" className={classes.tableTitle}><Link href={`${protocolStr}://bookmarks`} title={window.getLanguageFile().internalPages.home.bookmarks.title} color="inherit">{window.getLanguageFile().internalPages.home.bookmarks.title}</Link></TableCell>
+                                                                <TableCell className={classes.tableUrl} />
                                                             </TableRow>
-                                                        ))}
+                                                        }
                                                     </TableBody>
                                                 </Table>
                                             </Paper>
@@ -447,23 +452,28 @@ class Home extends Component {
                                         <ExpansionPanelDetails>
                                             <Paper className={classes.root}>
                                                 <Table className={classes.table}>
-                                                    <TableHead>
-                                                        <TableRow>
-                                                            <TableCell className={classes.tableIcon} style={{ userSelect: 'none', pointerEvents: 'none' }}></TableCell>
-                                                            <TableCell className={classes.tableTitle} style={{ userSelect: 'none', pointerEvents: 'none' }}>タイトル</TableCell>
-                                                            <TableCell className={classes.tableUrl} style={{ userSelect: 'none', pointerEvents: 'none' }}>URL</TableCell>
-                                                            <TableCell className={classes.tableDate} style={{ userSelect: 'none', pointerEvents: 'none' }}>追加日時</TableCell>
-                                                        </TableRow>
-                                                    </TableHead>
                                                     <TableBody>
-                                                        {this.state.bookMarks.map((item, i) => (
-                                                            <TableRow key={i}>
-                                                                <TableCell className={classes.tableIcon}><img src={new URL(item.url).protocol === `${protocolStr}:` ? `${fileProtocolStr}:///public.svg` : `http://www.google.com/s2/favicons?domain=${new URL(item.url).origin}`} style={{ width: 16, height: 16, verticalAlign: 'sub' }} /></TableCell>
-                                                                <TableCell component="th" scope="row" className={classes.tableTitle}><Link href={item.url} title={item.title} color="inherit">{item.title}</Link></TableCell>
-                                                                <TableCell title={item.url} className={classes.tableUrl}>{item.url}</TableCell>
-                                                                <TableCell className={classes.tableDate}><Moment format="YYYY/MM/DD HH:mm">{item.createdAt}</Moment></TableCell>
+                                                        {this.state.bookMarks.map((item, i) => {
+                                                            if (item.isFolder) return;
+                                                            if (i < 10) {
+                                                                return (
+                                                                    <TableRow key={i}>
+                                                                        <TableCell className={classes.tableDate}><Moment format="YYYY/MM/DD HH:mm">{item.createdAt}</Moment></TableCell>
+                                                                        <TableCell className={classes.tableIcon}><img src={String(item.url).startsWith(`${protocolStr}://`) || String(item.url).startsWith(`${fileProtocolStr}://`) ? `${protocolStr}://resources/icons/public.svg` : (item.favicon ? item.favicon : `http://www.google.com/s2/favicons?domain=${new URL(item.url).origin}`)} style={{ width: 16, height: 16, verticalAlign: 'sub' }} /></TableCell>
+                                                                        <TableCell component="th" scope="row" className={classes.tableTitle}><Link href={item.url} title={item.title} color="inherit">{item.title}</Link></TableCell>
+                                                                        <TableCell title={item.url} className={classes.tableUrl}>{item.url}</TableCell>
+                                                                    </TableRow>
+                                                                )
+                                                            }
+                                                        })}
+                                                        {this.state.bookMarks.length > 10 &&
+                                                            <TableRow>
+                                                                <TableCell className={classes.tableDate} />
+                                                                <TableCell className={classes.tableIcon} />
+                                                                <TableCell component="th" scope="row" className={classes.tableTitle}><Link href={`${protocolStr}://bookmarks`} title={window.getLanguageFile().internalPages.home.bookmarks.title} color="inherit">{window.getLanguageFile().internalPages.home.bookmarks.title}</Link></TableCell>
+                                                                <TableCell className={classes.tableUrl} />
                                                             </TableRow>
-                                                        ))}
+                                                        }
                                                     </TableBody>
                                                 </Table>
                                             </Paper>

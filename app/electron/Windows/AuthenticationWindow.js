@@ -37,6 +37,7 @@ module.exports = class AuthenticationWindow extends BrowserWindow {
             webPreferences: {
                 nodeIntegration: true,
                 contextIsolation: false,
+                enableRemoteModule: true
             }
         });
 

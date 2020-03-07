@@ -211,13 +211,15 @@ module.exports = class Firebase {
         });
     };
 
-    syncAccount = (id = undefined) => {
+    syncAccount = (id = undefined, email) => {
         const firestore = firebase.firestore();
 
         if (id) {
             firestore.collection('sync').doc(id).get().then((doc) => {
                 if (doc.exists) {
                     const user = doc.data();
+
+                    if (user.email !== String(email)) return null;
 
                     const userConfig = new Config({
                         cwd: path.join(app.getPath('userData'), 'Users', id),

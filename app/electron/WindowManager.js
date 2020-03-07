@@ -106,7 +106,7 @@ module.exports = class WindowManager {
         });
 
         ipcMain.on('update-filters', (e, args) => {
-            loadFilters(true);
+            loadFilters();
         });
 
         /*
@@ -133,15 +133,11 @@ module.exports = class WindowManager {
                         })
                         .catch((err) => {
                             console.log(`Test: ${err}`);
-                            this.db.bookmarks.find({ isPrivate: args.isPrivate }).sort({ createdAt: -1 }).exec((err, docs) => {
-                                e.sender.send('data-bookmarks-get', { bookmarks: docs });
-                            });
+                            this.db.bookmarks.find({ isPrivate: args.isPrivate }).sort({ createdAt: -1 }).exec((err, docs) => e.sender.send('data-bookmarks-get', { bookmarks: docs }));
                         });
                 } else {
                     console.log(`Offline Mode`);
-                    this.db.bookmarks.find({ isPrivate: args.isPrivate }).sort({ createdAt: -1 }).exec((err, docs) => {
-                        e.sender.send('data-bookmarks-get', { bookmarks: docs });
-                    });
+                    this.db.bookmarks.find({ isPrivate: args.isPrivate }).sort({ createdAt: -1 }).exec((err, docs) => e.sender.send('data-bookmarks-get', { bookmarks: docs }));
                 }
             });
         });
@@ -161,15 +157,11 @@ module.exports = class WindowManager {
                         })
                         .catch((err) => {
                             console.log(`Test: ${err}`);
-                            this.db.historys.find({}).sort({ createdAt: -1 }).exec((err, docs) => {
-                                e.sender.send('data-history-get', { historys: docs });
-                            });
+                            this.db.historys.find({}).sort({ createdAt: -1 }).exec((err, docs) => e.sender.send('data-history-get', { historys: docs }));
                         });
                 } else {
                     console.log(`Offline Mode`);
-                    this.db.historys.find({}).sort({ createdAt: -1 }).exec((err, docs) => {
-                        e.sender.send('data-history-get', { historys: docs });
-                    });
+                    this.db.historys.find({}).sort({ createdAt: -1 }).exec((err, docs) => e.sender.send('data-history-get', { historys: docs }));
                 }
             });
         });
@@ -180,9 +172,7 @@ module.exports = class WindowManager {
         });
 
         ipcMain.on('data-downloads-get', (e, args) => {
-            this.db.downloads.find({}).sort({ createdAt: -1 }).exec((err, docs) => {
-                e.sender.send('data-downloads-get', { downloads: docs });
-            });
+            this.db.downloads.find({}).sort({ createdAt: -1 }).exec((err, docs) => e.sender.send('data-downloads-get', { downloads: docs }));
         });
 
         ipcMain.on('data-downloads-clear', (e, args) => {
@@ -286,9 +276,13 @@ module.exports = class WindowManager {
             hash: `/app/${id}/${encodeURIComponent(url)}`,
         });
 
+        window.webContents.openDevTools({ mode: 'detach' });
         window.loadURL(startUrl);
 
         window.once('ready-to-show', () => window.show());
+
+        window.on('maximize', () => window.webContents.send(`window-maximized-${id}`, {}));
+        window.on('unmaximize', () => window.webContents.send(`window-unmaximized-${id}`, {}));
         window.on('focus', () => window.webContents.send(`window-focus-${id}`, {}));
         window.on('blur', () => window.webContents.send(`window-blur-${id}`, {}));
     }
@@ -401,7 +395,7 @@ module.exports = class WindowManager {
             resizable,
             minimizable,
             maximizable,
-            icon: `${__dirname}/static/app/icon.png`,
+            icon: nativeImage.createFromPath(`${__dirname}/static/app/icon.png`),
             fullscreenable: true,
             show: false,
             webPreferences: {

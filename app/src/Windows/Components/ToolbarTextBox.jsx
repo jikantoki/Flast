@@ -62,7 +62,7 @@ export const ToolbarTextBox = styled.input`
   outline: none;
   background: unset;
   border: none;
-  font-family: 'Roboto Mono', 'SourceHanCodeJP Light';
+  font-family: 'Noto Sans', 'Noto Sans JP';
   cursor: initial;
   /* border-left: solid 1px #c1c1c1; */
   /* border-right: solid 1px #c1c1c1; */
@@ -84,7 +84,7 @@ export const ToolbarDummyTextBox = styled.div`
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
-  font-family: 'Roboto Mono', 'SourceHanCodeJP Light';
+  font-family: 'Noto Sans', 'Noto Sans JP';
   cursor: text;
 
   & span {

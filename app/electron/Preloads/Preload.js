@@ -33,21 +33,18 @@ const FileType = {
  * @param {string} path パス
  * @return {FileType} ファイルの種類
  */
-const getFileType = path => {
+const getFileType = (path) => {
     try {
         const stat = fs.statSync(path);
 
         switch (true) {
             case stat.isFile():
                 return FileType.File;
-
             case stat.isDirectory():
                 return FileType.Directory;
-
             default:
                 return FileType.Unknown;
         }
-
     } catch (e) {
         return FileType.Unknown;
     }
@@ -58,22 +55,20 @@ const getFileType = path => {
  * @param {string} dirPath 検索するディレクトリのパス
  * @return {Array<string>} ファイルのパスのリスト
  */
-const listFiles = dirPath => {
+const listFiles = (dirPath) => {
     const ret = [];
     const paths = fs.readdirSync(dirPath);
 
-    paths.forEach(a => {
+    paths.forEach((a) => {
         const path = `${dirPath}/${a}`;
 
         switch (getFileType(path)) {
             case FileType.File:
                 ret.push(path);
                 break;
-
             case FileType.Directory:
                 ret.push(...listFiles(path));
                 break;
-
             default:
             /* noop */
         }
@@ -120,7 +115,7 @@ global.getFile = (path, json = false) => {
 global.openInEditor = () => {
     if (location.protocol !== `${protocolStr}:` && location.protocol !== `${fileProtocolStr}:`) return;
 
-    userConfig.openInEditor();
+    shell.openPath(userConfig.path);
 }
 
 /*
@@ -343,10 +338,10 @@ global.logoutAccount = () => new Promise((resolve) => {
     });
 });
 
-global.syncAccount = (id = undefined) => new Promise((resolve) => {
+global.syncAccount = (id = undefined, email) => new Promise((resolve) => {
     if (location.protocol !== `${protocolStr}:` && location.protocol !== `${fileProtocolStr}:`) return;
 
-    ipcRenderer.send('sync-account', { id });
+    ipcRenderer.send('sync-account', { id, email });
     ipcRenderer.once('sync-account', (e, args) => {
         resolve(args.id);
     });
@@ -386,10 +381,10 @@ global.getBookmarkBar = () => {
     return userConfig.get('design.isBookmarkBar');
 }
 
-global.setBookmarkBar = (b) => {
+global.setBookmarkBar = (type) => {
     if (location.protocol !== `${protocolStr}:` && location.protocol !== `${fileProtocolStr}:`) return;
 
-    userConfig.set('design.isBookmarkBar', b);
+    userConfig.set('design.isBookmarkBar', type);
     ipcRenderer.send('window-change-settings', {});
     ipcRenderer.send('window-fixBounds', {});
 }
