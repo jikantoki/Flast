@@ -4,6 +4,7 @@
 	"version": "82.0.0",
 	"flast_channel": "Beta",
 	"flast_package_id": "org.aoichaan0513.Flast",
+	"flast_url": "https://flast.aoichaan0513.jp",
 	"private": true,
 	"main": "electron/Starter.js",
 	"homepage": "./",
