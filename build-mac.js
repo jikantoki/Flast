@@ -1,6 +1,6 @@
 const { build, Platform } = require('electron-builder');
 const fs = require('fs');
-const pkg = require('app/package.json');
+const pkg = JSON.parse(fs.readFileSync('./app/package.json', 'utf8'));
 
 const platform = Platform.MAC;
 
