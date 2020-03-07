@@ -23,25 +23,25 @@ jobs:
         with:
           node-version: 13
 
-      - name: npm install
+      - name: Install Dependencies
         run: |
-          npx electron-rebuild
+          npm install
 
-      - name: npm install
+      - name: Rebuild Eletron
         run: |
-          npx electron-rebuild --version 9.0.0-beta.5
+          npx electron-rebuild --version "9.0.0-beta.5"
 
       - name: cd app
         run: |
           cd app/
 
-      - name: npm install
+      - name: Install Dependencies
         run: |
           npm install
 
-      - name: npx electron-rebuild
+      - name: Rebuild Eletron
         run: |
-          npx electron-rebuild --version 9.0.0-beta.5
+          npx electron-rebuild --version "9.0.0-beta.5"
 
       - name: npm run builds
         run: |
