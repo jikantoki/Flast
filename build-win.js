@@ -7,44 +7,39 @@ const platform = Platform.WINDOWS;
 build({
     targets: platform.createTarget(),
     config: {
-        'appId': pkg.flast_package_id,
-        'productName': pkg.name,
-        'copyright': `Copyright 2019 ${pkg.author.name}. All rights reserved.`,
-        'icon': './static/icon.png',
-        'asar': true,
-        'directories': {
-            'output': `dist/${pkg.flast_channel}/${platform.name}`,
-            'buildResources': 'static'
+        appId: pkg.flast_package_id,
+        productName: pkg.name,
+        copyright: `Copyright 2019 ${pkg.author.name}. All rights reserved.`,
+        icon: './static/icon.png',
+        asar: true,
+        directories: {
+            output: `dist/${pkg.flast_channel}/${platform.name}`,
+            buildResources: 'static'
         },
-        'publish': {
-            'provider': 'generic',
-            'url': `https://aoichaan0513.jp/flast/${platform.name}/${pkg.flast_channel}`,
-            'channel': pkg.flast_channel
+        publish: {
+            provider: 'github',
+            repo: pkg.name,
+            owner: pkg.author.name
         },
-        'fileAssociations': [
+        fileAssociations: [
             {
-                'name': 'Document',
-                'description': pkg.name,
-                'role': 'Viewer',
-                'ext': ['html', 'htm', 'php']
+                name: 'Document',
+                description: pkg.name,
+                role: 'Viewer',
+                ext: ['html', 'htm', 'php']
             }
         ],
-        'nsis': {
-            'include': 'static/installer.nsh',
-            'installerIcon': 'static/icon.ico',
-            'uninstallerIcon': 'static/icon.ico'
+        nsis: {
+            include: 'static/installer.nsh',
+            installerIcon: 'static/icon.ico',
+            uninstallerIcon: 'static/icon.ico'
         },
-        'nsisWeb': {
-            'include': 'static/installer.nsh',
-            'installerIcon': 'static/icon.ico',
-            'uninstallerIcon': 'static/icon.ico'
-        },
-        'win': {
-            'icon': 'static/icon.ico',
-            'target': {
-                'target': 'nsis',
-                'arch': ['ia32', 'x64']
+        win: {
+            icon: 'static/icon.ico',
+            target: {
+                target: 'nsis-web',
+                arch: ['ia32', 'x64']
             }
         }
-    },
+    }
 });
