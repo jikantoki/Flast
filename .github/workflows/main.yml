@@ -3,11 +3,11 @@ name: Build
 on: [push]
 
 jobs:
-  build:
+  release:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [windows-latest]
+        os: [windows-latest, macos-latest, ubuntu-latest]
     steps:
     
       - name: Context
@@ -24,36 +24,48 @@ jobs:
         with:
           node-version: 13
 
-      - name: Install Dependencies
+      - name: Install Required Build Toolchain
+        if: matrix.os == 'ubuntu-latest'
+        run: sudo apt-get install gcc-multilib g++-multilib
+
+      - name: Install Dependencies / Rebuild Electron
         run: |
           npm install
-
-      - name: Rebuild Electron
-        run: |
           npx electron-rebuild --version 9.0.0-beta.6
 
-      - name: Install Dependencies
+      - name: Install Dependencies / Rebuild Electron
         working-directory: ./app
         run: |
           npm install
-
-      - name: Rebuild Electron
-        working-directory: ./app
-        run: |
           npx electron-rebuild --version 9.0.0-beta.6
 
-      - name: npm run builds
+      - name: Builds App
         working-directory: ./app
         run: |
           npm run builds
 
-      - name: npm run package:win
+      - name: Package Windows
+        if: matrix.os == 'windows-latest'
         run: |
           npm run package:win
 
-      - name: Cleanup artifacts
+      - name: Package macOS
+        if: matrix.os == 'macos-latest'
         run: |
-          npx rimraf "dist/!(*.exe|*.deb|*.AppImage|*.dmg)"
+          npm run package:mac
+
+      - name: Package Linux AppImage
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          npm run package:linux:appimage
+      - name: Package Linux deb
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          npm run package:linux:deb
+      - name: Package Linux rpm
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          npm run package:linux:rpm
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v1

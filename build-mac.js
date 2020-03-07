@@ -7,26 +7,26 @@ const platform = Platform.MAC;
 build({
     targets: platform.createTarget(),
     config: {
-        'appId': pkg.flast_package_id,
-        'productName': pkg.name,
-        'copyright': `Copyright 2019 ${pkg.author.name}. All rights reserved.`,
-        'icon': './static/icon.png',
-        'asar': true,
-        'directories': {
-            'output': `dist/${pkg.flast_channel}/${platform.name}`,
-            'buildResources': 'static'
+        appId: pkg.flast_package_id,
+        productName: pkg.name,
+        copyright: `Copyright 2019 ${pkg.author.name}. All rights reserved.`,
+        icon: './static/icon.png',
+        asar: true,
+        directories: {
+            output: `dist/${pkg.flast_channel}/${platform.name}`,
+            buildResources: 'static'
         },
-        'publish': {
-            'provider': 'generic',
-            'url': `https://aoichaan0513.jp/flast/${platform.name}/${pkg.flast_channel}`,
-            'channel': pkg.flast_channel
+        publish: {
+            provider: 'github',
+            repo: pkg.name,
+            owner: pkg.author.name
         },
-        'fileAssociations': [
+        fileAssociations: [
             {
-                'name': 'Document',
-                'description': pkg.name,
-                'role': 'Viewer',
-                'ext': 'html'
+                name: 'Document',
+                description: pkg.name,
+                role: 'Viewer',
+                ext: ['html', 'htm', 'php']
             }
         ],
         'mac': {
