@@ -1,0 +1,74 @@
+name: Build
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest]
+    steps:
+      - name: Context
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: echo "$GITHUB_CONTEXT"
+
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 1
+
+      - name: Install Node.js
+        uses: actions/setup-node@v1
+        with:
+          node-version: 13
+
+      - name: Install Dependencies
+        run: |
+          npm install
+
+      - name: Rebuild Electron
+        run: |
+          npx electron-rebuild --version 9.0.0-beta.6
+
+      - name: cd app
+        run: |
+          cd app/
+
+      - name: Install Dependencies
+        run: |
+          npm install
+
+      - name: Rebuild Electron
+        run: |
+          npx electron-rebuild --version 9.0.0-beta.6
+
+      - name: npm run builds
+        run: |
+          npm run builds
+
+      - name: cd ../
+        run: |
+          cd ../
+
+      - name: npm run package:win
+        run: |
+          npm run package:win
+
+      - name: Cleanup artifacts
+        run: |
+          npx rimraf "dist/!(*.exe|*.deb|*.AppImage|*.dmg)"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v1
+        with:
+          name: ${{ matrix.os }}
+          path: dist
+
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: "dist/**"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
