@@ -9,6 +9,7 @@ jobs:
       matrix:
         os: [windows-latest]
     steps:
+    
       - name: Context
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
@@ -31,25 +32,20 @@ jobs:
         run: |
           npx electron-rebuild --version 9.0.0-beta.6
 
-      - name: cd app
-        run: |
-          cd app/
-
       - name: Install Dependencies
+        working-directory: ./app
         run: |
           npm install
 
       - name: Rebuild Electron
+        working-directory: ./app
         run: |
           npx electron-rebuild --version 9.0.0-beta.6
 
       - name: npm run builds
+        working-directory: ./app
         run: |
           npm run builds
-
-      - name: cd ../
-        run: |
-          cd ../
 
       - name: npm run package:win
         run: |
