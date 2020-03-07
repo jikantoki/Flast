@@ -1,14 +1,78 @@
-name: Clone
+name: Build
 
 on: [push]
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  release:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
     steps:
-    - uses: actions/checkout@v1
-    - name: Clone another repository
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        git clone -b Beta https://${GITHUB_ACTOR}:${GITHUB_TOKEN}@github.com/Aoichaan0513/Flast
+      - name: Clone another repository
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git clone https://${GITHUB_ACTOR}:${GITHUB_TOKEN}@github.com/Aoichaan0513/Flast_Private
+
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 1
+
+      - name: Install Node.js
+        uses: actions/setup-node@v1
+        with:
+          node-version: 13
+
+      - name: Install Required Build Toolchain
+        if: matrix.os == 'ubuntu-latest'
+        run: sudo apt-get install gcc-multilib g++-multilib
+
+      - name: Install Dependencies / Rebuild Electron
+        run: |
+          npm install
+          npx electron-rebuild --version 9.0.0-beta.6
+
+      - name: Install Dependencies / Rebuild Electron (app)
+        working-directory: ./app
+        run: |
+          npm install
+          npx electron-rebuild --version 9.0.0-beta.6
+
+      - name: Builds App
+        working-directory: ./app
+        run: |
+          npm run builds
+
+      - name: Package Windows
+        if: matrix.os == 'windows-latest'
+        run: |
+          npm run package:win
+
+      - name: Package macOS
+        if: matrix.os == 'macos-latest'
+        run: |
+          npm run package:mac
+
+      - name: Package Linux deb
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          npm run package:linux:deb
+      - name: Package Linux rpm
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          npm run package:linux:rpm
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v1
+        with:
+          name: ${{ matrix.os }}
+          path: dist
+
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: "dist/**"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
