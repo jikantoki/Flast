@@ -1,5 +1,6 @@
 node_modules/
-electron/Config.js
+electron/Config.json
+electron/Config2.js
 build/static/
 pages/resources/Home.js
 pages/resources/Bookmarks.js

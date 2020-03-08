@@ -13,7 +13,7 @@ const fileProtocolStr = `${protocolStr}-file`;
 const { autoUpdater } = require('electron-updater');
 
 const { ExtensibleSession } = require('electron-extensions/main');
-// const cfg = require('./Config');
+const cfg = require('./Config');
 
 const defaultConfig = {
     profile: {
@@ -385,7 +385,7 @@ module.exports = class Application {
             });
 
             app.on('ready', () => {
-                // process.env.GOOGLE_API_KEY = cfg.googleAPIKey;
+                process.env.GOOGLE_API_KEY = cfg.googleAPIKey;
                 console.log(process.env.GOOGLE_API_KEY);
 
                 app.setAppUserModelId(pkg.flast_package_id);

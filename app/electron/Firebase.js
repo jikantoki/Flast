@@ -9,7 +9,7 @@ const pkg = require(`${app.getAppPath()}/package.json`);
 const protocolStr = 'flast';
 const fileProtocolStr = `${protocolStr}-file`;
 
-// const cfg = require('./Config');
+const cfg = require('./Config');
 
 const Config = require('electron-store');
 const config = new Config();
@@ -34,16 +34,7 @@ module.exports = class Firebase {
     constructor(defaultConfig) {
         this.defaultConfig = defaultConfig;
         if (!firebase.apps.length)
-            firebase.initializeApp({
-                apiKey: String(process.env.FIREBASE_API_KEY),
-                appId: String(process.env.FIREBASE_APP_ID),
-                authDomain: String(process.env.FIREBASE_AUTH_DOMAIN),
-                databaseURL: String(process.env.FIREBASE_DB_URL),
-                measurementId: String(process.env.FIREBASE_MEASUREMENT_ID),
-                messagingSenderId: String(process.env.FIREBASE_MESSAGING_SENDER_ID),
-                projectId: String(process.env.FIREBASE_PROJECT_ID),
-                storageBucket: String(process.env.FIREBASE_STORAGE_BUCKET)
-            });
+            firebase.initializeApp(cfg.firebaseConfig);
     }
 
     getDefaultConfig = () => {
