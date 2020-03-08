@@ -34,7 +34,7 @@ jobs:
           npx electron-rebuild --version 9.0.0-beta.6
 
       - name: Set Config
-        with:
+        env:
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
           FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
           FIREBASE_APP_ID: ${{ secrets.FIREBASE_APP_ID }}
