@@ -1,9 +1,11 @@
 const fs = require('fs');
 
+console.log(process.env);
+
 fs.writeFile('electron/Config.json', JSON.stringify({
     googleAPIKey: String(process.env.GOOGLE_API_KEY),
     firebaseConfig: {
-        apiKey: String(process.FIREBASE_API_KEY),
+        apiKey: String(process.env.FIREBASE_API_KEY),
         appId: String(process.env.FIREBASE_APP_ID),
         authDomain: String(process.env.FIREBASE_AUTH_DOMAIN),
         databaseURL: String(process.env.FIREBASE_DB_URL),

@@ -386,7 +386,6 @@ module.exports = class Application {
 
             app.on('ready', () => {
                 process.env.GOOGLE_API_KEY = cfg.googleAPIKey;
-                console.log(process.env.GOOGLE_API_KEY);
 
                 app.setAppUserModelId(pkg.flast_package_id);
                 session.defaultSession.setUserAgent(session.defaultSession.getUserAgent().replace(/ Electron\/[A-z0-9-\.]*/g, ''));
