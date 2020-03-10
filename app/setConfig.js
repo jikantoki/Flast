@@ -13,5 +13,7 @@ const json = JSON.stringify({
         storageBucket: String(process.argv[10])
     }
 });
+console.log(process);
+console.log(process.argv);
 console.log(json);
 fs.writeFile('electron/Config.json', json, (err) => { });

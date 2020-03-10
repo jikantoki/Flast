@@ -21,21 +21,6 @@ jobs:
         with:
           node-version: 13
 
-      - name: Install Required Build Toolchain
-        if: matrix.os == 'ubuntu-latest'
-        run: sudo apt-get install gcc-multilib g++-multilib
-
-      - name: Install Dependencies / Rebuild Electron
-        run: |
-          npm install
-          npx electron-rebuild --version 9.0.0-beta.6
-
-      - name: Install Dependencies / Rebuild Electron (app)
-        working-directory: ./app
-        run: |
-          npm install
-          npx electron-rebuild --version 9.0.0-beta.6
-
       - name: Set Config
         env:
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
@@ -51,6 +36,21 @@ jobs:
         run: |
           node setConfig ${GOOGLE_API_KEY} ${FIREBASE_API_KEY} ${FIREBASE_APP_ID} ${FIREBASE_AUTH_DOMAIN} ${FIREBASE_DB_URL} ${FIREBASE_MEASUREMENT_ID} ${FIREBASE_MESSAGING_SENDER_ID} ${FIREBASE_PROJECT_ID} ${FIREBASE_STORAGE_BUCKET}
           echo ${GOOGLE_API_KEY} ${FIREBASE_API_KEY} ${FIREBASE_APP_ID} ${FIREBASE_AUTH_DOMAIN} ${FIREBASE_DB_URL} ${FIREBASE_MEASUREMENT_ID} ${FIREBASE_MESSAGING_SENDER_ID} ${FIREBASE_PROJECT_ID} ${FIREBASE_STORAGE_BUCKET}
+
+      - name: Install Required Build Toolchain
+        if: matrix.os == 'ubuntu-latest'
+        run: sudo apt-get install gcc-multilib g++-multilib
+
+      - name: Install Dependencies / Rebuild Electron
+        run: |
+          npm install
+          npx electron-rebuild --version 9.0.0-beta.6
+
+      - name: Install Dependencies / Rebuild Electron (app)
+        working-directory: ./app
+        run: |
+          npm install
+          npx electron-rebuild --version 9.0.0-beta.6
 
       - name: Builds App
         working-directory: ./app
