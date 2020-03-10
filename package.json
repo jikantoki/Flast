@@ -2,7 +2,7 @@
 	"name": "Flast",
 	"description": "Cross-platform browser based on Chromium.",
 	"version": "82.0.0",
-	"flast_channel": "Stable",
+	"flast_channel": "Beta",
 	"flast_package_id": "org.aoichaan0513.Flast",
 	"homepage": "https://aoichaan0513.jp",
 	"private": true,
