@@ -1,6 +1,6 @@
 const fs = require('fs');
 
-fs.writeFile('electron/Config.json', JSON.stringify({
+const json = JSON.stringify({
     googleAPIKey: String(process.argv[2]),
     firebaseConfig: {
         apiKey: String(process.argv[3]),
@@ -12,4 +12,6 @@ fs.writeFile('electron/Config.json', JSON.stringify({
         projectId: String(process.argv[9]),
         storageBucket: String(process.argv[10])
     }
-}), (err) => { });
+});
+console.log(json);
+fs.writeFile('electron/Config.json', json, (err) => { });

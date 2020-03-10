@@ -1,6 +1,9 @@
-name: Build
+name: Build Beta
 
-on: [push]
+on:
+  push:
+    branches:
+      - Beta
 
 jobs:
   release:
