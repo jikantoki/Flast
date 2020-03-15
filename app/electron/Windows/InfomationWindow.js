@@ -23,7 +23,7 @@ const lang = require(`${app.getAppPath()}/langs/${userConfig.get('language') != 
 
 module.exports = class InfomationWindow extends BrowserWindow {
 
-    constructor(appWindow, windowId) {
+    constructor(appWindow) {
         super({
             width: 320,
             frame: false,
@@ -47,13 +47,12 @@ module.exports = class InfomationWindow extends BrowserWindow {
         });
 
         this.appWindow = appWindow;
-        this.windowId = windowId;
 
         const startUrl = process.env.ELECTRON_START_URL || format({
             pathname: path.join(__dirname, '/../../build/index.html'), // 警告：このファイルを移動する場合ここの相対パスの指定に注意してください
             protocol: 'file:',
             slashes: true,
-            hash: `/info/${windowId}`,
+            hash: `/info`,
         });
 
         this.loadURL(startUrl);
@@ -67,19 +66,19 @@ module.exports = class InfomationWindow extends BrowserWindow {
         this.appWindow.isModuleWindowFocused = true;
 
         this.hide();
-        this.webContents.send(`infoWindow-${this.windowId}`, { title, description, url, certificate, isButton });
+        this.webContents.send(`infoWindow-${this.id}`, { windowId: this.appWindow.windowId, title, description, url, certificate, isButton });
         this.fixBounds();
         this.show();
 
         // this.webContents.openDevTools({ mode: 'detach' });
 
-        ipcMain.once(`infoWindow-close-${this.windowId}`, (e, result) => {
+        ipcMain.once(`infoWindow-close-${this.id}`, (e, result) => {
             this.hide();
             this.appWindow.focus();
         });
 
         return new Promise((resolve, reject) => {
-            ipcMain.once(`infoWindow-result-${this.windowId}`, (e, result) => {
+            ipcMain.once(`infoWindow-result-${this.id}`, (e, result) => {
                 resolve(result);
                 this.hide();
                 this.appWindow.focus();

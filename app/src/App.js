@@ -2,7 +2,6 @@ import React, { Component } from 'react';
 import { HashRouter, Route, Switch } from 'react-router-dom';
 
 import MainWindow from './Windows/MainWindow';
-import TitlebarWindow from './Windows/Overlays/TitlebarWindow';
 import InfomationWindow from './Windows/InfomationWindow';
 import PermissionWindow from './Windows/PermissionWindow';
 import MenuWindow from './Windows/MenuWindow';
@@ -19,13 +18,12 @@ class App extends Component {
 		return (
 			<HashRouter>
 				<Route exact path='/window/:windowId/:urls?' component={MainWindow} />
-				<Route path='/titleBar/:windowId' component={TitlebarWindow} />
-				<Route path='/info/:windowId' component={InfomationWindow} />
+				<Route path='/info' component={InfomationWindow} />
 				<Route path='/permission/:windowId' component={PermissionWindow} />
-				<Route path='/menu/:windowId/:tabId' component={MenuWindow} />
+				<Route path='/menu' component={MenuWindow} />
 
 				<Route path='/suggest/:windowId' component={SuggestWindow} />
-				<Route path='/authentication/:windowId' component={AuthenticationWindow} />
+				<Route path='/authentication' component={AuthenticationWindow} />
 				
 				<Route path='/extensions/translate/:windowId' component={TranslateWindow} />
 

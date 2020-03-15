@@ -94,8 +94,11 @@ class Feedback extends Component {
                     }
                 ]
             })
+        }).then((res) => {
+            window.close();
+        }).catch((err) => {
+            console.log(err); // rejected: TypeError: Failed to fetch
         });
-        window.close();
     }
 
     render() {

@@ -23,7 +23,7 @@ const lang = require(`${app.getAppPath()}/langs/${userConfig.get('language') != 
 
 module.exports = class AuthenticationWindow extends BrowserWindow {
     
-    constructor(appWindow, windowId) {
+    constructor(appWindow) {
         super({
             width: 320,
             height: 220,
@@ -33,7 +33,6 @@ module.exports = class AuthenticationWindow extends BrowserWindow {
             show: false,
             fullscreenable: false,
             skipTaskbar: true,
-            title: `Module_${windowId}`,
             webPreferences: {
                 nodeIntegration: true,
                 contextIsolation: false,
@@ -49,13 +48,12 @@ module.exports = class AuthenticationWindow extends BrowserWindow {
         });
 
         this.appWindow = appWindow;
-        this.windowId = windowId;
 
         const startUrl = process.env.ELECTRON_START_URL || format({
             pathname: path.join(__dirname, '/../../build/index.html'),
             protocol: 'file:',
             slashes: true,
-            hash: `/authentication/${windowId}`,
+            hash: `/authentication`,
         });
 
         this.loadURL(startUrl);
@@ -74,15 +72,16 @@ module.exports = class AuthenticationWindow extends BrowserWindow {
         this.appWindow.isModuleWindowFocused = true;
 
         this.hide();
+        this.webContents.send(`authWindow-${this.id}`, { windowId: this.appWindow.windowId });
         this.fixBounds();
         this.show();
 
-        ipcMain.once(`authWindow-close-${this.windowId}`, (e, result) => {
+        ipcMain.once(`authWindow-close-${this.id}`, (e, result) => {
             this.hide();
             this.appWindow.focus();
         });
 
-        ipcMain.once(`authWindow-result-${this.windowId}`, (e, arg) => {
+        ipcMain.once(`authWindow-result-${this.id}`, (e, arg) => {
             loginCallback(arg.user, arg.pass);
             if (!this.isDestroyed())
                 this.hide();

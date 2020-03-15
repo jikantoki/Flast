@@ -39,6 +39,7 @@ class InfomationWindow extends Component {
 		super(props);
 
 		this.state = {
+			windowId: '',
 			title: '',
 			description: '',
 			url: '',
@@ -47,15 +48,15 @@ class InfomationWindow extends Component {
 		};
 
 		window.addEventListener('blur', () => {
-			ipcRenderer.send(`infoWindow-close-${this.props.match.params.windowId}`, {});
+			ipcRenderer.send(`infoWindow-close-${remote.getCurrentWindow().id}`, {});
 		});
 
 		ipcRenderer.on('window-change-settings', (e, args) => {
 			this.forceUpdate();
 		});
 
-		ipcRenderer.on(`infoWindow-${this.props.match.params.windowId}`, (e, args) => {
-			this.setState({ title: args.title, description: args.description, url: args.url, certificate: args.certificate, isButton: args.isButton });
+		ipcRenderer.on(`infoWindow-${remote.getCurrentWindow().id}`, (e, args) => {
+			this.setState({ windowId: args.windowId, title: args.title, description: args.description, url: args.url, certificate: args.certificate, isButton: args.isButton });
 		});
 	}
 
@@ -92,7 +93,7 @@ class InfomationWindow extends Component {
 	}
 
 	sendResult = (result) => {
-		ipcRenderer.send(`infoWindow-result-${this.props.match.params.windowId}`, result);
+		ipcRenderer.send(`infoWindow-result-${this.state.windowId}`, result);
 	}
 
 	getTitle = () => {
@@ -103,9 +104,9 @@ class InfomationWindow extends Component {
 		else if (this.state.certificate.type === 'File')
 			return lang.window.toolBar.addressBar.info.clicked.file;
 		else if (this.state.certificate.type === 'Secure')
-			return (<span style={{ color: this.getThemeType() || String(this.props.match.params.windowId).startsWith('private') ? '#81c995' : '#188038' }}>{lang.window.toolBar.addressBar.info.clicked.secure.title}</span>);
+			return (<span style={{ color: this.getThemeType() || String(this.state.windowId).startsWith('private') ? '#81c995' : '#188038' }}>{lang.window.toolBar.addressBar.info.clicked.secure.title}</span>);
 		else if (this.state.certificate.type === 'InSecure')
-			return (<span style={{ color: this.getThemeType() || String(this.props.match.params.windowId).startsWith('private') ? '#f28b82' : '#c5221f' }}>{lang.window.toolBar.addressBar.info.clicked.insecure.title}</span>);
+			return (<span style={{ color: this.getThemeType() || String(this.state.windowId).startsWith('private') ? '#f28b82' : '#c5221f' }}>{lang.window.toolBar.addressBar.info.clicked.insecure.title}</span>);
 	}
 
 	getDescription = () => {
@@ -119,13 +120,13 @@ class InfomationWindow extends Component {
 
 	render() {
 		return (
-			<Window isDarkModeOrPrivateMode={this.getThemeType() || String(this.props.match.params.windowId).startsWith('private')} onMouseEnter={(e) => { remote.getCurrentWindow().setIgnoreMouseEvents(false); }} onMouseLeave={(e) => { remote.getCurrentWindow().setIgnoreMouseEvents(true, { forward: true }); }}>
+			<Window isDarkModeOrPrivateMode={this.getThemeType() || String(this.state.windowId).startsWith('private')} onMouseEnter={(e) => { remote.getCurrentWindow().setIgnoreMouseEvents(false); }} onMouseLeave={(e) => { remote.getCurrentWindow().setIgnoreMouseEvents(true, { forward: true }); }}>
 				<div style={{ display: 'flex', justifyContent: 'space-around' }}>
 					<h5 style={{ margin: 0, fontFamily: '"Noto Sans", "Noto Sans JP"' }}>
 						{this.state.certificate !== {} ? this.getTitle() : this.state.title}
 					</h5>
-					<Button style={{ margin: 0, width: 20, height: 20, marginLeft: 'auto', border: 'none' }} onClick={() => ipcRenderer.send(`infoWindow-close-${this.props.match.params.windowId}`, {})}>
-						<svg name="TitleBarClose" width="12" height="12" viewBox="0 0 12 12" fill={this.getThemeType() || String(this.props.match.params.windowId).startsWith('private') ? '#f9f9fa' : '#353535'}>
+					<Button style={{ margin: 0, width: 20, height: 20, marginLeft: 'auto', border: 'none' }} onClick={() => ipcRenderer.send(`infoWindow-close-${remote.getCurrentWindow().id}`, {})}>
+						<svg name="TitleBarClose" width="12" height="12" viewBox="0 0 12 12" fill={this.getThemeType() || String(this.state.windowId).startsWith('private') ? '#f9f9fa' : '#353535'}>
 							<polygon fill-rule="evenodd" points="11 1.576 6.583 6 11 10.424 10.424 11 6 6.583 1.576 11 1 10.424 5.417 6 1 1.576 1.576 1 6 5.417 10.424 1" />
 						</svg>
 					</Button>

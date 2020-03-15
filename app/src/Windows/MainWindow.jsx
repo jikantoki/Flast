@@ -574,7 +574,6 @@ class BrowserView extends Component {
 
 		if (this.state.zoomSize != userConfig.get('pageSettings.defaultZoomSize'))
 			i += 1;
-
 		if (!this.state.barText.startsWith(protocolStr))
 			i += 2;
 
@@ -585,7 +584,7 @@ class BrowserView extends Component {
 		const isBookmarkBar = userConfig.get('design.isBookmarkBar') === 1 || userConfig.get('design.isBookmarkBar') === 0 && this.state.viewUrl.startsWith(`${protocolStr}://home/`);
 
 		return (
-			<ContentWrapper isLoading={this.state.isLoading} isDarkModeOrPrivateMode={this.getThemeType() || String(this.props.windowId).startsWith('private')}>
+			<ContentWrapper isDarkModeOrPrivateMode={this.getThemeType() || String(this.props.windowId).startsWith('private')}>
 				<Toolbar isDarkModeOrPrivateMode={this.getThemeType() || String(this.props.windowId).startsWith('private')} isBookmarkBar={isBookmarkBar}>
 					<ToolbarButton isDarkModeOrPrivateMode={this.getThemeType() || String(this.props.windowId).startsWith('private')} src={this.state.canGoBack ? this.isDarkModeOrPrivateMode.bind(this, LightBackIcon, DarkBackIcon) : BackInActiveIcon} size={24}
 						isShowing={true} isRight={false} isMarginLeft={true} isEnabled={this.state.canGoBack} title={lang.window.toolBar.back} onClick={() => { this.goBack(); }} />
@@ -920,7 +919,7 @@ class MainWindow extends Component {
 								return (
 									<Tab key={i} isDarkModeOrPrivateMode={this.getThemeType() || String(this.props.match.params.windowId).startsWith('private')} isMaximized={remote.getCurrentWindow().isMaximized() || remote.getCurrentWindow().isFullScreen()} isActive={tab.id === this.state.current}
 										isFixed={tab.isFixed} inActiveColor={remote.getCurrentWindow().isFocused() ? this.getForegroundColor(this.getColor()) : '#000000'} accentColor={tab.color} className={tab.isFixed ? 'fixed-tab' : ''}
-										onClick={() => { if (tab.id !== this.state.current) { ipcRenderer.send(`tab-select-${this.props.match.params.windowId}`, { id: tab.id }); } this.forceUpdate(); }} onContextMenu={this.handleContextMenu.bind(this, tab.id)} title={tab.title}>
+										onClick={() => { if (tab.id !== this.state.current) { ipcRenderer.send(`tab-select-${this.props.match.params.windowId}`, { id: tab.id }); this.setState({ current: tab.id }); } this.forceUpdate(); }} onContextMenu={this.handleContextMenu.bind(this, tab.id)} title={tab.title}>
 										<TabIcon src={this.getTabIcon(tab.id, tab.url, tab.icon)} width={18} height={18} onError={this.handleTabIconError} />
 										<TabTitle isShowing={tab.isAudioStatus !== 0} isFixed={tab.isFixed}>{tab.title}</TabTitle>
 										<TabStatusIcon isActive={tab.id === this.state.current} isFixed={tab.isFixed} isRight={true} src={tab.isAudioStatus !== 0 ? (tab.id === this.state.current ? this.isDarkModeOrPrivateMode.bind(this, tab.isAudioStatus === 1 ? LightAudioIcon : LightAudioMuteIcon, tab.isAudioStatus === 1 ? DarkAudioIcon : DarkAudioMuteIcon) : (this.getForegroundColor(platform.isWin32 || platform.isDarwin ? `#${systemPreferences.getAccentColor()}` : '#353535') === '#000000' || this.isDarkModeOrPrivateMode() ? (tab.isAudioStatus === 1 ? LightAudioIcon : LightAudioMuteIcon) : (tab.isAudioStatus === 1 ? DarkAudioIcon : DarkAudioMuteIcon))) : undefined} isShowing={tab.isAudioStatus !== 0} size={14} title={tab.isAudioStatus !== 0 ? (tab.isAudioStatus === 1 ? lang.window.titleBar.tab.media.audioPlaying : lang.window.titleBar.tab.media.audioMuted) : ''} />

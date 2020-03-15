@@ -276,7 +276,6 @@ module.exports = class WindowManager {
             hash: `/app/${id}/${encodeURIComponent(url)}`,
         });
 
-        window.webContents.openDevTools({ mode: 'detach' });
         window.loadURL(startUrl);
 
         window.once('ready-to-show', () => window.show());
@@ -305,7 +304,6 @@ module.exports = class WindowManager {
 
             this.firebase.getBookmarks(true)
                 .then((items) => {
-
                     let datas = [];
                     items.forEach((item, i) => datas.push({ url: item.data().url, title: item.data().title, createdAt: item.data().date.toDate() }));
                     console.log(datas);
@@ -404,6 +402,7 @@ module.exports = class WindowManager {
                 plugins: true,
                 experimentalFeatures: true,
                 contextIsolation: false,
+                enableRemoteModule: true
             }
         });
     }

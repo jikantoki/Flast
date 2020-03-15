@@ -36,10 +36,17 @@ const Window = styled.div`
 class AuthenticationWindow extends Component {
 	constructor(props) {
 		super(props);
+
 		this.state = {
+			windowId: '',
 			userName: '',
 			passWord: ''
 		};
+
+		ipcRenderer.on(`authWindow-${remote.getCurrentWindow().id}`, (e, args) => {
+			this.setState({ windowId: args.windowId });
+			this.forceUpdate();
+		});
 
 		ipcRenderer.on('window-change-settings', (e, args) => {
 			this.forceUpdate();
@@ -50,7 +57,7 @@ class AuthenticationWindow extends Component {
 	}
 
 	submit = () => {
-		ipcRenderer.send(`authWindow-result-${this.props.match.params.windowId}`, { user: this.state.userName, pass: this.state.passWord });
+		ipcRenderer.send(`authWindow-result-${remote.getCurrentWindow().id}`, { user: this.state.userName, pass: this.state.passWord });
 	}
 
 	getTheme = () => {
@@ -72,7 +79,7 @@ class AuthenticationWindow extends Component {
 
 	render() {
 		return (
-			<Window isDarkModeOrPrivateMode={this.getTheme() || String(this.props.match.params.windowId).startsWith('private')} onMouseEnter={(e) => { remote.getCurrentWindow().setIgnoreMouseEvents(false); }} onMouseLeave={(e) => { remote.getCurrentWindow().setIgnoreMouseEvents(true, { forward: true }); }}>
+			<Window isDarkModeOrPrivateMode={this.getTheme() || String(this.state.windowId).startsWith('private')} onMouseEnter={(e) => { remote.getCurrentWindow().setIgnoreMouseEvents(false); }} onMouseLeave={(e) => { remote.getCurrentWindow().setIgnoreMouseEvents(true, { forward: true }); }}>
 				<div style={{ marginBottom: 10 }}>
 					<label style={{ whiteSpace: 'normal' }}>このサイトにログインするための認証情報を入力してください。</label>
 					<label style={{ marginBottom: 0 }}>ユーザー名</label>
@@ -82,7 +89,7 @@ class AuthenticationWindow extends Component {
 				</div>
 				<div style={{ display: 'flex', justifyContent: 'space-between' }}>
 					<Button style={{ width: '49.2%' }} tabIndex={0} onClick={this.submit.bind(this)}>送信</Button>
-					<Button style={{ width: '49.2%' }} tabIndex={0} onClick={() => ipcRenderer.send(`authWindow-close-${this.props.match.params.windowId}`, {})}>キャンセル</Button>
+					<Button style={{ width: '49.2%' }} tabIndex={0} onClick={() => ipcRenderer.send(`authWindow-close-${remote.getCurrentWindow().id}`, {})}>キャンセル</Button>
 				</div>
 			</Window>
 		);

@@ -79,12 +79,12 @@ module.exports = class MainWindow extends BrowserWindow {
 
         userConfig.get('window.isMaximized') && this.maximize();
 
-        this.infoWindow = new InfomationWindow(this, this.windowId);
+        this.infoWindow = new InfomationWindow(this);
         this.permissionWindow = new PermissionWindow(this, this.windowId);
-        this.menuWindow = new MenuWindow(this, this.windowId);
+        this.menuWindow = new MenuWindow(this);
 
         this.suggestWindow = new SuggestWindow(this, this.windowId);
-        this.authenticationWindow = new AuthenticationWindow(this, this.windowId);
+        this.authenticationWindow = new AuthenticationWindow(this);
 
         this.translateWindow = new TranslateWindow(this, this.windowId);
 
@@ -295,7 +295,7 @@ module.exports = class MainWindow extends BrowserWindow {
                     if (view.view.webContents.id == args.id) {
                         let webContents = this.views[i].view.webContents;
 
-                        this.menuWindow.showWindow(args.url, webContents.zoomFactor);
+                        this.menuWindow.showWindow(args.id, args.url, webContents.zoomFactor);
                     }
                 });
             } else {
@@ -845,8 +845,10 @@ module.exports = class MainWindow extends BrowserWindow {
                 this.suggestWindow.hide();
                 this.authenticationWindow.hide();
 
+                /*
                 this.menuWindow.destroy();
                 this.menuWindow = new MenuWindow(this, this.windowId, id);
+                */
                 this.fixBounds();
             }
         });
@@ -871,8 +873,10 @@ module.exports = class MainWindow extends BrowserWindow {
         this.suggestWindow.hide();
         this.authenticationWindow.hide();
 
+        /*
         this.menuWindow.destroy();
         this.menuWindow = new MenuWindow(this, this.windowId, item.id);
+        */
         this.fixBounds();
     }
 

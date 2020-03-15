@@ -25,7 +25,8 @@ const width = 350;
 const height = 600;
 
 module.exports = class InfomationWindow extends BrowserWindow {
-    constructor(appWindow, windowId, tabId) {
+
+    constructor(appWindow) {
         super({
             width,
             height,
@@ -35,7 +36,6 @@ module.exports = class InfomationWindow extends BrowserWindow {
             show: false,
             fullscreenable: false,
             skipTaskbar: true,
-            title: `Module_${windowId}`,
             webPreferences: {
                 nodeIntegration: true,
                 contextIsolation: false,
@@ -52,14 +52,11 @@ module.exports = class InfomationWindow extends BrowserWindow {
 
         this.appWindow = appWindow;
 
-        this.windowId = windowId;
-        this.tabId = tabId;
-
         const startUrl = format({
             pathname: path.join(__dirname, '/../../build/index.html'),
             protocol: 'file:',
             slashes: true,
-            hash: `/menu/${windowId}/${tabId}`,
+            hash: `/menu`,
         });
 
         this.loadURL(startUrl);
@@ -69,17 +66,17 @@ module.exports = class InfomationWindow extends BrowserWindow {
         this.fixBounds();
     }
 
-    showWindow = (url, zoomSize) => {
+    showWindow = (tabId, url, zoomSize) => {
         this.appWindow.isModuleWindowFocused = true;
 
         this.hide();
-        this.webContents.send(`menuWindow-${this.windowId}`, { url, zoomSize });
+        this.webContents.send(`menuWindow-${this.id}`, { windowId: this.appWindow.windowId, tabId, url, zoomSize });
         this.fixBounds();
         this.show();
 
         // this.webContents.openDevTools({ mode: 'detach' });
 
-        ipcMain.once(`menuWindow-close-${this.windowId}`, (e, result) => {
+        ipcMain.once(`menuWindow-close-${this.id}`, (e, result) => {
             if (this.isDestroyed()) return;
             this.hide();
             this.appWindow.focus();
