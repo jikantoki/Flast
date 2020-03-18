@@ -1,7 +1,7 @@
 {
 	"name": "Flast",
 	"description": "Cross-platform browser based on Chromium.",
-	"version": "5.2.4",
+	"version": "5.2.5",
 	"flast_channel": "Stable",
 	"flast_package_id": "org.aoichaan0513.Flast",
 	"private": true,
@@ -74,9 +74,10 @@
 	"devDependencies": {
 		"@babel/plugin-proposal-class-properties": "7.4.4",
 		"css-loader": "^3.4.0",
-		"electron": "^8.0.0-beta.9",
+		"electron": "8.1.1",
 		"electron-packager": "^14.1.1",
 		"log-update": "3.2.0",
+		"minimist": ">=1.2.2",
 		"node-sass": "^4.13.1",
 		"npm-run-all": "4.1.5",
 		"postcss-easy-import": "^3.0.0",

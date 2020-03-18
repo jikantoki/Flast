@@ -1,7 +1,7 @@
 {
 	"name": "Flast",
 	"description": "Cross-platform browser based on Chromium.",
-	"version": "5.2.4",
+	"version": "5.2.5",
 	"flast_channel": "Stable",
 	"flast_package_id": "org.aoichaan0513.Flast",
 	"homepage": "https://aoichaan0513.jp",
@@ -11,10 +11,6 @@
 		"email": "aoichaan0513@gmail.com",
 		"url": "https://aoichaan0513.jp"
 	},
-	"dependencies": {
-		"electron": "^8.0.0-beta.9",
-		"electron-updater": "^4.0.6"
-	},
 	"scripts": {
 		"package:win": "node build-win",
 		"package:mac": "node build-mac",
@@ -22,7 +18,12 @@
 		"package:linux:deb": "node build-linux-deb",
 		"package:linux:rpm": "node build-linux-rpm"
 	},
+	"dependencies": {
+		"electron": "8.1.1",
+		"electron-updater": "^4.0.6"
+	},
 	"devDependencies": {
-		"electron-builder": "^22.3.2"
+		"electron-builder": "^22.3.2",
+		"minimist": ">=1.2.2"
 	}
 }

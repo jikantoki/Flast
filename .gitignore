@@ -1,8 +1,15 @@
+package-lock.json
 node_modules/
 dist/
 
+app/package-lock.json
+app/.firebaserc
+app/firebase.json
+app/firestore.indexes.json
+app/firestore.rules
 app/node_modules/
-app/electron/Config.js
+app/electron/Config.json
+app/electron/Config2.js
 app/build/static/
 app/pages/resources/Home.js
 app/pages/resources/Bookmarks.js
