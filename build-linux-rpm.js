@@ -18,7 +18,7 @@ build({
         },
         publish: {
             provider: 'generic',
-            url: `https://${flast_url}/flast/${process.platform}/${flast_channel}`,
+            url: `${flast_url}/releases/${process.platform}/${flast_channel}`,
             channel: flast_channel
         },
         fileAssociations: [
