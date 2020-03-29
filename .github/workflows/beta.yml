@@ -30,13 +30,11 @@ jobs:
       - name: Install Dependencies
         run: |
           npm install
-          npx audit fix
 
       - name: Install Dependencies / Rebuild Electron (app)
         working-directory: ./app
         run: |
           npm install
-          npx audit fix
           npx electron-rebuild --version 9.0.0-beta.5
 
       - name: Set Config
