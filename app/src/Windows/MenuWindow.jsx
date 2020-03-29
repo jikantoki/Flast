@@ -259,7 +259,7 @@ class MenuWindow extends Component {
 
 	closeMenu = () => {
 		this.setState({ isOpen: null });
-		ipcRenderer.send(`menuWindow-close-${this.state.windowId}`, {});
+		ipcRenderer.send(`menuWindow-close-${remote.getCurrentWindow().id}`, {});
 	}
 
 	getIconDirectory = () => {

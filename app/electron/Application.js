@@ -13,7 +13,7 @@ const fileProtocolStr = `${protocolStr}-file`;
 const { autoUpdater } = require('electron-updater');
 
 const { ExtensibleSession } = require('electron-extensions/main');
-const cfg = require('./Config');
+const cfg = require('./Config.json');
 
 const defaultConfig = {
     profile: {

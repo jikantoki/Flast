@@ -1,30 +1,30 @@
 const { build, Platform } = require('electron-builder');
 const fs = require('fs');
-const pkg = JSON.parse(fs.readFileSync('./app/package.json', 'utf8'));
+const { flast_package_id, name, author, flast_channel, flast_url } = JSON.parse(fs.readFileSync('./app/package.json', 'utf8'));
 
 const platform = Platform.LINUX;
 
 build({
     targets: platform.createTarget(),
     config: {
-        appId: pkg.flast_package_id,
-        productName: pkg.name,
-        copyright: `Copyright 2019 ${pkg.author.name}. All rights reserved.`,
+        appId: flast_package_id,
+        productName: name,
+        copyright: `Copyright 2019 ${author.name}. All rights reserved.`,
         icon: './static/icon.png',
         asar: true,
         directories: {
-            output: `dist/${pkg.flast_channel}/${platform.name}`,
+            output: `dist/${flast_channel}/${platform.name}`,
             buildResources: 'static'
         },
         publish: {
-            provider: 'github',
-            repo: pkg.name,
-            owner: pkg.author.name
+            provider: 'generic',
+            url: `https://${flast_url}/flast/${process.platform}/${flast_channel}`,
+            channel: flast_channel
         },
         fileAssociations: [
             {
                 name: 'Document',
-                description: pkg.name,
+                description: name,
                 role: 'Viewer',
                 ext: ['html', 'htm', 'php']
             }
@@ -37,5 +37,5 @@ build({
                 arch: ['ia32', 'x64']
             }
         }
-    },
+    }
 });

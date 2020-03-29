@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { Component, Fragment } from 'react';
 import { BrowserRouter, Route, Link as RouterLink, Switch as RouterSwitch } from 'react-router-dom';
 
 import PropTypes from 'prop-types';
@@ -165,7 +165,7 @@ class NavigationBar extends Component {
                     <div className={classes.toolbar} />
                 </Hidden>
                 {!window.location.href.startsWith('flast://settings/') ?
-                    <div>
+                    <Fragment>
                         <List>
                             <a className={classes.link} href={window.getButtonStartPage()} >
                                 <ListItem button selected={'flast://home/' === window.location.href}>
@@ -234,9 +234,9 @@ class NavigationBar extends Component {
                                 </ListItem>
                             </a>
                         </List>
-                    </div>
+                    </Fragment>
                     :
-                    <div>
+                    <Fragment>
                         <List>
                             <RouterLink className={classes.link} to="/">
                                 <ListItem button selected={window.location.href === 'flast://settings/'}>
@@ -308,7 +308,7 @@ class NavigationBar extends Component {
                                 </ListItem>
                             </RouterLink>
                         </List>
-                    </div>
+                    </Fragment>
                 }
             </ThemeProvider>
         );

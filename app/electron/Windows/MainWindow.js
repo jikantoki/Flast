@@ -93,9 +93,6 @@ module.exports = class MainWindow extends BrowserWindow {
         this.setMenuBarVisibility(false);
         this.autoHideMenuBar = true;
 
-        mainMenu.on('menu-will-show', (e) => console.log(e));
-        mainMenu.on('menu-will-close', (e) => console.log(e));
-
         let urlStrings = '';
         urls.map((url, i) => urlStrings += `${encodeURIComponent(url)}($|$)`);
 

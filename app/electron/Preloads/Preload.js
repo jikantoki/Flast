@@ -904,12 +904,11 @@ onfocus = (e) => {
 onmousedown = (e) => {
     if (remote.getCurrentWindow().getBrowserViews()[0] == undefined) return;
     const view = remote.getCurrentWindow().getBrowserViews()[0];
-    const url = view.webContents.getURL();
 
     if (e.button == 3) {
         if (view.webContents.canGoBack())
             view.webContents.goBack();
-        if (url.startsWith(`${protocolStr}://error`)) {
+        if (view.webContents.getURL().startsWith(`${protocolStr}://error`)) {
             if (view.webContents.canGoBack())
                 view.webContents.goBack();
             return;
@@ -918,7 +917,7 @@ onmousedown = (e) => {
     } else if (e.button == 4) {
         if (view.webContents.canGoForward())
             view.webContents.goForward();
-        if (url.startsWith(`${protocolStr}://error`)) {
+        if (view.webContents.getURL().startsWith(`${protocolStr}://error`)) {
             if (view.webContents.canGoForward())
                 view.webContents.goForward();
             return;

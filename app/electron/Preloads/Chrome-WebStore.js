@@ -2,12 +2,7 @@ exports.injectChromeWebstoreInstallButton = () => {
     const baseUrl =
         'https://clients2.google.com/service/update2/crx?response=redirect&acceptformat=crx2,crx3&prodversion=%VERSION&x=id%3D%ID%26installsource%3Dondemand%26uc';
     const ibText = 'Add to Flast';
-    const ibTemplate =
-        '<div role="button" class="dd-Va g-c-wb g-eg-ua-Uc-c-za g-c-Oc-td-jb-oa g-c" aria-label="' +
-        ibText +
-        '" tabindex="0" style="user-select: none;"><div class="g-c-Hf"><div class="g-c-x"><div class="g-c-R  webstore-test-button-label">' +
-        ibText +
-        '</div></div></div></div>';
+    const ibTemplate = `<div role="button" class="dd-Va g-c-wb g-eg-ua-Uc-c-za g-c-Oc-td-jb-oa g-c" aria-label="${ibText}" tabindex="0" style="user-select: none;"><div class="g-c-Hf"><div class="g-c-x"><div class="g-c-R  webstore-test-button-label">${ibText}</div></div></div></div>`;
 
     function waitForCreation(selector, callback) {
         const element = document.querySelector(selector);
@@ -40,9 +35,7 @@ exports.injectChromeWebstoreInstallButton = () => {
     });
 
     function installPlugin(id, version = navigator.userAgent.match(/(?<=Chrom(e|ium)\/)\d+\.\d+/)[0]) {
-        window.location.href = baseUrl
-            .replace('%VERSION', version)
-            .replace('%ID', id);
+        window.location.href = baseUrl.replace('%VERSION', version).replace('%ID', id);
     }
 
     function InstallButton(wrapper, id = document.URL.match(/(?<=\/)(\w+)(\?|$)/)[1]) {
